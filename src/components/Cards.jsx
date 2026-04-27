@@ -80,42 +80,48 @@ export function PostListRow({ artwork, onOpen }) {
     <button
       type="button"
       onClick={() => onOpen(artwork.id)}
-      className="flex w-full items-stretch gap-3 px-3 py-2.5 text-left hover:bg-[var(--surface-2)]/40"
+      className="flex w-full items-stretch gap-3 px-3 py-3 text-left hover:bg-[var(--surface-2)]/40"
     >
       {/* 썸네일 — 좌측 고정 */}
       <ImageBox
         src={artwork.imageUrl}
         alt={artwork.title}
-        className="h-[52px] w-[52px] shrink-0 rounded-[6px]"
+        className="h-[60px] w-[60px] shrink-0 rounded-[6px]"
       />
-      {/* 본문 — 좌측 정렬 축 (제목 / 메타) */}
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-1 text-[14px] font-bold leading-tight tracking-[-0.04em] text-[var(--text)]">
+      {/* 본문 — 좌측 정렬축 (제목 / 메타) */}
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
+        <p className="line-clamp-1 text-[15px] font-extrabold leading-tight tracking-[-0.04em] text-[var(--text)]">
           {hot && (
-            <span className="mr-0.5 inline-flex align-[-1px] text-[var(--accent)]">
-              <IconHype size={11} filled />
+            <span className="mr-1 inline-flex align-[-2px] text-[var(--accent)]">
+              <IconHype size={13} filled />
             </span>
           )}
           {artwork.title}
+          {commentCount > 0 && (
+            <span className="ml-1 align-baseline text-[12px] font-extrabold text-[var(--accent)]">
+              [{commentCount}]
+            </span>
+          )}
         </p>
-        <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-tight text-[var(--text-muted)]">
+        <p className="flex items-center gap-1.5 text-[11px] leading-tight text-[var(--text-muted)]">
           <span className="truncate font-semibold text-[var(--text-body)]">{profileLabel(profile)}</span>
           <span className="text-[var(--text-faint)]">·</span>
           <span className="shrink-0">{timeAgo(artwork.created_at)}</span>
+          {hype > 0 && (
+            <>
+              <span className="text-[var(--text-faint)]">·</span>
+              <span className="inline-flex shrink-0 items-center gap-0.5 font-semibold text-[var(--ink)]">
+                <IconHype size={10} filled /> {hype}
+              </span>
+            </>
+          )}
+          {artwork.view_count > 0 && (
+            <>
+              <span className="text-[var(--text-faint)]">·</span>
+              <span className="shrink-0">조회 {artwork.view_count}</span>
+            </>
+          )}
         </p>
-      </div>
-      {/* 우측 — 댓글 수 / hype (고정 위치) */}
-      <div className="flex shrink-0 flex-col items-end justify-center gap-1 text-[10px] text-[var(--text-muted)]">
-        {commentCount > 0 && (
-          <span className="rounded-full bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--ink)]">
-            {commentCount}
-          </span>
-        )}
-        {hype > 0 && (
-          <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-[var(--ink)]">
-            <IconHype size={10} filled /> {hype}
-          </span>
-        )}
       </div>
     </button>
   );

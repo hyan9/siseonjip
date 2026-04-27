@@ -16,6 +16,7 @@ import {
   publicPhotoUrl,
 } from './db';
 import { useAuth } from './auth-context';
+import { buildBotMemoryGraph } from './bot-seed';
 
 const DataContext = createContext(null);
 
@@ -85,21 +86,29 @@ export function DataProvider({ children }) {
   const value = useMemo(() => {
     const userId = session?.user?.id ?? null;
 
-    const enrichedArtworks = artworks.map((art) => ({
+    // 데모 봇 시드 — 실제 DB는 그대로 두고 메모리에서만 머지
+    // (팔로우/팔로잉, 추천 피드가 처음에도 비어있지 않게)
+    const bot = buildBotMemoryGraph(userId);
+    const mergedProfiles = [...profiles, ...bot.profiles];
+    const mergedArtworks = [...artworks, ...bot.artworks];
+    const mergedFollows = [...follows, ...bot.follows];
+    const mergedHypes = [...hypes, ...bot.hypes];
+
+    const enrichedArtworks = mergedArtworks.map((art) => ({
       ...art,
       imageUrl: art.image_url || publicPhotoUrl(art.storage_path),
     }));
 
-    const getProfile = (id) => profiles.find((p) => p.id === id) || null;
+    const getProfile = (id) => mergedProfiles.find((p) => p.id === id) || null;
     const getPlace = (id) => places.find((p) => p.id === id) || null;
     const getArtwork = (id) => enrichedArtworks.find((a) => a.id === id) || null;
     const getUserArtworks = (uid) => enrichedArtworks.filter((a) => a.user_id === uid);
     const getPlaceArtworks = (pid) =>
       enrichedArtworks.filter((a) => a.place_id === pid && a.location_mode !== '숨김');
     const getCommentsFor = (artworkId) => comments.filter((c) => c.artwork_id === artworkId);
-    const getHypeCount = (artworkId) => hypes.filter((h) => h.artwork_id === artworkId).length;
+    const getHypeCount = (artworkId) => mergedHypes.filter((h) => h.artwork_id === artworkId).length;
     const isHypedByMe = (artworkId) =>
-      userId != null && hypes.some((h) => h.artwork_id === artworkId && h.user_id === userId);
+      userId != null && mergedHypes.some((h) => h.artwork_id === artworkId && h.user_id === userId);
 
     const getCurateForUser = (uid) => {
       const slots = curateSlots
@@ -126,16 +135,16 @@ export function DataProvider({ children }) {
         (r) => r.comment_id === commentId && r.user_id === userId
       );
 
-    const getFollowers = (uid) => follows.filter((f) => f.followee_id === uid);
-    const getFollowing = (uid) => follows.filter((f) => f.follower_id === uid);
+    const getFollowers = (uid) => mergedFollows.filter((f) => f.followee_id === uid);
+    const getFollowing = (uid) => mergedFollows.filter((f) => f.follower_id === uid);
     const isFollowing = (targetId) =>
-      userId != null && follows.some(
+      userId != null && mergedFollows.some(
         (f) => f.follower_id === userId && f.followee_id === targetId
       );
 
     // 추천 알고리즘: 최신성 + 인기 + 팔로잉 보너스 + 키워드 친화도
     const myFollowingSet = new Set(getFollowing(userId).map((f) => f.followee_id));
-    const myHypedArtworks = hypes.filter((h) => h.user_id === userId).map((h) => h.artwork_id);
+    const myHypedArtworks = mergedHypes.filter((h) => h.user_id === userId).map((h) => h.artwork_id);
     const myKeywordCounts = new Map();
     for (const aid of myHypedArtworks) {
       const art = enrichedArtworks.find((a) => a.id === aid);
@@ -184,7 +193,7 @@ export function DataProvider({ children }) {
 
     const getRecommendedCreators = (limit = 6) => {
       // 작가 점수 = 받은 hype 합 + 최근 작품 보너스 + 자기 자신 제외 + 차단 제외
-      return profiles
+      return mergedProfiles
         .filter((p) => p.id !== userId && !blockedSet.has(p.id))
         .map((p) => {
           const works = enrichedArtworks.filter((a) => a.user_id === p.id);
@@ -267,7 +276,7 @@ export function DataProvider({ children }) {
 
     const getMyActivity = (limit = 50) => {
       if (!userId) return [];
-      const myHypes = hypes
+      const myHypes = mergedHypes
         .filter((h) => h.user_id === userId)
         .map((h) => ({ kind: 'hype', artwork_id: h.artwork_id, created_at: h.created_at }));
       const myComments = comments
@@ -276,7 +285,7 @@ export function DataProvider({ children }) {
       const mySaves = saves
         .filter((s) => s.user_id === userId)
         .map((s) => ({ kind: 'save', artwork_id: s.artwork_id, created_at: s.created_at }));
-      const myFollows = follows
+      const myFollows = mergedFollows
         .filter((f) => f.follower_id === userId)
         .map((f) => ({ kind: 'follow', followee_id: f.followee_id, created_at: f.created_at }));
       const myReactions = commentReactions
@@ -322,13 +331,13 @@ export function DataProvider({ children }) {
       error,
       refresh,
       userId,
-      profiles,
+      profiles: mergedProfiles,
       places,
       artworks: enrichedArtworks,
       comments,
-      hypes,
+      hypes: mergedHypes,
       curateSlots,
-      follows,
+      follows: mergedFollows,
       commentReactions,
       getProfile,
       getPlace,

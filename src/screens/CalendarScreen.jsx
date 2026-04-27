@@ -94,6 +94,13 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
   const days = useMemo(() => getMonthDays(myWorks, year, month), [myWorks, year, month]);
   const activeDays = days.filter((d) => d.artworkIds.length > 0);
 
+  // 그날의 4장을 위아래 스크롤로 보는 zoom
+  const [zoomDay, setZoomDay] = useState(null); // { photos, initialIndex }
+  const openDayZoom = (photos, initialIndex = 0) => {
+    if (!photos || photos.length === 0) return;
+    setZoomDay({ photos, initialIndex });
+  };
+
   // 일주일 뷰: 14일치 (오늘 중앙), 위/아래 페이드 마스크
   const todayStr = now.toDateString();
   const weekDays = useMemo(() => {
@@ -138,7 +145,7 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
     <>
       <Header
         title={`필름 · ${myWorks.length}장`}
-        subtitle="매일 네 장. 25번째 자리는 가장 아름다운 사진을 위해 비어 있어요."
+        subtitle="매일 네 장. 25번째는 그중 가장 오래 남은 한 장."
         kicker={`ROLL · ${monthShort} ${now.getFullYear()}`}
       />
       <div className="space-y-5">
@@ -175,7 +182,7 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
                         {wd.date.getDate()}
                       </p>
                     </div>
-                    {/* 사진 4컷 — 칸 사이 간격 0 (붙여서 연속 필름 느낌) */}
+                    {/* 사진 4컷 — 칸 사이 간격 0. 누르면 그날 사진들이 위아래 스크롤 zoom */}
                     <div className="grid min-w-0 flex-1 grid-cols-4 gap-0">
                       {[0,1,2,3].map((slot) => {
                         const art = wd.photos[slot];
@@ -183,7 +190,7 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
                           <button
                             key={slot}
                             type="button"
-                            onClick={() => art && openArtwork(art.id)}
+                            onClick={() => art && openDayZoom(wd.photos, slot)}
                             disabled={!art}
                             className={`relative aspect-square overflow-hidden ${
                               art
@@ -218,13 +225,16 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
               <div key={`pad-${i}`} className="aspect-[0.78]" />
             ))}
             {days.map((day) => {
-              const art = day.artworkIds[0] ? myWorks.find((a) => a.id === day.artworkIds[0]) : null;
-              const count = day.artworkIds.length;
+              const dayPhotos = day.artworkIds
+                .map((id) => myWorks.find((a) => a.id === id))
+                .filter(Boolean);
+              const art = dayPhotos[0] || null;
+              const count = dayPhotos.length;
               return (
                 <button
                   key={day.day}
                   type="button"
-                  onClick={() => art && openArtwork(art.id)}
+                  onClick={() => count > 0 && openDayZoom(dayPhotos, 0)}
                   disabled={!art}
                   className={`relative aspect-[0.78] overflow-hidden rounded-[12px] bg-[var(--surface-2)] ${!art ? 'cursor-default opacity-60' : ''}`}
                 >
@@ -252,7 +262,15 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
               </button>
             </div>
             {activeDays.map((day) => (
-              <FilmDayGrid key={day.day} year={year} month={month} day={day.day} artworkIds={day.artworkIds} works={myWorks} openArtwork={openArtwork} />
+              <FilmDayGrid
+                key={day.day}
+                year={year}
+                month={month}
+                day={day.day}
+                artworkIds={day.artworkIds}
+                works={myWorks}
+                onOpenDay={openDayZoom}
+              />
             ))}
           </section>
         )}
@@ -261,10 +279,18 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
           <EmptyState title="아직 필름이 비어있어요" hint="첫 사진을 올려보세요." onAction={() => setScreen('record')} actionLabel="사진 올리기" />
         )}
       </div>
+
+      {zoomDay && (
+        <PhotoZoomModal
+          photos={zoomDay.photos}
+          initialIndex={zoomDay.initialIndex}
+          onClose={() => setZoomDay(null)}
+        />
+      )}
     </>
   );
 }
-function FilmDayGrid({ year, month, day, artworkIds, works, openArtwork }) {
+function FilmDayGrid({ year, month, day, artworkIds, works, onOpenDay }) {
   const photos = artworkIds.map((id) => works.find((a) => a.id === id)).filter(Boolean);
   if (photos.length === 0) return null;
   return (
@@ -278,8 +304,13 @@ function FilmDayGrid({ year, month, day, artworkIds, works, openArtwork }) {
         </div>
       </div>
       <div className={`grid gap-1.5 ${photos.length === 1 ? 'grid-cols-1' : photos.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-        {photos.slice(0, 6).map((art) => (
-          <button key={art.id} type="button" onClick={() => openArtwork(art.id)} className="overflow-hidden rounded-[16px]">
+        {photos.slice(0, 6).map((art, i) => (
+          <button
+            key={art.id}
+            type="button"
+            onClick={() => onOpenDay(photos, i)}
+            className="overflow-hidden rounded-[16px]"
+          >
             <ImageBox src={art.imageUrl} alt={art.title} className="h-32" />
           </button>
         ))}

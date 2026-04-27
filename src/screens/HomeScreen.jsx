@@ -199,12 +199,15 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
         ))}
       </div>
 
-      <div className="pt-3">
-        <p className="text-[10px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
-          {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
-        </p>
-        <h1 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.07em]">오늘의 시선들</h1>
-      </div>
+      {/* 추천 모드일 때만 페이지 제목 — 실시간은 list가 곧 본문 */}
+      {feedMode === '추천' && (
+        <div className="pt-3">
+          <p className="text-[10px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
+            {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
+          </p>
+          <h1 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.07em]">오늘의 시선들</h1>
+        </div>
+      )}
 
       {hasFollowing && (
         <div className="mb-1 mt-2 flex gap-2">

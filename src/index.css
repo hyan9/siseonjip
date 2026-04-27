@@ -5,66 +5,67 @@
    ============================================================ */
 
 :root {
-  /* 2026 톤 — 따뜻한 종이의 정체성은 유지하되 노란기 줄이고 더 미니멀하게.
-     bg/surface 대비를 살리고, 액센트(테라코타)를 추가해 사진 위의 작은 인덱스를 살림. */
-  --bg: #ebe9df;
-  --surface: #f5f3ea;
-  --surface-2: #e0dcce;
-  --surface-3: #d3ccbc;
-  --image-bg: #cdc6b4;
+  /* "Mist & Stone" — 따뜻한 종이를 버리고 차가운 인쇄 종이 톤으로 갈아엎음.
+     bg는 옅은 mist white, surface는 거의 순백, ink는 짙은 charcoal.
+     액센트는 테라코타 그대로 살려서 사진 위 인덱스가 도드라지도록. */
+  --bg: #f1f2ee;
+  --surface: #ffffff;
+  --surface-2: #e7e8e3;
+  --surface-3: #d4d6d0;
+  --image-bg: #c8cac4;
 
-  --ink: #181513;
+  --ink: #1a1d1f;
   --ink-text: #ffffff;
 
-  --text: #181513;
-  --text-muted: #6f6c66;
-  --text-faint: #948f87;
-  --text-body: #4a4641;
-  --text-quote: #3b3732;
-  --text-meta: #837d75;
-  --placeholder: #a39e95;
+  --text: #1a1d1f;
+  --text-muted: #6b6f73;
+  --text-faint: #989ca0;
+  --text-body: #404448;
+  --text-quote: #2f3236;
+  --text-meta: #7a7e82;
+  --placeholder: #a8acb0;
 
-  --border: #ddd6c4;
-  --border-strong: #cfc7b4;
-  --border-dashed: #c5bdab;
+  --border: #dfe1dc;
+  --border-strong: #c8cac4;
+  --border-dashed: #b9bcb6;
 
-  /* 액센트 — 따뜻한 테라코타 (Hype·25번째 등 사진 친화적인 강조) */
+  /* 액센트 — 따뜻한 테라코타 (사진 위에 떠도 무겁지 않음) */
   --accent: #d97757;
-  --accent-soft: #f4d6c5;
+  --accent-soft: #f4dcd1;
 
-  --hero-from: #2e251e;
-  --hero-via: #1b130d;
+  --hero-from: #2a2d30;
+  --hero-via: #16181b;
   --hero-to: #000000;
 }
 
 [data-theme="dark"] {
-  --bg: #131217;
-  --surface: #1c1a21;
-  --surface-2: #25232c;
-  --surface-3: #2d2a35;
-  --image-bg: #2a2731;
+  /* "Charcoal Studio" — 종이 결을 버리고 짙은 청색-회색 톤. 사진 발색에 더 충실. */
+  --bg: #0e1014;
+  --surface: #161a20;
+  --surface-2: #1f242b;
+  --surface-3: #2a3038;
+  --image-bg: #232830;
 
-  /* ink는 다크에서도 어두운 색 유지 — text-white 유틸이 그대로 작동하도록 */
-  --ink: #0a080f;
+  --ink: #050608;
   --ink-text: #ffffff;
 
-  --text: #f1efe9;
-  --text-muted: #a8a29a;
-  --text-faint: #797269;
-  --text-body: #c5bfb6;
-  --text-quote: #d8d2c8;
-  --text-meta: #8c857c;
-  --placeholder: #6a6760;
+  --text: #ecedef;
+  --text-muted: #9ea3a9;
+  --text-faint: #6a6f74;
+  --text-body: #c4c8cc;
+  --text-quote: #d6d9dc;
+  --text-meta: #8a8e92;
+  --placeholder: #5e6266;
 
-  --border: #2c2934;
-  --border-strong: #3c3845;
-  --border-dashed: #3c3845;
+  --border: #232830;
+  --border-strong: #353c44;
+  --border-dashed: #353c44;
 
-  --accent: #e88a6b;
-  --accent-soft: #2f1f1a;
+  --accent: #f08461;
+  --accent-soft: #2c1e19;
 
-  --hero-from: #2a1f15;
-  --hero-via: #15110b;
+  --hero-from: #1f2126;
+  --hero-via: #0e1014;
   --hero-to: #000000;
 }
 

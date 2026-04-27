@@ -125,10 +125,10 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
   const twentyFiveArt = works.find((a) => a.is_twenty_five) || null;
   const heroArtwork = profile.hero_artwork_id ? works.find((a) => a.id === profile.hero_artwork_id) : null;
   const featured = twentyFiveArt || heroArtwork;
-  const featuredLabel = twentyFiveArt ? '🌟 25번째 사진' : '⭐ 대표 이미지';
+  const featuredLabel = twentyFiveArt ? '25번째 사진' : '대표 이미지';
   const featuredSub = twentyFiveArt
-    ? '월터의 상상은 현실이 된다 — 가장 아름답게 본 단 한 장'
-    : '아직 25번째를 고르지 않았어요';
+    ? '월터의 상상은 현실이 된다 — 가장 오래 남은 한 장'
+    : '아직 찾는 중';
 
   const handleLogoutConfirm = async () => {
     setLogoutOpen(false);
@@ -150,6 +150,10 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
 
   const handleFollow = async () => {
     if (!userId || isMe) return;
+    if (profile?.is_bot) {
+      alert('데모 봇이라 실제 팔로우는 작동하지 않아요. 팔로워/팔로잉 화면이 어떻게 보이는지 살펴봐 주세요.');
+      return;
+    }
     setFollowBusy(true);
     try {
       await toggleFollow(viewedId, userId, following);
@@ -220,7 +224,7 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
       <Header
         title={profile.nickname}
         subtitle={profile.bio || ''}
-        kicker={isMe ? '내 개인전' : '개인전'}
+        kicker={isMe ? '내 개인전' : profile.is_bot ? '개인전 · 데모 봇' : '개인전'}
         onBack={isMe ? undefined : () => setScreen('home')}
         right={
           isMe ? (
