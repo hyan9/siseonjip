@@ -20,6 +20,7 @@ import ShareButton from '../components/ShareButton';
 import { FourPhotoWall, PhotoTile, PersonRow, PlaceRow, PostListRow } from '../components/Cards';
 import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
+import ConfirmDialog from '../components/ConfirmDialog';
 import LocationPickerModal from '../components/LocationPickerModal';
 import PhotoZoomModal from '../components/PhotoZoomModal';
 import {
@@ -110,6 +111,8 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
   const [exporting, setExporting] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [recapBusy, setRecapBusy] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
 
   if (!profile) return <EmptyState title="사용자를 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
@@ -118,8 +121,9 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
   const featured = twentyFiveArt || heroArtwork;
   const featuredLabel = twentyFiveArt ? '🌟 25번째 사진' : '대표 이미지';
 
-  const handleLogout = () => {
-    if (window.confirm('로그아웃 할까요?')) signOut();
+  const handleLogoutConfirm = async () => {
+    setLogoutOpen(false);
+    await signOut();
   };
 
   const handleSeed = async () => {
@@ -163,12 +167,9 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
     }
   };
 
-  const handleBlock = async () => {
+  const handleBlockConfirm = async () => {
     if (!userId || isMe) return;
-    const confirmMsg = blocked
-      ? '차단을 해제할까요?'
-      : `${profile.nickname}을(를) 차단하면 서로의 콘텐츠가 보이지 않게 됩니다. 계속할까요?`;
-    if (!window.confirm(confirmMsg)) return;
+    setBlockOpen(false);
     setBlockBusy(true);
     try {
       await toggleBlock(viewedId, userId, blocked);
@@ -226,7 +227,7 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
               </button>
               <button
                 type="button"
-                onClick={handleLogout}
+                onClick={() => setLogoutOpen(true)}
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]"
                 title="로그아웃"
               >
@@ -241,16 +242,16 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
           <button
             type="button"
             onClick={() => openArtwork(featured.id)}
-            className="flex w-full items-center gap-3 rounded-[18px] bg-[var(--surface)] p-2.5 text-left shadow-[0_0_0_1px_var(--border)]"
+            className="relative -mx-4 -mt-2 block w-[calc(100%+2rem)] overflow-hidden text-left"
           >
-            <ImageBox src={featured.imageUrl} alt={featured.title} className="h-16 w-16 shrink-0 rounded-[12px]" />
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">{featuredLabel}</p>
-              <p className="mt-0.5 truncate text-sm font-bold tracking-[-0.04em]">
+            <ImageBox src={featured.imageUrl} alt={featured.title} className="h-[200px] w-full" priority />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-4 text-white">
+              <p className="text-[10px] font-semibold tracking-[0.18em] text-white/80">{featuredLabel}</p>
+              <p className="mt-1 text-[20px] font-extrabold leading-tight tracking-[-0.06em]">
                 {featured.title || '제목 없는 사진'}
               </p>
             </div>
-            <span className="text-lg text-[var(--text-faint)]">›</span>
           </button>
         )}
 
@@ -265,61 +266,63 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
             </div>
           )}
 
-          {/* Stats grid */}
-          <div className="mt-4 grid grid-cols-4 gap-2 rounded-[18px] bg-[var(--bg)] p-3 text-center">
-            <StatCell label="사진" value={stats.artworkCount} />
-            <StatCell label="🔥 받음" value={stats.totalHype} />
-            <StatCell label="팔로워" value={stats.followerCount} />
-            <StatCell label="팔로잉" value={stats.followingCount} />
+          {/* Stats — 인라인 메타 */}
+          <div className="mt-4 flex items-center gap-1 text-[12px] text-[var(--text-muted)]">
+            <span><b className="text-[var(--text)]">{stats.artworkCount}</b> 사진</span>
+            <span className="px-1 text-[var(--text-faint)]">·</span>
+            <span>🔥 <b className="text-[var(--text)]">{stats.totalHype}</b></span>
+            <span className="px-1 text-[var(--text-faint)]">·</span>
+            <span><b className="text-[var(--text)]">{stats.followerCount}</b> 팔로워</span>
+            <span className="px-1 text-[var(--text-faint)]">·</span>
+            <span><b className="text-[var(--text)]">{stats.followingCount}</b> 팔로잉</span>
           </div>
 
           {!isMe && userId && (
-            <div className="mt-3 space-y-2">
-              <div className="flex gap-2">
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleFollow}
+                disabled={followBusy}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${
+                  following
+                    ? 'border border-[var(--ink)] bg-[var(--surface)] text-[var(--text)]'
+                    : 'bg-[var(--ink)] text-white'
+                }`}
+              >
+                <Icon name={following ? 'checkFollow' : 'plusFollow'} size={15} />
+                {following ? '팔로잉' : '팔로우'}
+              </button>
+              {openConversation && (
                 <button
                   type="button"
-                  onClick={handleFollow}
-                  disabled={followBusy}
-                  className={`flex-1 inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${
-                    following
-                      ? 'border border-[var(--ink)] bg-[var(--surface)] text-[var(--text)]'
-                      : 'bg-[var(--ink)] text-white'
-                  }`}
+                  onClick={() => openConversation(viewedId)}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] text-base"
+                  title="메시지"
                 >
-                  <Icon name={following ? 'checkFollow' : 'plusFollow'} size={16} />
-                  {following ? '팔로잉' : '팔로우'}
+                  💬
                 </button>
-                {openConversation && (
-                  <button
-                    type="button"
-                    onClick={() => openConversation(viewedId)}
-                    className="rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold"
-                  >
-                    💬 메시지
-                  </button>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setReportOpen(true)}
-                  className="flex-1 rounded-full border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-muted)]"
-                >
-                  🚩 신고
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBlock}
-                  disabled={blockBusy}
-                  className={`flex-1 rounded-full px-3 py-1.5 text-xs disabled:opacity-50 ${
-                    blocked
-                      ? 'border border-red-300 bg-red-50 text-red-700'
-                      : 'border border-[var(--border)] text-[var(--text-muted)]'
-                  }`}
-                >
-                  {blocked ? '🚫 차단됨 (해제)' : '🚫 차단'}
-                </button>
-              </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setReportOpen(true)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-base"
+                title="신고"
+              >
+                🚩
+              </button>
+              <button
+                type="button"
+                onClick={() => setBlockOpen(true)}
+                disabled={blockBusy}
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-base disabled:opacity-50 ${
+                  blocked
+                    ? 'border border-red-300 bg-red-50'
+                    : 'border border-[var(--border)] bg-[var(--surface)]'
+                }`}
+                title={blocked ? '차단 해제' : '차단'}
+              >
+                🚫
+              </button>
             </div>
           )}
 
@@ -469,6 +472,30 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
           onClose={() => setReportOpen(false)}
         />
       )}
+
+      <ConfirmDialog
+        open={logoutOpen}
+        title="로그아웃 할까요?"
+        message="다시 들어오려면 같은 계정으로 로그인이 필요해요."
+        confirmLabel="로그아웃"
+        destructive
+        onConfirm={handleLogoutConfirm}
+        onCancel={() => setLogoutOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={blockOpen}
+        title={blocked ? '차단을 해제할까요?' : `${profile.nickname}을(를) 차단할까요?`}
+        message={
+          blocked
+            ? '다시 서로의 콘텐츠가 보이게 됩니다.'
+            : '차단하면 서로의 사진/댓글/메시지가 보이지 않습니다.'
+        }
+        confirmLabel={blocked ? '차단 해제' : '차단'}
+        destructive={!blocked}
+        onConfirm={handleBlockConfirm}
+        onCancel={() => setBlockOpen(false)}
+      />
     </>
   );
 }

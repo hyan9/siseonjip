@@ -120,17 +120,24 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
             ))}
             {days.map((day) => {
               const art = day.artworkIds[0] ? myWorks.find((a) => a.id === day.artworkIds[0]) : null;
+              const count = day.artworkIds.length;
               return (
                 <button
                   key={day.day}
                   type="button"
-                  onClick={() => (art ? openArtwork(art.id) : setScreen('record'))}
-                  className="relative aspect-[0.78] overflow-hidden rounded-[12px] bg-[var(--surface-2)]"
+                  onClick={() => art && openArtwork(art.id)}
+                  disabled={!art}
+                  className={`relative aspect-[0.78] overflow-hidden rounded-[12px] bg-[var(--surface-2)] ${!art ? 'cursor-default opacity-60' : ''}`}
                 >
                   {art && <img src={art.imageUrl} alt={art.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
                   <span className={`absolute left-1 top-1 rounded-full px-1.5 py-0.5 text-[9px] ${art ? 'bg-white/85 text-[var(--text)]' : 'text-[var(--text-faint)]'}`}>
                     {day.day}
                   </span>
+                  {count > 1 && (
+                    <span className="absolute right-1 top-1 rounded-full bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold text-white">
+                      +{count - 1}
+                    </span>
+                  )}
                 </button>
               );
             })}

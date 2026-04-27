@@ -86,7 +86,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerson, openKeyword, openCollectionPicker }) {
-  const { userId, getArtwork, getProfile, getPlace, getUserArtworks, isSavedByMe, refresh } = useData();
+  const { userId, artworks, getArtwork, getProfile, getPlace, getUserArtworks, getHypeCount, isSavedByMe, refresh } = useData();
   const { theme } = useTheme();
   const art = getArtwork(artworkId);
   const [deleting, setDeleting] = useState(false);
@@ -170,6 +170,27 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
   };
 
   const zoomIndex = Math.max(0, userPhotos.findIndex((a) => a.id === art.id));
+
+  // 이전/다음 글 네비게이션 — 전체 피드(공개)에서 같은 알고리즘 정렬로 인접 항목 찾기
+  const feedNav = useMemo(() => {
+    const candidates = artworks.filter((a) => a.location_mode !== '숨김');
+    const now = Date.now();
+    const sorted = candidates
+      .map((a) => {
+        const ageHours = (now - new Date(a.created_at).getTime()) / 3600000;
+        const recencyScore = 1 / (1 + ageHours / 24);
+        const hypeScore = Math.log1p(getHypeCount(a.id)) * 0.6;
+        return { a, score: recencyScore + hypeScore };
+      })
+      .sort((x, y) => y.score - x.score)
+      .map((s) => s.a);
+    const idx = sorted.findIndex((a) => a.id === art.id);
+    if (idx === -1) return { prev: null, next: null };
+    return {
+      prev: idx > 0 ? sorted[idx - 1] : null,
+      next: idx < sorted.length - 1 ? sorted[idx + 1] : null,
+    };
+  }, [artworks, getHypeCount, art.id]);
 
   return (
     <>
@@ -336,6 +357,33 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
         </section>
 
         <CommentSection artworkId={art.id} openPerson={openPerson} />
+
+        {(feedNav.prev || feedNav.next) && (
+          <section className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => feedNav.prev && openArtwork(feedNav.prev.id)}
+              disabled={!feedNav.prev}
+              className="flex-1 truncate rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-left text-xs disabled:opacity-40"
+            >
+              <span className="block text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">‹ 이전 글</span>
+              <span className="mt-0.5 block truncate font-bold text-[var(--text)]">
+                {feedNav.prev ? (feedNav.prev.title || '제목 없음') : '없음'}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => feedNav.next && openArtwork(feedNav.next.id)}
+              disabled={!feedNav.next}
+              className="flex-1 truncate rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-right text-xs disabled:opacity-40"
+            >
+              <span className="block text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">다음 글 ›</span>
+              <span className="mt-0.5 block truncate font-bold text-[var(--text)]">
+                {feedNav.next ? (feedNav.next.title || '제목 없음') : '없음'}
+              </span>
+            </button>
+          </section>
+        )}
 
         {related.length > 0 && (
           <section>

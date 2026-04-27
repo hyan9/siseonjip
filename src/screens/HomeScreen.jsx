@@ -149,15 +149,23 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
     [places, getPlaceArtworks, visibleArtworks]
   );
 
-  // 전체글 (최신순)
-  const feedList = visibleArtworks
-    .filter((a) => a.location_mode !== '숨김')
-    .slice(0, 30);
-  // 인기글 (🔥 추천 5+ 또는 댓글 많은 순)
-  const hotList = visibleArtworks
-    .filter((a) => a.location_mode !== '숨김' && getHypeCount(a.id) >= 3)
-    .sort((a, b) => getHypeCount(b.id) - getHypeCount(a.id))
-    .slice(0, 8);
+  // 단일 알고리즘 피드 (최신성 + 인기 + 친화도 가중)
+  const feedList = useMemo(() => {
+    const candidates = visibleArtworks.filter((a) => a.location_mode !== '숨김');
+    const now = Date.now();
+    const scored = candidates.map((art) => {
+      const ageHours = (now - new Date(art.created_at).getTime()) / 3600000;
+      const recencyScore = 1 / (1 + ageHours / 24); // 1일 단위 감쇠
+      const hype = getHypeCount(art.id);
+      const hypeScore = Math.log1p(hype) * 0.6;
+      const followBonus = followingIds.has(art.user_id) ? 0.4 : 0;
+      return { art, score: recencyScore + hypeScore + followBonus };
+    });
+    return scored
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 40)
+      .map((s) => s.art);
+  }, [visibleArtworks, getHypeCount, followingIds]);
 
   return (
     <>
@@ -330,30 +338,13 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
             </section>
           )}
 
-          {hotList.length > 0 && (
-            <section className="rounded-[20px] bg-[var(--surface)] px-4 py-2 shadow-[0_0_0_1px_var(--border)]">
-              <div className="flex items-end justify-between border-b border-[var(--border)] py-2">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[18px]">🔥</span>
-                  <h2 className="text-[18px] font-extrabold tracking-[-0.06em]">개념글</h2>
-                  <span className="text-[10px] text-[var(--text-faint)]">추천 3+ 사진</span>
-                </div>
-              </div>
-              <div>
-                {hotList.map((art) => (
-                  <PostListRow key={art.id} artwork={art} onOpen={openArtwork} />
-                ))}
-              </div>
-            </section>
-          )}
-
           {feedList.length > 0 && (
             <section className="rounded-[20px] bg-[var(--surface)] px-4 py-2 shadow-[0_0_0_1px_var(--border)]">
               <div className="flex items-end justify-between border-b border-[var(--border)] py-2">
                 <div className="flex items-baseline gap-2">
                   <span className="text-[18px]">📋</span>
-                  <h2 className="text-[18px] font-extrabold tracking-[-0.06em]">전체글</h2>
-                  <span className="text-[10px] text-[var(--text-faint)]">{feedList.length}건</span>
+                  <h2 className="text-[18px] font-extrabold tracking-[-0.06em]">시선집</h2>
+                  <span className="text-[10px] text-[var(--text-faint)]">최신·인기 가중</span>
                 </div>
                 <button
                   type="button"

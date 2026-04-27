@@ -1,14 +1,34 @@
 // 4컷 큐레이팅을 PNG 이미지로 export.
 // 인스타 스토리/피드 공유용.
 
-function loadImage(url) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous'; // canvas tainting 방지
-    img.onload = () => resolve(img);
-    img.onerror = (err) => reject(err);
-    img.src = url;
-  });
+// Supabase Storage URL은 CORS 헤더가 없을 수 있어 crossOrigin 직접 로드가
+// 실패하거나 canvas를 tainted 상태로 만들어 toBlob에서 SecurityError를 던진다.
+// fetch → blob → object URL 경로로 우회하면 same-origin으로 처리되어 안전함.
+async function loadImage(url) {
+  try {
+    const res = await fetch(url, { mode: 'cors', credentials: 'omit' });
+    if (!res.ok) throw new Error(`fetch ${res.status}`);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    try {
+      return await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = (err) => reject(err);
+        img.src = blobUrl;
+      });
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
+    }
+  } catch (e) {
+    return await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = (err) => reject(err);
+      img.src = url;
+    });
+  }
 }
 
 function drawCover(ctx, img, dx, dy, dw, dh) {
