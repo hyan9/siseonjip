@@ -123,19 +123,6 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
 
   const topCreators = useMemo(() => getRecommendedCreators(6), [getRecommendedCreators]);
 
-  // 인기 키워드 top 5
-  const trendingKeywords = useMemo(() => {
-    const counts = new Map();
-    for (const art of visibleArtworks) {
-      if (!art.daily_vision) continue;
-      counts.set(art.daily_vision, (counts.get(art.daily_vision) ?? 0) + 1);
-    }
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 6)
-      .map(([word, count]) => ({ word, count }));
-  }, [visibleArtworks]);
-
   const placesWithArt = useMemo(
     () =>
       places
@@ -268,27 +255,32 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
             </section>
           )}
 
-          {trendingKeywords.length > 0 && (
-            <section>
-              <div className="mb-3 flex items-end justify-between">
-                <div>
-                  <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">사람들의 시선</p>
-                  <h2 className="mt-0.5 text-[20px] font-extrabold tracking-[-0.07em]">키워드 따라가기</h2>
+          {feedList.length > 0 && (
+            <section className="rounded-[20px] bg-[var(--surface)] px-4 py-2 shadow-[0_0_0_1px_var(--border)]">
+              <div className="flex items-end justify-between border-b border-[var(--border)] py-2">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[18px]">📋</span>
+                  <h2 className="text-[18px] font-extrabold tracking-[-0.06em]">시선집</h2>
+                  <span className="text-[10px] text-[var(--text-faint)]">
+                    {feedList.length}/{fullFeed.length} · 최신·인기 가중
+                  </span>
                 </div>
               </div>
-              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-                {trendingKeywords.map(({ word, count }) => (
-                  <button
-                    key={word}
-                    type="button"
-                    onClick={() => openKeyword(word)}
-                    className="shrink-0 rounded-[16px] bg-[var(--surface)] px-4 py-3 text-left shadow-[0_0_0_1px_var(--border)]"
-                  >
-                    <p className="text-[15px] font-bold tracking-[-0.04em]">#{word}</p>
-                    <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">{count}장</p>
-                  </button>
+              <div>
+                {feedList.map((art) => (
+                  <PostListRow key={art.id} artwork={art} onOpen={openArtwork} />
                 ))}
               </div>
+              {displayCount < fullFeed.length && (
+                <div ref={sentinelRef} className="py-4 text-center text-[11px] text-[var(--text-muted)]">
+                  불러오는 중…
+                </div>
+              )}
+              {displayCount >= fullFeed.length && fullFeed.length > PAGE && (
+                <div className="py-4 text-center text-[11px] text-[var(--text-faint)]">
+                  · 끝 ·
+                </div>
+              )}
             </section>
           )}
 
@@ -357,34 +349,6 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
             </section>
           )}
 
-          {feedList.length > 0 && (
-            <section className="rounded-[20px] bg-[var(--surface)] px-4 py-2 shadow-[0_0_0_1px_var(--border)]">
-              <div className="flex items-end justify-between border-b border-[var(--border)] py-2">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[18px]">📋</span>
-                  <h2 className="text-[18px] font-extrabold tracking-[-0.06em]">시선집</h2>
-                  <span className="text-[10px] text-[var(--text-faint)]">
-                    {feedList.length}/{fullFeed.length} · 최신·인기 가중
-                  </span>
-                </div>
-              </div>
-              <div>
-                {feedList.map((art) => (
-                  <PostListRow key={art.id} artwork={art} onOpen={openArtwork} />
-                ))}
-              </div>
-              {displayCount < fullFeed.length && (
-                <div ref={sentinelRef} className="py-4 text-center text-[11px] text-[var(--text-muted)]">
-                  불러오는 중…
-                </div>
-              )}
-              {displayCount >= fullFeed.length && fullFeed.length > PAGE && (
-                <div className="py-4 text-center text-[11px] text-[var(--text-faint)]">
-                  · 끝 ·
-                </div>
-              )}
-            </section>
-          )}
         </div>
       )}
     </>

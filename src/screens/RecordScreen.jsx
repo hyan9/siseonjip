@@ -113,7 +113,7 @@ async function processPickedFile(file) {
 }
 
 export default function RecordScreen({ setScreen }) {
-  const { userId, places, refresh } = useData();
+  const { userId, places, getUserArtworks, refresh } = useData();
   const [items, setItems] = useState([]);
   const [mode, setMode] = useState('동네');
   const [dailyVision, setDailyVision] = useState('');
@@ -209,8 +209,18 @@ export default function RecordScreen({ setScreen }) {
     }
   };
 
+  // 오늘 이미 올린 사진 수 (하루 4장 cap)
+  const myWorks = userId ? getUserArtworks(userId) : [];
+  const todayKey = new Date().toLocaleDateString('ko-KR');
+  const todayCount = myWorks.filter((a) => new Date(a.created_at).toLocaleDateString('ko-KR') === todayKey).length;
+  const dailyRemaining = Math.max(0, 4 - todayCount);
+
   const handleSaveAll = async () => {
     if (items.length === 0 || !userId) return;
+    if (items.length > dailyRemaining) {
+      alert(`시선집은 하루 4장이 한도예요. 오늘 ${todayCount}장 올렸고 ${dailyRemaining}장만 더 올릴 수 있어요.`);
+      return;
+    }
     setBusy(true);
     setError(null);
     setProgress({ done: 0, total: items.length });
@@ -275,16 +285,21 @@ export default function RecordScreen({ setScreen }) {
     <>
       <Header
         title="기록"
-        subtitle="한 번에 최대 4장까지 올릴 수 있어요."
+        subtitle={`시선집은 하루 4장 — 오늘 ${todayCount}/4`}
         kicker="새 장면"
       />
       <div className="space-y-4">
+        {dailyRemaining === 0 && (
+          <div className="rounded-[16px] border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-900">
+            🌙 오늘은 4장을 모두 채웠어요. 내일 다시 만나요.
+          </div>
+        )}
         {items.length === 0 ? (
-          <label className="block cursor-pointer">
-            <input type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} />
+          <label className={`block ${dailyRemaining === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}>
+            <input type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} disabled={dailyRemaining === 0} />
             <div className="flex h-[430px] flex-col items-center justify-center rounded-[28px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]">
               <Icon name="camera" size={34} />
-              <span className="mt-3 text-sm">사진 고르기 (최대 4장)</span>
+              <span className="mt-3 text-sm">사진 고르기 (오늘 {dailyRemaining}장 가능)</span>
               <span className="mt-2 text-xs text-[var(--text-faint)]">사진 안의 위치 정보도 함께 확인합니다.</span>
             </div>
           </label>
