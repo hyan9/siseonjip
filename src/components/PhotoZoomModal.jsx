@@ -15,12 +15,31 @@ export default function PhotoZoomModal({ photos, initialIndex = 0, onClose }) {
     el.scrollTo({ top: initialIndex * el.clientHeight, behavior: 'instant' });
   }, [initialIndex]);
 
-  // body 스크롤 잠금
+  // body 스크롤 잠금 + 모바일 back 버튼으로 모달만 닫히게 (앱 안 나가짐)
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
-  }, []);
+    // history entry 추가 → back 누르면 popstate에서 모달 닫고 더 이상 전파 안 함
+    let didPush = false;
+    try {
+      window.history.pushState({ kadennyangModal: true }, '', '');
+      didPush = true;
+    } catch {
+      // 환경에 따라 실패 무시
+    }
+    const onPop = () => { onClose(); };
+    window.addEventListener('popstate', onPop);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('popstate', onPop);
+      // 모달이 코드로 닫혔을 때 history entry 제거
+      if (didPush && window.history.state?.kadennyangModal) {
+        try { window.history.back(); } catch {
+          // 환경에 따라 실패 무시
+        }
+      }
+    };
+  }, [onClose]);
 
   // 키보드: Esc 닫기, 위아래 화살표 이동
   useEffect(() => {

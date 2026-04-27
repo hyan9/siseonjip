@@ -161,31 +161,25 @@
   --hero-to: #000000;
 }
 
-/* 점박이 패턴 — 백그라운드만 도트, 카드/텍스트 박스는 surface로 가려짐.
-   두 layer를 살짝 다른 위치/크기로 겹쳐서 진짜 점박이 고양이 털 같은 흩어진 느낌. */
+/* 점박이 — 달마시안 스타일 큰 검정 얼룩이 흩어진 패턴.
+   여러 크기 점이 불규칙한 위치에 (SVG data URL로 자연스러운 얼룩 흩뿌림). */
 html[data-theme="spotted"],
 html[data-theme="spotted"] body,
 html[data-theme="spotted"] #root {
   background-color: var(--bg);
-  background-image:
-    radial-gradient(circle, rgba(20, 20, 20, 0.42) 1.6px, transparent 2px),
-    radial-gradient(circle, rgba(20, 20, 20, 0.28) 1.1px, transparent 1.5px);
-  background-size: 14px 14px, 19px 19px;
-  background-position: 0 0, 7px 9px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360'><g fill='%23141414' fill-opacity='0.85'><ellipse cx='52' cy='48' rx='14' ry='11' transform='rotate(20 52 48)'/><ellipse cx='150' cy='28' rx='9' ry='7' transform='rotate(-15 150 28)'/><ellipse cx='240' cy='66' rx='17' ry='13' transform='rotate(35 240 66)'/><ellipse cx='320' cy='30' rx='8' ry='6'/><ellipse cx='90' cy='110' rx='11' ry='8' transform='rotate(-25 90 110)'/><ellipse cx='200' cy='128' rx='13' ry='10' transform='rotate(10 200 128)'/><ellipse cx='305' cy='115' rx='10' ry='8' transform='rotate(-30 305 115)'/><ellipse cx='40' cy='180' rx='15' ry='12' transform='rotate(40 40 180)'/><ellipse cx='130' cy='195' rx='9' ry='7' transform='rotate(-10 130 195)'/><ellipse cx='250' cy='200' rx='14' ry='11' transform='rotate(15 250 200)'/><ellipse cx='340' cy='190' rx='8' ry='6'/><ellipse cx='65' cy='265' rx='11' ry='9' transform='rotate(-20 65 265)'/><ellipse cx='160' cy='270' rx='15' ry='12' transform='rotate(28 160 270)'/><ellipse cx='280' cy='285' rx='10' ry='8' transform='rotate(-12 280 285)'/><ellipse cx='32' cy='335' rx='9' ry='7' transform='rotate(45 32 335)'/><ellipse cx='220' cy='335' rx='13' ry='10' transform='rotate(-22 220 335)'/><ellipse cx='320' cy='340' rx='8' ry='6' transform='rotate(15 320 340)'/></g></svg>");
+  background-size: 360px 360px;
   background-attachment: fixed;
 }
 /* Shell 안 main도 같은 패턴 (max-width 박스 안에서도 자연스럽게 이어짐) */
 html[data-theme="spotted"] main {
-  background-image:
-    radial-gradient(circle, rgba(20, 20, 20, 0.42) 1.6px, transparent 2px),
-    radial-gradient(circle, rgba(20, 20, 20, 0.28) 1.1px, transparent 1.5px);
-  background-size: 14px 14px, 19px 19px;
-  background-position: 0 0, 7px 9px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360'><g fill='%23141414' fill-opacity='0.85'><ellipse cx='52' cy='48' rx='14' ry='11' transform='rotate(20 52 48)'/><ellipse cx='150' cy='28' rx='9' ry='7' transform='rotate(-15 150 28)'/><ellipse cx='240' cy='66' rx='17' ry='13' transform='rotate(35 240 66)'/><ellipse cx='320' cy='30' rx='8' ry='6'/><ellipse cx='90' cy='110' rx='11' ry='8' transform='rotate(-25 90 110)'/><ellipse cx='200' cy='128' rx='13' ry='10' transform='rotate(10 200 128)'/><ellipse cx='305' cy='115' rx='10' ry='8' transform='rotate(-30 305 115)'/><ellipse cx='40' cy='180' rx='15' ry='12' transform='rotate(40 40 180)'/><ellipse cx='130' cy='195' rx='9' ry='7' transform='rotate(-10 130 195)'/><ellipse cx='250' cy='200' rx='14' ry='11' transform='rotate(15 250 200)'/><ellipse cx='340' cy='190' rx='8' ry='6'/><ellipse cx='65' cy='265' rx='11' ry='9' transform='rotate(-20 65 265)'/><ellipse cx='160' cy='270' rx='15' ry='12' transform='rotate(28 160 270)'/><ellipse cx='280' cy='285' rx='10' ry='8' transform='rotate(-12 280 285)'/><ellipse cx='32' cy='335' rx='9' ry='7' transform='rotate(45 32 335)'/><ellipse cx='220' cy='335' rx='13' ry='10' transform='rotate(-22 220 335)'/><ellipse cx='320' cy='340' rx='8' ry='6' transform='rotate(15 320 340)'/></g></svg>");
+  background-size: 360px 360px;
 }
-/* TopBar / BottomNav / 카드는 surface로 도트 가려서 텍스트 가독성 보호 — 이미 그러나 명시 */
+/* TopBar / BottomNav / 카드는 surface로 가려서 텍스트 가독성 보호 */
 html[data-theme="spotted"] header.sticky,
 html[data-theme="spotted"] nav.sticky {
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: rgba(255, 255, 255, 0.96);
 }
 
 /* 고등어 — 은빛 줄무늬 + 차콜 */

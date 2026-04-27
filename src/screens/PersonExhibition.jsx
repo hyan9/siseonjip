@@ -188,21 +188,32 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
       <div className="space-y-4">
         <section className="rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
           <div className="flex gap-3">
-            {/* 25번째 사진 — 프로필 사진 자리 (없으면 그냥 비움) */}
-            {featured && (
-              <button
-                type="button"
-                onClick={() => openArtwork(featured.id)}
-                className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-full"
-              >
-                <ImageBox src={featured.imageUrl} alt={featured.title} className="h-full w-full" priority />
-                {twentyFiveArt && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--ink)] text-white">
-                    <IconStar size={11} filled />
-                  </span>
-                )}
-              </button>
-            )}
+            {/* 프로필 사진 — 25번째 우선, 없으면 첫 작품, 둘 다 없으면 마스코트 placeholder */}
+            {(() => {
+              const profilePhoto = featured || works[0] || null;
+              if (profilePhoto) {
+                return (
+                  <button
+                    type="button"
+                    onClick={() => openArtwork(profilePhoto.id)}
+                    className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-full"
+                  >
+                    <ImageBox src={profilePhoto.imageUrl} alt={profilePhoto.title} className="h-full w-full" priority />
+                    {twentyFiveArt && (
+                      <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--ink)] text-white">
+                        <IconStar size={11} filled />
+                      </span>
+                    )}
+                  </button>
+                );
+              }
+              // 작품 0개 — 마스코트 placeholder
+              return (
+                <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full bg-[var(--surface-2)] text-[var(--text-muted)]">
+                  <Icon name="camera" size={32} />
+                </div>
+              );
+            })()}
 
             <div className="min-w-0 flex-1">
               {profile.exhibition_title && (
