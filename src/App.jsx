@@ -30,6 +30,7 @@ import {
   toggleCommentReaction,
   deleteComment,
   bulkUpdateArtworkLocationMode,
+  setHeroArtwork,
 } from './lib/db';
 
 import Icon from './components/Icon';
@@ -71,6 +72,48 @@ function placeLabel(place) {
 
 function profileLabel(profile) {
   return profile?.nickname || '익명';
+}
+
+const MENTION_REGEX = /@([^\s@,.!?:;]{2,30})/g;
+
+function renderTextWithMentions(text, profiles, onOpenPerson) {
+  if (!text) return null;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  // 정규식 stateful — exec 사용
+  const re = new RegExp(MENTION_REGEX);
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const nickname = match[1];
+    const profile = profiles?.find((p) => p.nickname === nickname);
+    if (profile && onOpenPerson) {
+      parts.push(
+        <button
+          key={`m-${match.index}`}
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenPerson(profile.id);
+          }}
+          className="font-semibold text-blue-500 hover:underline"
+        >
+          @{nickname}
+        </button>
+      );
+    } else {
+      parts.push(
+        <span key={`m-${match.index}`} className="font-semibold text-[var(--text-muted)]">
+          @{nickname}
+        </span>
+      );
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts;
 }
 
 /* ========================================================================
@@ -1281,17 +1324,21 @@ function RecordItemCard({ item, onRemove, onTitleChange, onUseMyLocation, locati
    Artwork detail + comments
    ====================================================================== */
 
-function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openKeyword }) {
+function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerson, openKeyword }) {
   const { userId, getArtwork, getProfile, getPlace, getUserArtworks, refresh } = useData();
   const art = getArtwork(artworkId);
   const [deleting, setDeleting] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const [busyHero, setBusyHero] = useState(false);
 
   if (!art) return <EmptyState title="사진을 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
   const profile = getProfile(art.user_id);
   const place = getPlace(art.place_id);
-  const related = getUserArtworks(art.user_id).filter((item) => item.id !== art.id).slice(0, 3);
+  const userPhotos = getUserArtworks(art.user_id);
+  const related = userPhotos.filter((item) => item.id !== art.id).slice(0, 3);
   const isMine = art.user_id === userId;
+  const isHero = profile?.hero_artwork_id === art.id;
 
   const handleDelete = async () => {
     if (!window.confirm('이 사진을 정말 삭제할까요? 되돌릴 수 없어요.')) return;
@@ -1306,25 +1353,49 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openKeywo
     }
   };
 
+  const handleSetHero = async () => {
+    setBusyHero(true);
+    try {
+      await setHeroArtwork(userId, isHero ? null : art.id);
+      await refresh();
+    } catch (err) {
+      alert('히어로 설정 실패: ' + err.message);
+    } finally {
+      setBusyHero(false);
+    }
+  };
+
+  const zoomIndex = Math.max(0, userPhotos.findIndex((a) => a.id === art.id));
+
   return (
     <>
       <button type="button" onClick={() => setScreen('home')} className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]">
         <Icon name="back" size={18} />
       </button>
       <div className="space-y-4">
-        <section className="overflow-hidden rounded-[28px] bg-[var(--ink)] shadow-[0_0_0_1px_var(--ink)]">
-          <div className="relative flex min-h-[620px] items-center justify-center bg-[var(--ink)]">
-            <ImageBox src={art.imageUrl} alt={art.title} fit="contain" className="h-[620px] w-full bg-[var(--ink)]" />
+        <section className="relative overflow-hidden rounded-[28px] bg-[var(--ink)] shadow-[0_0_0_1px_var(--ink)]">
+          <button
+            type="button"
+            onClick={() => setZoomOpen(true)}
+            className="relative flex min-h-[620px] w-full items-center justify-center bg-[var(--ink)]"
+            aria-label="사진 확대해서 보기"
+          >
+            <ImageBox src={art.imageUrl} alt={art.title} fit="contain" className="h-[620px] w-full bg-[var(--ink)]" priority />
             {art.is_twenty_five && (
               <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--text)]">
                 가장 아름다운 사진
               </span>
             )}
-            <div className="absolute right-3 top-3"><ShareButton title={art.title || '시선집'} /></div>
-          </div>
+            {isHero && (
+              <span className="absolute left-3 top-12 rounded-full bg-yellow-300 px-3 py-1 text-xs font-semibold text-[var(--text)]">
+                ⭐ 대표 이미지
+              </span>
+            )}
+          </button>
+          <div className="absolute right-3 top-3"><ShareButton title={art.title || '시선집'} /></div>
         </section>
 
-        <CommentSection artworkId={art.id} />
+        <CommentSection artworkId={art.id} openPerson={openPerson} />
 
         <section className="rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
           <div className="flex items-start justify-between gap-3">
@@ -1355,14 +1426,23 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openKeywo
               #{art.daily_vision}
             </button>
           )}
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             <HypeButton artwork={art} />
             {isMine && (
               <>
                 <button
                   type="button"
+                  onClick={handleSetHero}
+                  disabled={busyHero}
+                  className={`ml-auto rounded-full px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${isHero ? 'border border-yellow-400 bg-yellow-200 text-[var(--text)]' : 'border border-[var(--border-strong)] text-[var(--text)]'}`}
+                  title={isHero ? '대표 이미지 해제' : '내 프로필의 대표 이미지로 설정'}
+                >
+                  {isHero ? '⭐ 대표' : '⭐ 대표로'}
+                </button>
+                <button
+                  type="button"
                   onClick={() => setScreen('artworkEdit')}
-                  className="ml-auto rounded-full border border-[var(--border-strong)] px-3 py-1.5 text-xs font-semibold text-[var(--text)]"
+                  className="rounded-full border border-[var(--border-strong)] px-3 py-1.5 text-xs font-semibold text-[var(--text)]"
                 >
                   편집
                 </button>
@@ -1392,11 +1472,19 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openKeywo
           </section>
         )}
       </div>
+
+      {zoomOpen && (
+        <PhotoZoomModal
+          photos={userPhotos}
+          initialIndex={zoomIndex}
+          onClose={() => setZoomOpen(false)}
+        />
+      )}
     </>
   );
 }
 
-function CommentSection({ artworkId }) {
+function CommentSection({ artworkId, openPerson }) {
   const {
     userId,
     getProfile,
@@ -1450,8 +1538,8 @@ function CommentSection({ artworkId }) {
         <input
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder={replyingTo ? '답글 남기기' : '짧게 남기기'}
-          className="flex-1 rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm outline-none"
+          placeholder={replyingTo ? '답글… (@닉네임으로 멘션 가능)' : '짧게 남기기 (@닉네임 멘션 가능)'}
+          className="flex-1 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text)] outline-none"
         />
         <button
           type="submit"
@@ -1471,6 +1559,7 @@ function CommentSection({ artworkId }) {
             key={comment.id}
             comment={comment}
             onReply={() => { setReplyingTo(comment.id); }}
+            openPerson={openPerson}
           />
         ))}
       </div>
@@ -1478,9 +1567,10 @@ function CommentSection({ artworkId }) {
   );
 }
 
-function CommentItem({ comment, onReply, isReply = false }) {
+function CommentItem({ comment, onReply, isReply = false, openPerson }) {
   const {
     userId,
+    profiles,
     getProfile,
     getRepliesFor,
     getCommentReactionCount,
@@ -1520,9 +1610,18 @@ function CommentItem({ comment, onReply, isReply = false }) {
 
   return (
     <article className={`${isReply ? 'ml-5 border-l border-[var(--border)] pl-3' : 'border-l border-[var(--ink)] pl-4'}`}>
-      <p className="text-[15px] leading-7 text-[var(--text-quote)]">"{comment.text}"</p>
+      <p className="text-[15px] leading-7 text-[var(--text-quote)]">
+        "{renderTextWithMentions(comment.text, profiles, openPerson)}"
+      </p>
       <p className="mt-1 text-[11px] tracking-[0.12em] text-[var(--text-meta)]">
-        {profileLabel(author)} · {timeAgo(comment.created_at)}
+        <button
+          type="button"
+          onClick={() => openPerson?.(author?.id)}
+          className="hover:underline"
+        >
+          {profileLabel(author)}
+        </button>
+        {' · '}{timeAgo(comment.created_at)}
       </p>
       <div className="mt-1.5 flex items-center gap-3 text-[11px] text-[var(--text-muted)]">
         <button
@@ -1558,7 +1657,7 @@ function CommentItem({ comment, onReply, isReply = false }) {
           ) : (
             <div className="mt-2 space-y-3">
               {replies.map((r) => (
-                <CommentItem key={r.id} comment={r} isReply onReply={() => {}} />
+                <CommentItem key={r.id} comment={r} isReply onReply={() => {}} openPerson={openPerson} />
               ))}
             </div>
           )}
@@ -1778,6 +1877,7 @@ function NotificationsScreen({ setScreen, openArtwork, openPerson }) {
                 case 'comment': return `${sourceName}이(가) 댓글`;
                 case 'comment_reply': return `${sourceName}이(가) 답글`;
                 case 'comment_reaction': return `${sourceName}이(가) 댓글에 ❤`;
+                case 'mention': return `${sourceName}이(가) @멘션`;
                 case 'follow': return `${sourceName}이(가) 팔로우`;
                 default: return '새 알림';
               }
@@ -1862,6 +1962,110 @@ function KeywordScreen({ keyword, setScreen, openArtwork }) {
         </div>
       )}
     </>
+  );
+}
+
+/* ========================================================================
+   PhotoZoomModal — fullscreen viewer with swipe + native pinch
+   ====================================================================== */
+
+function PhotoZoomModal({ photos, initialIndex = 0, onClose, onOpenPerson }) {
+  const [index, setIndex] = useState(initialIndex);
+  const [touchStart, setTouchStart] = useState(null);
+  const photo = photos[index];
+
+  const goPrev = () => setIndex((i) => Math.max(0, i - 1));
+  const goNext = () => setIndex((i) => Math.min(photos.length - 1, i + 1));
+
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === 'Escape') onClose();
+      else if (event.key === 'ArrowLeft') goPrev();
+      else if (event.key === 'ArrowRight') goNext();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  // body 스크롤 막기
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  const handleTouchStart = (event) => {
+    if (event.touches.length === 1) {
+      setTouchStart({ x: event.touches[0].clientX, y: event.touches[0].clientY });
+    } else {
+      setTouchStart(null); // pinch는 브라우저에 맡김
+    }
+  };
+
+  const handleTouchEnd = (event) => {
+    if (!touchStart) return;
+    const dx = event.changedTouches[0].clientX - touchStart.x;
+    const dy = event.changedTouches[0].clientY - touchStart.y;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) goPrev();
+      else goNext();
+    }
+    setTouchStart(null);
+  };
+
+  if (!photo) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col bg-black text-white">
+      <div className="flex items-center justify-between px-4 py-3">
+        <div>
+          <p className="text-xs text-white/70">{index + 1} / {photos.length}</p>
+          <p className="mt-0.5 text-sm font-semibold tracking-[-0.04em]">{photo.title || '제목 없음'}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10"
+          aria-label="닫기"
+        >
+          <Icon name="x" size={16} />
+        </button>
+      </div>
+
+      <div
+        className="flex-1 overflow-auto"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        style={{ touchAction: 'pinch-zoom' }}
+      >
+        <img
+          src={photo.imageUrl}
+          alt={photo.title || ''}
+          className="block min-h-full w-full max-w-none object-contain"
+          draggable={false}
+        />
+      </div>
+
+      <div className="flex items-center justify-between px-4 py-3">
+        <button
+          type="button"
+          onClick={goPrev}
+          disabled={index === 0}
+          className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold disabled:opacity-30"
+        >
+          ← 이전
+        </button>
+        <p className="text-xs text-white/70">스와이프 또는 ←/→</p>
+        <button
+          type="button"
+          onClick={goNext}
+          disabled={index === photos.length - 1}
+          className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold disabled:opacity-30"
+        >
+          다음 →
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -2021,6 +2225,8 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
 
   if (!profile) return <EmptyState title="사용자를 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
+  const heroArtwork = profile.hero_artwork_id ? works.find((a) => a.id === profile.hero_artwork_id) : null;
+
   const handleLogout = () => {
     if (window.confirm('로그아웃 할까요?')) signOut();
   };
@@ -2075,6 +2281,26 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
         }
       />
       <div className="space-y-4">
+        {heroArtwork && (
+          <section className="-mx-4 -mt-2 mb-2">
+            <button
+              type="button"
+              onClick={() => openArtwork(heroArtwork.id)}
+              className="block w-full overflow-hidden bg-[var(--ink)] text-left"
+            >
+              <div className="relative">
+                <ImageBox src={heroArtwork.imageUrl} alt={heroArtwork.title} className="h-[280px] w-full" priority />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-4 text-white">
+                  <p className="text-[10px] font-semibold tracking-[0.18em] text-white/70">대표 이미지</p>
+                  <p className="mt-1 text-[20px] font-extrabold leading-tight tracking-[-0.06em]">
+                    {heroArtwork.title || '제목 없는 사진'}
+                  </p>
+                </div>
+              </div>
+            </button>
+          </section>
+        )}
+
         <section className="rounded-[28px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
           <h2 className="text-[24px] font-extrabold leading-tight tracking-[-0.075em]">{profile.exhibition_title || '제목 없는 전시'}</h2>
           {profile.note && <p className="mt-2 text-sm leading-6 text-[var(--text-body)]">{profile.note}</p>}
@@ -2783,7 +3009,7 @@ function MainApp() {
   if (screen === 'search') content = <SearchScreen openArtwork={openArtwork} openPerson={openPerson} openPlace={openPlace} />;
   if (screen === 'space') content = <SpaceScreen openPlace={openPlace} openArtwork={openArtwork} />;
   if (screen === 'record') content = <RecordScreen setScreen={setScreen} />;
-  if (screen === 'detail') content = <ArtworkDetail artworkId={selectedArtworkId} setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} openKeyword={openKeyword} />;
+  if (screen === 'detail') content = <ArtworkDetail artworkId={selectedArtworkId} setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} openPerson={openPerson} openKeyword={openKeyword} />;
   if (screen === 'artworkEdit') content = <ArtworkEditScreen artworkId={selectedArtworkId} setScreen={setScreen} />;
   if (screen === 'person') content = <PersonExhibition userId={selectedUserId} setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'profile') content = <PersonExhibitionMe setScreen={setScreen} openArtwork={openArtwork} />;

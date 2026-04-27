@@ -119,6 +119,10 @@ export function NotificationsProvider({ children }) {
             case 'comment_reaction':
               title = `${sourceName}이(가) 내 댓글에 ❤`;
               break;
+            case 'mention':
+              title = `${sourceName}이(가) 댓글에서 @멘션했어요`;
+              body = artTitle;
+              break;
             case 'follow':
               title = `${sourceName}이(가) 팔로우했어요`;
               break;

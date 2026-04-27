@@ -102,12 +102,32 @@ export function publicPhotoUrl(storagePath) {
   return data?.publicUrl ?? null;
 }
 
+async function compressIfImage(file) {
+  if (!file?.type?.startsWith('image/')) return file;
+  try {
+    const { default: imageCompression } = await import('browser-image-compression');
+    const compressed = await imageCompression(file, {
+      maxSizeMB: 2,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+      fileType: file.type === 'image/png' ? 'image/png' : 'image/jpeg',
+      initialQuality: 0.85,
+    });
+    return compressed;
+  } catch (err) {
+    console.warn('[upload] 이미지 압축 실패, 원본 업로드:', err);
+    return file;
+  }
+}
+
 export async function uploadPhoto(userId, file) {
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const toUpload = await compressIfImage(file);
+  const ext = (toUpload.name?.split('.').pop()?.toLowerCase()) ||
+    (toUpload.type === 'image/png' ? 'png' : 'jpg');
   const path = `${userId}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage
     .from(PHOTO_BUCKET)
-    .upload(path, file, { contentType: file.type, upsert: false });
+    .upload(path, toUpload, { contentType: toUpload.type, upsert: false });
   if (error) throw error;
   return path;
 }
@@ -439,4 +459,8 @@ export async function updateProfile(userId, fields) {
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function setHeroArtwork(userId, artworkId) {
+  return updateProfile(userId, { hero_artwork_id: artworkId });
 }
