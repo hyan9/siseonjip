@@ -25,6 +25,9 @@ import {
   seedDemoArtworks,
   deleteArtwork,
   updateArtwork,
+  toggleFollow,
+  toggleCommentReaction,
+  deleteComment,
 } from './lib/db';
 
 import Icon from './components/Icon';
@@ -452,62 +455,293 @@ function GoogleLogo() {
    Home
    ====================================================================== */
 
-function HomeScreen({ setScreen, openArtwork, openPlace }) {
-  const { artworks, places, getPlaceArtworks } = useData();
+function HomeScreen({ setScreen, openArtwork, openPlace, openPerson, openKeyword }) {
+  const {
+    userId,
+    artworks,
+    profiles,
+    places,
+    getPlaceArtworks,
+    getProfile,
+    getUserArtworks,
+    getHypeCount,
+    getFollowing,
+  } = useData();
+  const { unreadCount } = useNotifications();
+  const [feedFilter, setFeedFilter] = useState('전체');
 
-  const placesWithArt = places
-    .map((place) => ({ place, photos: getPlaceArtworks(place.id).slice(0, 4) }))
-    .filter((entry) => entry.photos.length > 0);
+  const followingIds = useMemo(
+    () => new Set(getFollowing(userId).map((f) => f.followee_id)),
+    [getFollowing, userId]
+  );
+  const hasFollowing = followingIds.size > 0;
+
+  const visibleArtworks = useMemo(
+    () => (feedFilter === '팔로잉' ? artworks.filter((a) => followingIds.has(a.user_id)) : artworks),
+    [artworks, feedFilter, followingIds]
+  );
+
+  // 오늘의 한 컷 — 가장 hype 받은 사진 (없으면 최신)
+  const featured = useMemo(() => {
+    const candidates = visibleArtworks.filter((a) => a.location_mode !== '숨김');
+    if (candidates.length === 0) return null;
+    let best = candidates[0];
+    let bestScore = getHypeCount(best.id);
+    for (const art of candidates) {
+      const score = getHypeCount(art.id);
+      if (score > bestScore) {
+        best = art;
+        bestScore = score;
+      }
+    }
+    return best;
+  }, [visibleArtworks, getHypeCount]);
+
+  // 인기 작가 — 받은 hype 합계 기준 top 6
+  const topCreators = useMemo(() => {
+    return profiles
+      .map((p) => {
+        const total = getUserArtworks(p.id).reduce((sum, art) => sum + getHypeCount(art.id), 0);
+        return { profile: p, total };
+      })
+      .filter((entry) => entry.total > 0 || getUserArtworks(entry.profile.id).length > 0)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 6);
+  }, [profiles, getUserArtworks, getHypeCount]);
+
+  // 인기 키워드 top 5
+  const trendingKeywords = useMemo(() => {
+    const counts = new Map();
+    for (const art of visibleArtworks) {
+      if (!art.daily_vision) continue;
+      counts.set(art.daily_vision, (counts.get(art.daily_vision) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([word, count]) => ({ word, count }));
+  }, [visibleArtworks]);
+
+  const placesWithArt = useMemo(
+    () =>
+      places
+        .map((place) => ({
+          place,
+          photos: getPlaceArtworks(place.id)
+            .filter((a) => visibleArtworks.some((va) => va.id === a.id))
+            .slice(0, 4),
+        }))
+        .filter((entry) => entry.photos.length > 0),
+    [places, getPlaceArtworks, visibleArtworks]
+  );
+
+  // 새로 올라온 사진
+  const latest = visibleArtworks
+    .filter((a) => a.location_mode !== '숨김')
+    .slice(0, 8);
 
   return (
     <>
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <p className="text-[12px] font-semibold tracking-[0.18em] text-[#746e66]">시선집</p>
-          <h1 className="mt-0.5 text-[27px] font-extrabold tracking-[-0.08em]">근방 네컷 전시</h1>
+          <p className="text-[12px] font-semibold tracking-[0.18em] text-[#746e66]">시선집 · {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</p>
+          <h1 className="mt-0.5 text-[27px] font-extrabold tracking-[-0.08em]">오늘의 시선들</h1>
         </div>
         <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setScreen('notifications')}
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#e4dccd] bg-[#fbf8f2]"
+            aria-label="알림"
+          >
+            <Icon name="bell" size={17} />
+            {unreadCount > 0 && (
+              <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-[#fbf8f2] bg-red-500" />
+            )}
+          </button>
           <button type="button" onClick={() => setScreen('search')} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e4dccd] bg-[#fbf8f2]" aria-label="탐색">
             <Icon name="search" size={17} />
-          </button>
-          <button type="button" onClick={() => setScreen('profile')} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e4dccd] bg-[#fbf8f2]" aria-label="내 전시">
-            <Icon name="user" size={17} />
           </button>
         </div>
       </div>
 
-      {artworks.length === 0 ? (
-        <div className="space-y-3">
-          <EmptyState
-            title="아직 시선집이 비어있어요"
-            hint={'사용법은 간단해요:\n1. 아래 + 버튼으로 사진 올리기\n2. 사진의 EXIF GPS 또는 "내 위치"로 자동 동네 매칭\n3. 같은 동네의 사진은 자동으로 한 전시에 묶여요\n\n둘러보고 싶으면 [내 전시] 탭에서 샘플 사진 5장 추가도 가능합니다.'}
-            onAction={() => setScreen('record')}
-            actionLabel="첫 사진 올리기"
-          />
+      {hasFollowing && (
+        <div className="mb-4 flex gap-2">
+          {['전체', '팔로잉'].map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setFeedFilter(item)}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold ${
+                feedFilter === item
+                  ? 'bg-[#151515] text-white'
+                  : 'border border-[#e4dccd] bg-[#fbf8f2] text-[#746e66]'
+              }`}
+            >
+              {item}
+            </button>
+          ))}
         </div>
-      ) : placesWithArt.length === 0 ? (
+      )}
+
+      {artworks.length === 0 ? (
         <EmptyState
-          title="아직 위치 기반 전시가 없어요"
-          hint="위치 정보가 있는 사진(EXIF GPS 또는 '내 위치 사용')을 올리면 동네별로 묶여서 보여요."
+          title="아직 시선집이 비어있어요"
+          hint={'사용법은 간단해요:\n1. 아래 + 버튼으로 사진 올리기\n2. 사진의 EXIF GPS 또는 "내 위치"로 자동 동네 매칭\n3. 같은 동네의 사진은 자동으로 한 전시에 묶여요\n\n둘러보고 싶으면 [내 전시] 탭에서 샘플 사진 5장 추가도 가능합니다.'}
           onAction={() => setScreen('record')}
-          actionLabel="사진 올리기"
+          actionLabel="첫 사진 올리기"
+        />
+      ) : visibleArtworks.length === 0 ? (
+        <EmptyState
+          title="팔로잉 한 사람이 아직 사진을 안 올렸어요"
+          hint="'전체' 탭으로 다른 사람들의 사진을 둘러보세요."
         />
       ) : (
-        <section className="space-y-4">
-          {placesWithArt.map(({ place, photos }) => (
-            <article key={place.id} className="rounded-[28px] bg-[#fbf8f2] p-3 shadow-[0_0_0_1px_#e4dccd]">
-              <button type="button" onClick={() => openPlace(place.id)} className="mb-3 flex w-full items-end justify-between gap-3 px-1 text-left">
-                <div>
-                  <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">{placeLabel(place)}</p>
-                  <h2 className="mt-0.5 text-[24px] font-extrabold tracking-[-0.075em]">{place.name || '이름 없는 공간'}</h2>
+        <div className="space-y-6">
+          {featured && (
+            <section>
+              <button
+                type="button"
+                onClick={() => openArtwork(featured.id)}
+                className="block w-full overflow-hidden rounded-[28px] bg-[#151515] text-left shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+              >
+                <div className="relative">
+                  <ImageBox src={featured.imageUrl} alt={featured.title} className="h-[360px]" />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-5 text-white">
+                    <p className="text-[10px] font-semibold tracking-[0.18em] text-white/70">오늘의 한 컷</p>
+                    <h2 className="mt-1 text-[26px] font-extrabold leading-tight tracking-[-0.07em]">
+                      {featured.title || '제목 없는 사진'}
+                    </h2>
+                    <p className="mt-1 text-[13px] text-white/80">
+                      {profileLabel(getProfile(featured.user_id))} ·{' '}
+                      🔥 {getHypeCount(featured.id)}
+                    </p>
+                  </div>
                 </div>
-                <span className="rounded-full border border-[#d8cfbf] px-2.5 py-1 text-[11px] text-[#746e66]">위치 전시</span>
               </button>
-              <FourPhotoWall photos={photos} onOpen={openArtwork} />
-              {place.note && <p className="mt-3 px-1 text-xs leading-5 text-[#746e66]">{place.note}</p>}
-            </article>
-          ))}
-        </section>
+            </section>
+          )}
+
+          {trendingKeywords.length > 0 && (
+            <section>
+              <div className="mb-3 flex items-end justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">사람들의 시선</p>
+                  <h2 className="mt-0.5 text-[20px] font-extrabold tracking-[-0.07em]">키워드 따라가기</h2>
+                </div>
+              </div>
+              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+                {trendingKeywords.map(({ word, count }) => (
+                  <button
+                    key={word}
+                    type="button"
+                    onClick={() => openKeyword(word)}
+                    className="shrink-0 rounded-[16px] bg-[#fbf8f2] px-4 py-3 text-left shadow-[0_0_0_1px_#e4dccd]"
+                  >
+                    <p className="text-[15px] font-bold tracking-[-0.04em]">#{word}</p>
+                    <p className="mt-0.5 text-[11px] text-[#746e66]">{count}장</p>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {placesWithArt.length > 0 && (
+            <section className="space-y-4">
+              <div>
+                <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">동네별 전시</p>
+                <h2 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.075em]">근방 네컷</h2>
+              </div>
+              {placesWithArt.map(({ place, photos }) => (
+                <article key={place.id} className="rounded-[28px] bg-[#fbf8f2] p-3 shadow-[0_0_0_1px_#e4dccd]">
+                  <button
+                    type="button"
+                    onClick={() => openPlace(place.id)}
+                    className="mb-3 flex w-full items-end justify-between gap-3 px-1 text-left"
+                  >
+                    <div>
+                      <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">
+                        {placeLabel(place)}
+                      </p>
+                      <h3 className="mt-0.5 text-[20px] font-extrabold tracking-[-0.075em]">
+                        {place.name || '이름 없는 공간'}
+                      </h3>
+                    </div>
+                    <span className="rounded-full border border-[#d8cfbf] px-2.5 py-1 text-[11px] text-[#746e66]">
+                      {photos.length}컷
+                    </span>
+                  </button>
+                  <FourPhotoWall photos={photos} onOpen={openArtwork} />
+                </article>
+              ))}
+            </section>
+          )}
+
+          {topCreators.length > 0 && (
+            <section>
+              <div className="mb-3 flex items-end justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">사람들</p>
+                  <h2 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.075em]">눈에 띄는 작가</h2>
+                </div>
+              </div>
+              <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+                {topCreators.map(({ profile, total }) => {
+                  const main =
+                    getUserArtworks(profile.id).find((a) => a.is_twenty_five) ||
+                    getUserArtworks(profile.id)[0];
+                  return (
+                    <button
+                      key={profile.id}
+                      type="button"
+                      onClick={() => openPerson(profile.id)}
+                      className="min-w-[150px] overflow-hidden rounded-[20px] bg-[#fbf8f2] text-left shadow-[0_0_0_1px_#e4dccd]"
+                    >
+                      <ImageBox src={main?.imageUrl} alt={profile.nickname} className="h-[170px] w-full" />
+                      <div className="p-3">
+                        <p className="truncate text-sm font-bold tracking-[-0.04em]">
+                          {profile.nickname}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-[#746e66]">🔥 {total}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {latest.length > 0 && (
+            <section>
+              <div className="mb-3 flex items-end justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">최근</p>
+                  <h2 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.075em]">새로 올라온 사진</h2>
+                </div>
+              </div>
+              <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1">
+                {latest.map((art) => (
+                  <button
+                    key={art.id}
+                    type="button"
+                    onClick={() => openArtwork(art.id)}
+                    className="min-w-[140px] overflow-hidden rounded-[18px] bg-[#fbf8f2] text-left shadow-[0_0_0_1px_#e4dccd]"
+                  >
+                    <ImageBox src={art.imageUrl} alt={art.title} className="h-[180px]" />
+                    <div className="p-2">
+                      <p className="truncate text-[12px] font-bold tracking-[-0.04em]">
+                        {art.title || '제목 없음'}
+                      </p>
+                      <p className="mt-0.5 truncate text-[10px] text-[#9a948b]">
+                        {profileLabel(getProfile(art.user_id))}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
       )}
     </>
   );
@@ -947,8 +1181,8 @@ function RecordScreen({ setScreen }) {
    Artwork detail + comments
    ====================================================================== */
 
-function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace }) {
-  const { userId, getArtwork, getProfile, getPlace, getUserArtworks, getCommentsFor, refresh } = useData();
+function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openKeyword }) {
+  const { userId, getArtwork, getProfile, getPlace, getUserArtworks, refresh } = useData();
   const art = getArtwork(artworkId);
   const [deleting, setDeleting] = useState(false);
 
@@ -957,7 +1191,6 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace }) {
   const profile = getProfile(art.user_id);
   const place = getPlace(art.place_id);
   const related = getUserArtworks(art.user_id).filter((item) => item.id !== art.id).slice(0, 3);
-  const artComments = getCommentsFor(art.id);
   const isMine = art.user_id === userId;
 
   const handleDelete = async () => {
@@ -991,7 +1224,7 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace }) {
           </div>
         </section>
 
-        <CommentSection artworkId={art.id} comments={artComments} />
+        <CommentSection artworkId={art.id} />
 
         <section className="rounded-[24px] bg-[#fbf8f2] p-4 shadow-[0_0_0_1px_#e4dccd]">
           <div className="flex items-start justify-between gap-3">
@@ -1013,6 +1246,15 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace }) {
             </div>
           </div>
           {art.note && <p className="mt-4 text-[15px] leading-7 text-[#3f3a34]">{art.note}</p>}
+          {art.daily_vision && (
+            <button
+              type="button"
+              onClick={() => openKeyword?.(art.daily_vision)}
+              className="mt-3 inline-block rounded-full bg-[#eee6d8] px-3 py-1 text-xs font-semibold text-[#151515]"
+            >
+              #{art.daily_vision}
+            </button>
+          )}
           <div className="mt-4 flex items-center gap-2">
             <HypeButton artwork={art} />
             {isMine && (
@@ -1054,25 +1296,41 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace }) {
   );
 }
 
-function CommentSection({ artworkId, comments }) {
-  const { userId, getProfile, refresh } = useData();
+function CommentSection({ artworkId }) {
+  const {
+    userId,
+    getProfile,
+    getRootCommentsFor,
+    refresh,
+  } = useData();
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+
+  const rootComments = getRootCommentsFor(artworkId).sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!text.trim() || !userId) return;
     setBusy(true);
     try {
-      await postComment(artworkId, userId, text.trim());
+      await postComment(artworkId, userId, text.trim(), replyingTo);
       setText('');
+      setReplyingTo(null);
       await refresh();
     } catch (error) {
-      console.error('댓글 실패', error);
+      alert('댓글 실패: ' + error.message);
     } finally {
       setBusy(false);
     }
   };
+
+  const replyTarget = replyingTo
+    ? rootComments.find((c) => c.id === replyingTo) ||
+      rootComments.flatMap((r) => [r]).find((c) => c.id === replyingTo)
+    : null;
 
   return (
     <section className="rounded-[24px] bg-[#fbf8f2] p-4 shadow-[0_0_0_1px_#e4dccd]">
@@ -1081,11 +1339,18 @@ function CommentSection({ artworkId, comments }) {
         <h2 className="mt-1 text-[22px] font-extrabold tracking-[-0.06em]">이 사진 앞에서</h2>
       </div>
 
+      {replyingTo && replyTarget && (
+        <div className="mb-2 flex items-center justify-between rounded-[14px] bg-[#eee6d8] px-3 py-2 text-xs text-[#4d4943]">
+          <span>↳ {profileLabel(getProfile(replyTarget.user_id))}에게 답글</span>
+          <button type="button" onClick={() => setReplyingTo(null)} className="text-[#746e66]">취소</button>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="mb-4 flex gap-2">
         <input
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder="짧게 남기기"
+          placeholder={replyingTo ? '답글 남기기' : '짧게 남기기'}
           className="flex-1 rounded-full border border-[#e4dccd] bg-white px-4 py-2 text-sm outline-none"
         />
         <button
@@ -1093,25 +1358,259 @@ function CommentSection({ artworkId, comments }) {
           disabled={busy || !text.trim()}
           className="rounded-full bg-[#151515] px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
         >
-          남기기
+          {replyingTo ? '답글' : '남기기'}
         </button>
       </form>
 
-      <div className="space-y-3">
-        {comments.length === 0 && <p className="text-xs text-[#9a948b]">아직 노트가 없어요. 첫 감상을 남겨보세요.</p>}
-        {comments.map((comment) => {
-          const author = getProfile(comment.user_id);
-          return (
-            <article key={comment.id} className="border-l border-[#151515] pl-4">
-              <p className="text-[15px] leading-7 text-[#3f3a34]">"{comment.text}"</p>
-              <p className="mt-2 text-[11px] tracking-[0.12em] text-[#8c857c]">
-                {profileLabel(author)} · {formatTime(comment.created_at)}
-              </p>
-            </article>
-          );
-        })}
+      <div className="space-y-4">
+        {rootComments.length === 0 && (
+          <p className="text-xs text-[#9a948b]">아직 노트가 없어요. 첫 감상을 남겨보세요.</p>
+        )}
+        {rootComments.map((comment) => (
+          <CommentItem
+            key={comment.id}
+            comment={comment}
+            onReply={() => { setReplyingTo(comment.id); }}
+          />
+        ))}
       </div>
     </section>
+  );
+}
+
+function CommentItem({ comment, onReply, isReply = false }) {
+  const {
+    userId,
+    getProfile,
+    getRepliesFor,
+    getCommentReactionCount,
+    isCommentLikedByMe,
+    refresh,
+  } = useData();
+  const author = getProfile(comment.user_id);
+  const isMine = comment.user_id === userId;
+  const liked = isCommentLikedByMe(comment.id);
+  const likeCount = getCommentReactionCount(comment.id);
+  const replies = getRepliesFor(comment.id);
+  const [showReplies, setShowReplies] = useState(replies.length > 0 && replies.length <= 3);
+  const [busy, setBusy] = useState(false);
+
+  const handleLike = async () => {
+    if (!userId) return;
+    setBusy(true);
+    try {
+      await toggleCommentReaction(comment.id, userId, liked);
+      await refresh();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('댓글을 삭제할까요?')) return;
+    try {
+      await deleteComment(comment.id, userId);
+      await refresh();
+    } catch (err) {
+      alert('삭제 실패: ' + err.message);
+    }
+  };
+
+  return (
+    <article className={`${isReply ? 'ml-5 border-l border-[#e4dccd] pl-3' : 'border-l border-[#151515] pl-4'}`}>
+      <p className="text-[15px] leading-7 text-[#3f3a34]">"{comment.text}"</p>
+      <p className="mt-1 text-[11px] tracking-[0.12em] text-[#8c857c]">
+        {profileLabel(author)} · {timeAgo(comment.created_at)}
+      </p>
+      <div className="mt-1.5 flex items-center gap-3 text-[11px] text-[#746e66]">
+        <button
+          type="button"
+          onClick={handleLike}
+          disabled={busy || !userId}
+          className={`inline-flex items-center gap-1 ${liked ? 'text-red-500' : 'text-[#746e66]'}`}
+        >
+          <Icon name={liked ? 'heartFilled' : 'heart'} size={13} />
+          {likeCount > 0 && <span>{likeCount}</span>}
+        </button>
+        {!isReply && (
+          <button type="button" onClick={onReply} className="inline-flex items-center gap-1">
+            <Icon name="reply" size={13} />
+            답글
+          </button>
+        )}
+        {isMine && (
+          <button type="button" onClick={handleDelete} className="text-red-500">삭제</button>
+        )}
+      </div>
+
+      {!isReply && replies.length > 0 && (
+        <div className="mt-2">
+          {!showReplies ? (
+            <button
+              type="button"
+              onClick={() => setShowReplies(true)}
+              className="text-[11px] text-[#746e66] underline"
+            >
+              답글 {replies.length}개 보기
+            </button>
+          ) : (
+            <div className="mt-2 space-y-3">
+              {replies.map((r) => (
+                <CommentItem key={r.id} comment={r} isReply onReply={() => {}} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </article>
+  );
+}
+
+/* ========================================================================
+   Notifications history
+   ====================================================================== */
+
+function timeAgo(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return '방금';
+  if (m < 60) return `${m}분 전`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}시간 전`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d}일 전`;
+  return new Date(iso).toLocaleDateString('ko-KR');
+}
+
+function NotificationsScreen({ setScreen, openArtwork, openPerson }) {
+  const { notifications, markRead, clearUnread, error } = useNotifications();
+  const { getProfile, getArtwork } = useData();
+
+  useEffect(() => {
+    // 화면 닫을 때 일괄 읽음 처리
+    return () => { clearUnread(); };
+  }, [clearUnread]);
+
+  const handleClick = async (n) => {
+    if (!n.read_at) await markRead(n.id);
+    if (n.kind === 'follow') {
+      if (n.source_user_id) openPerson(n.source_user_id);
+    } else if (n.artwork_id) {
+      openArtwork(n.artwork_id);
+    }
+  };
+
+  return (
+    <>
+      <Header title="알림" subtitle="다른 사람의 반응을 모아봅니다." kicker="모아 보기" onBack={() => setScreen('home')} />
+
+      {error && (
+        <div className="mb-4 rounded-[16px] bg-yellow-50 p-3 text-xs leading-5 text-yellow-900">
+          알림 테이블이 아직 없어요. <code>supabase/migrations/003_social_and_stats.sql</code>을 실행해주세요.
+        </div>
+      )}
+
+      {notifications.length === 0 ? (
+        <EmptyState title="아직 알림이 없어요" hint="다른 사람들이 내 사진에 반응하면 여기에 모아 보여드릴게요." />
+      ) : (
+        <div className="space-y-2">
+          {notifications.map((n) => {
+            const source = getProfile(n.source_user_id);
+            const art = n.artwork_id ? getArtwork(n.artwork_id) : null;
+            const sourceName = source?.nickname ?? '누군가';
+            const headline = (() => {
+              switch (n.kind) {
+                case 'hype': return `${sourceName}이(가) 🔥 Hype`;
+                case 'comment': return `${sourceName}이(가) 댓글`;
+                case 'comment_reply': return `${sourceName}이(가) 답글`;
+                case 'comment_reaction': return `${sourceName}이(가) 댓글에 ❤`;
+                case 'follow': return `${sourceName}이(가) 팔로우`;
+                default: return '새 알림';
+              }
+            })();
+            return (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => handleClick(n)}
+                className={`flex w-full items-center gap-3 rounded-[18px] p-3 text-left ${
+                  n.read_at ? 'bg-[#fbf8f2] shadow-[0_0_0_1px_#e4dccd]' : 'bg-white shadow-[0_0_0_1px_#151515]'
+                }`}
+              >
+                {art ? (
+                  <ImageBox src={art.imageUrl} alt={art.title} className="h-12 w-12 shrink-0 rounded-[10px]" />
+                ) : (
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] bg-[#eee6d8] text-lg">
+                    {n.kind === 'follow' ? '👋' : '✨'}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold tracking-[-0.04em]">{headline}</p>
+                  {art?.title && <p className="truncate text-[11px] text-[#746e66]">{art.title}</p>}
+                  <p className="mt-0.5 text-[10px] text-[#9a948b]">{timeAgo(n.created_at)}</p>
+                </div>
+                {!n.read_at && <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ========================================================================
+   Keyword aggregate page
+   ====================================================================== */
+
+function KeywordScreen({ keyword, setScreen, openArtwork }) {
+  const { artworks, getHypeCount } = useData();
+  const [sort, setSort] = useState('인기');
+
+  const filtered = useMemo(() => {
+    const arr = artworks.filter((a) => a.daily_vision === keyword);
+    if (sort === '인기') {
+      return [...arr].sort((a, b) => getHypeCount(b.id) - getHypeCount(a.id));
+    }
+    return [...arr].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }, [artworks, keyword, sort, getHypeCount]);
+
+  return (
+    <>
+      <Header
+        title={`#${keyword}`}
+        subtitle="같은 시선을 모아봅니다."
+        kicker="키워드"
+        onBack={() => setScreen('home')}
+      />
+      <div className="mb-4 flex items-center gap-2 text-xs">
+        <span className="text-[#9a948b]">{filtered.length}장 · 정렬</span>
+        {['인기', '최신'].map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => setSort(item)}
+            className={`rounded-full px-3 py-1 ${
+              sort === item ? 'bg-[#eee6d8] font-semibold text-[#151515]' : 'text-[#746e66]'
+            }`}
+          >
+            {item === '인기' ? '🔥 인기' : item}
+          </button>
+        ))}
+      </div>
+      {filtered.length === 0 ? (
+        <EmptyState title="이 키워드 사진이 아직 없어요" />
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {filtered.map((art) => (
+            <PhotoTile key={art.id} artwork={art} onOpen={openArtwork} />
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1226,18 +1725,34 @@ function ArtworkEditScreen({ artworkId, setScreen }) {
    Person Exhibition (개인전)
    ====================================================================== */
 
+function StatCell({ label, value }) {
+  return (
+    <div>
+      <p className="text-[18px] font-extrabold tracking-[-0.04em] text-[#151515]">{value}</p>
+      <p className="mt-0.5 text-[10px] font-semibold tracking-[0.08em] text-[#746e66]">{label}</p>
+    </div>
+  );
+}
+
 function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
-  const { userId, getProfile, getUserArtworks, getCurateForUser, refresh } = useData();
-  const { clearUnread } = useNotifications();
+  const {
+    userId,
+    getProfile,
+    getUserArtworks,
+    getCurateForUser,
+    getStats,
+    isFollowing,
+    getHypeCount,
+    refresh,
+  } = useData();
   const profile = getProfile(viewedId);
   const works = getUserArtworks(viewedId);
   const wall = getCurateForUser(viewedId);
   const isMe = viewedId === userId;
+  const stats = getStats(viewedId);
+  const following = isFollowing(viewedId);
   const [seeding, setSeeding] = useState(false);
-
-  useEffect(() => {
-    if (isMe) clearUnread();
-  }, [isMe, clearUnread]);
+  const [followBusy, setFollowBusy] = useState(false);
 
   if (!profile) return <EmptyState title="사용자를 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
@@ -1255,6 +1770,19 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
       alert('시딩 실패: ' + error.message);
     } finally {
       setSeeding(false);
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!userId || isMe) return;
+    setFollowBusy(true);
+    try {
+      await toggleFollow(viewedId, userId, following);
+      await refresh();
+    } catch (err) {
+      alert('실패: ' + err.message);
+    } finally {
+      setFollowBusy(false);
     }
   };
 
@@ -1289,6 +1817,31 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
               ))}
             </div>
           )}
+
+          {/* Stats grid */}
+          <div className="mt-4 grid grid-cols-4 gap-2 rounded-[18px] bg-[#f4efe6] p-3 text-center">
+            <StatCell label="사진" value={stats.artworkCount} />
+            <StatCell label="🔥 받음" value={stats.totalHype} />
+            <StatCell label="팔로워" value={stats.followerCount} />
+            <StatCell label="팔로잉" value={stats.followingCount} />
+          </div>
+
+          {!isMe && userId && (
+            <button
+              type="button"
+              onClick={handleFollow}
+              disabled={followBusy}
+              className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${
+                following
+                  ? 'border border-[#151515] bg-white text-[#151515]'
+                  : 'bg-[#151515] text-white'
+              }`}
+            >
+              <Icon name={following ? 'checkFollow' : 'plusFollow'} size={16} />
+              {following ? '팔로잉' : '팔로우'}
+            </button>
+          )}
+
           {isMe && (
             <div className="mt-3 flex flex-wrap gap-2">
               <button
@@ -1311,6 +1864,25 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
             </div>
           )}
         </section>
+
+        {stats.topArtwork && stats.totalHype > 0 && (
+          <section className="rounded-[24px] bg-[#fbf8f2] p-3 shadow-[0_0_0_1px_#e4dccd]">
+            <button
+              type="button"
+              onClick={() => openArtwork(stats.topArtwork.id)}
+              className="block w-full text-left"
+            >
+              <div className="mb-2 flex items-center justify-between px-1">
+                <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">가장 인기 있는 사진</p>
+                <span className="rounded-full bg-[#151515] px-2 py-0.5 text-[10px] font-semibold text-white">🔥 {getHypeCount(stats.topArtwork.id)}</span>
+              </div>
+              <div className="overflow-hidden rounded-[18px]">
+                <ImageBox src={stats.topArtwork.imageUrl} alt={stats.topArtwork.title} className="h-44" />
+              </div>
+              <p className="mt-2 px-1 text-sm font-bold tracking-[-0.04em]">{stats.topArtwork.title || '제목 없음'}</p>
+            </button>
+          </section>
+        )}
 
         <section>
           <div className="mb-3 flex items-center justify-between">
@@ -1840,7 +2412,15 @@ function Splash({ message = '불러오는 중…' }) {
 function OnboardingModal() {
   const { userId, getProfile, refresh } = useData();
   const profile = getProfile(userId);
-  const needsOnboarding = profile && /^user_[a-f0-9]+$/i.test(profile.nickname);
+  // 자동 생성된 닉네임 패턴 (익명_xxxx, user_xxxxxx, user55gg, 짧고 임의의 문자열 등)
+  const looksAutoGenerated = (nick) => {
+    if (!nick) return true;
+    if (/^익명[_-]?[a-z0-9]{2,8}$/i.test(nick)) return true;
+    if (/^user[_-]?[a-z0-9]{2,8}$/i.test(nick)) return true;
+    if (/^visitor[_-]?[a-z0-9]{2,8}$/i.test(nick)) return true;
+    return false;
+  };
+  const needsOnboarding = profile && looksAutoGenerated(profile.nickname);
   const [nickname, setNickname] = useState('');
   const [bio, setBio] = useState('');
   const [busy, setBusy] = useState(false);
@@ -1914,17 +2494,19 @@ function MainApp() {
   const [selectedArtworkId, setSelectedArtworkId] = useState(null);
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedKeyword, setSelectedKeyword] = useState(null);
 
   const openArtwork = (id) => { setSelectedArtworkId(id); setScreen('detail'); };
   const openPlace = (id) => { setSelectedPlaceId(id); setScreen('place'); };
   const openPerson = (id) => { setSelectedUserId(id); setScreen('person'); };
+  const openKeyword = (word) => { setSelectedKeyword(word); setScreen('keyword'); };
 
   let content = null;
-  if (screen === 'home') content = <HomeScreen setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} />;
+  if (screen === 'home') content = <HomeScreen setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} openPerson={openPerson} openKeyword={openKeyword} />;
   if (screen === 'search') content = <SearchScreen openArtwork={openArtwork} openPerson={openPerson} openPlace={openPlace} />;
   if (screen === 'space') content = <SpaceScreen openPlace={openPlace} openArtwork={openArtwork} />;
   if (screen === 'record') content = <RecordScreen setScreen={setScreen} />;
-  if (screen === 'detail') content = <ArtworkDetail artworkId={selectedArtworkId} setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} />;
+  if (screen === 'detail') content = <ArtworkDetail artworkId={selectedArtworkId} setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} openKeyword={openKeyword} />;
   if (screen === 'artworkEdit') content = <ArtworkEditScreen artworkId={selectedArtworkId} setScreen={setScreen} />;
   if (screen === 'person') content = <PersonExhibition userId={selectedUserId} setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'profile') content = <PersonExhibitionMe setScreen={setScreen} openArtwork={openArtwork} />;
@@ -1933,6 +2515,8 @@ function MainApp() {
   if (screen === 'place') content = <PlaceExhibition placeId={selectedPlaceId} setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'archive') content = <CalendarScreen openArtwork={openArtwork} setScreen={setScreen} />;
   if (screen === 'twentyFive') content = <TwentyFiveScreen setScreen={setScreen} />;
+  if (screen === 'notifications') content = <NotificationsScreen setScreen={setScreen} openArtwork={openArtwork} openPerson={openPerson} />;
+  if (screen === 'keyword') content = <KeywordScreen keyword={selectedKeyword} setScreen={setScreen} openArtwork={openArtwork} />;
 
   return (
     <>

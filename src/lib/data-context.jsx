@@ -6,6 +6,8 @@ import {
   fetchComments,
   fetchHypes,
   fetchCurateSlots,
+  fetchFollows,
+  fetchCommentReactions,
   publicPhotoUrl,
 } from './db';
 import { useAuth } from './auth-context';
@@ -20,19 +22,23 @@ export function DataProvider({ children }) {
   const [comments, setComments] = useState([]);
   const [hypes, setHypes] = useState([]);
   const [curateSlots, setCurateSlots] = useState([]);
+  const [follows, setFollows] = useState([]);
+  const [commentReactions, setCommentReactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const refresh = useCallback(async () => {
     try {
       setError(null);
-      const [p, pl, a, c, h, cs] = await Promise.all([
+      const [p, pl, a, c, h, cs, f, cr] = await Promise.all([
         fetchProfiles(),
         fetchPlaces(),
         fetchArtworks(),
         fetchComments(),
         fetchHypes(),
         fetchCurateSlots(),
+        fetchFollows().catch(() => []),
+        fetchCommentReactions().catch(() => []),
       ]);
       setProfiles(p);
       setPlaces(pl);
@@ -40,6 +46,8 @@ export function DataProvider({ children }) {
       setComments(c);
       setHypes(h);
       setCurateSlots(cs);
+      setFollows(f);
+      setCommentReactions(cr);
     } catch (err) {
       console.error('[data] refresh 실패', err);
       setError(err);
@@ -81,6 +89,54 @@ export function DataProvider({ children }) {
       return getUserArtworks(uid).slice(0, 4);
     };
 
+    // 답글 처리: parent_id 있는 건 자식, 없는 건 최상위
+    const getRootCommentsFor = (artworkId) =>
+      comments.filter((c) => c.artwork_id === artworkId && !c.parent_id);
+    const getRepliesFor = (commentId) =>
+      comments
+        .filter((c) => c.parent_id === commentId)
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+    const getCommentReactionCount = (commentId) =>
+      commentReactions.filter((r) => r.comment_id === commentId).length;
+    const isCommentLikedByMe = (commentId) =>
+      userId != null && commentReactions.some(
+        (r) => r.comment_id === commentId && r.user_id === userId
+      );
+
+    const getFollowers = (uid) => follows.filter((f) => f.followee_id === uid);
+    const getFollowing = (uid) => follows.filter((f) => f.follower_id === uid);
+    const isFollowing = (targetId) =>
+      userId != null && follows.some(
+        (f) => f.follower_id === userId && f.followee_id === targetId
+      );
+
+    const getStats = (uid) => {
+      const userArts = getUserArtworks(uid);
+      let totalHype = 0;
+      let topArtwork = null;
+      let topCount = -1;
+      for (const art of userArts) {
+        const count = getHypeCount(art.id);
+        totalHype += count;
+        if (count > topCount) {
+          topCount = count;
+          topArtwork = art;
+        }
+      }
+      const totalComments = comments.filter(
+        (c) => userArts.some((a) => a.id === c.artwork_id) && c.user_id !== uid
+      ).length;
+      return {
+        artworkCount: userArts.length,
+        totalHype,
+        totalComments,
+        topArtwork,
+        followerCount: getFollowers(uid).length,
+        followingCount: getFollowing(uid).length,
+      };
+    };
+
     return {
       loading,
       error,
@@ -92,23 +148,27 @@ export function DataProvider({ children }) {
       comments,
       hypes,
       curateSlots,
+      follows,
+      commentReactions,
       getProfile,
       getPlace,
       getArtwork,
       getUserArtworks,
       getPlaceArtworks,
       getCommentsFor,
+      getRootCommentsFor,
+      getRepliesFor,
       getHypeCount,
       isHypedByMe,
       getCurateForUser,
-      setProfiles,
-      setPlaces,
-      setArtworks,
-      setComments,
-      setHypes,
-      setCurateSlots,
+      getCommentReactionCount,
+      isCommentLikedByMe,
+      getFollowers,
+      getFollowing,
+      isFollowing,
+      getStats,
     };
-  }, [profiles, places, artworks, comments, hypes, curateSlots, session?.user?.id, loading, error, refresh]);
+  }, [profiles, places, artworks, comments, hypes, curateSlots, follows, commentReactions, session?.user?.id, loading, error, refresh]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

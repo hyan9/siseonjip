@@ -50,6 +50,48 @@ export async function fetchCurateSlots() {
   return data ?? [];
 }
 
+export async function fetchFollows() {
+  const { data, error } = await supabase.from('follows').select('*');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchCommentReactions() {
+  const { data, error } = await supabase.from('comment_reactions').select('*');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchNotifications(userId, limit = 50) {
+  if (!userId) return [];
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function markNotificationRead(notificationId, userId) {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('id', notificationId)
+    .eq('user_id', userId);
+  if (error) throw error;
+}
+
+export async function markAllNotificationsRead(userId) {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .is('read_at', null);
+  if (error) throw error;
+}
+
 // ============================================================
 // 사진 업로드 + 작품 등록
 // ============================================================
@@ -238,14 +280,63 @@ export async function toggleHype(artworkId, userId, currentlyHyped) {
   return true;
 }
 
-export async function postComment(artworkId, userId, text) {
+export async function postComment(artworkId, userId, text, parentId = null) {
   const { data, error } = await supabase
     .from('comments')
-    .insert({ artwork_id: artworkId, user_id: userId, text })
+    .insert({
+      artwork_id: artworkId,
+      user_id: userId,
+      text,
+      parent_id: parentId ?? null,
+    })
     .select()
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function deleteComment(commentId, userId) {
+  const { error } = await supabase
+    .from('comments')
+    .delete()
+    .eq('id', commentId)
+    .eq('user_id', userId);
+  if (error) throw error;
+}
+
+export async function toggleCommentReaction(commentId, userId, currentlyLiked) {
+  if (currentlyLiked) {
+    const { error } = await supabase
+      .from('comment_reactions')
+      .delete()
+      .eq('comment_id', commentId)
+      .eq('user_id', userId);
+    if (error) throw error;
+    return false;
+  }
+  const { error } = await supabase
+    .from('comment_reactions')
+    .insert({ comment_id: commentId, user_id: userId });
+  if (error) throw error;
+  return true;
+}
+
+export async function toggleFollow(targetUserId, currentUserId, currentlyFollowing) {
+  if (targetUserId === currentUserId) throw new Error('자기 자신을 팔로우할 수 없어요');
+  if (currentlyFollowing) {
+    const { error } = await supabase
+      .from('follows')
+      .delete()
+      .eq('follower_id', currentUserId)
+      .eq('followee_id', targetUserId);
+    if (error) throw error;
+    return false;
+  }
+  const { error } = await supabase
+    .from('follows')
+    .insert({ follower_id: currentUserId, followee_id: targetUserId });
+  if (error) throw error;
+  return true;
 }
 
 export async function setCurateOrder(userId, artworkIds) {
