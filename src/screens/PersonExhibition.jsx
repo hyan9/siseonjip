@@ -7,6 +7,7 @@ import {
   EmptyState,
 } from '../components/ui';
 import Icon from '../components/Icon';
+import Avatar from '../components/Avatar';
 import { FourPhotoWall } from '../components/Cards';
 import ReportModal from '../components/ReportModal';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -172,48 +173,15 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
         onBack={isMe ? undefined : () => setScreen('home')}
         right={
           isMe ? (
-            <div className="flex items-center gap-0.5 text-[var(--text-muted)]">
-              <button
-                type="button"
-                onClick={() => setScreen('saved')}
-                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-                title="저장한 사진"
-              >
-                <IconSaved size={17} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setScreen('collections')}
-                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-                title="컬렉션"
-              >
-                <IconCollections size={17} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setScreen('activity')}
-                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-                title="활동"
-              >
-                <IconActivity size={17} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setScreen('profileEdit')}
-                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-                title="프로필 편집"
-              >
-                <IconEdit size={17} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setSettingsOpen(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-                title="설정"
-              >
-                <IconSettings size={17} />
-              </button>
-            </div>
+            // 우상단은 설정 하나만 — 저장/컬렉션/활동/메시지/프로필 편집은 TopBar 햄버거 메뉴에 통합되어 있음
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+              title="설정"
+            >
+              <IconSettings size={17} />
+            </button>
           ) : null
         }
       />
@@ -382,17 +350,56 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
             : <FourPhotoWall photos={wall} onOpen={openArtwork} />}
         </section>
 
-        <section>
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-[22px] font-extrabold tracking-[-0.07em]">📼 필름</h2>
-            <span className="text-[11px] text-[var(--text-muted)]">{works.length}장</span>
-          </div>
-          {works.length === 0 ? (
-            <EmptyState title="아직 사진이 없어요" />
-          ) : (
-            <FilmTimeline works={works} onOpenAt={(i) => setGalleryStart(i)} />
-          )}
-        </section>
+        {/* 자주 쓰는 단어 — 작가의 시선 키워드 */}
+        {(() => {
+          const counts = new Map();
+          for (const a of works) if (a.daily_vision) counts.set(a.daily_vision, (counts.get(a.daily_vision) ?? 0) + 1);
+          const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+          if (top.length === 0) return null;
+          return (
+            <section>
+              <h2 className="mb-2 text-[16px] font-extrabold tracking-[-0.05em]">자주 쓰는 단어</h2>
+              <div className="flex flex-wrap gap-1.5">
+                {top.map(([word, n]) => (
+                  <span
+                    key={word}
+                    className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-[11px] font-semibold"
+                  >
+                    #{word}
+                    <span className="text-[10px] text-[var(--text-faint)]">{n}</span>
+                  </span>
+                ))}
+              </div>
+            </section>
+          );
+        })()}
+
+        {/* 모든 작품 — 시간순 그리드 (필름 타임라인은 캘린더에 있으니 여기는 단순 그리드) */}
+        {works.length > 0 && (
+          <section>
+            <div className="mb-2 flex items-baseline justify-between">
+              <h2 className="text-[16px] font-extrabold tracking-[-0.05em]">모든 작품</h2>
+              <span className="text-[10px] text-[var(--text-muted)]">{works.length}장</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {works.map((art, i) => (
+                <button
+                  key={art.id}
+                  type="button"
+                  onClick={() => setGalleryStart(i)}
+                  className="relative overflow-hidden rounded-[8px]"
+                >
+                  <ImageBox src={art.imageUrl} alt={art.title} className="aspect-square w-full" />
+                  {art.is_twenty_five && (
+                    <span className="absolute left-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--accent)] text-white">
+                      <IconStar size={9} filled />
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {reportOpen && (
@@ -499,9 +506,7 @@ function FollowListModal({ title, rows, onClose, onOpenPerson }) {
                 onClick={() => onOpenPerson?.(p.id)}
                 className="flex w-full items-center gap-3 border-b border-[var(--border)] px-4 py-3 text-left last:border-b-0 hover:bg-[var(--surface-2)]"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ink)] text-[12px] font-bold text-white">
-                  {(p.nickname || '?').slice(0, 1)}
-                </div>
+                <Avatar profile={p} size={36} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-bold tracking-[-0.04em]">{p.nickname}</p>
                   {p.bio && <p className="truncate text-[11px] text-[var(--text-muted)]">{p.bio}</p>}

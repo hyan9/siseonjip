@@ -119,22 +119,26 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
         .slice(0, 5)
     : [];
 
-  // 내 주변 1km 이내 사진들 (place 좌표 기반)
+  // 가장 가까운 사진들 — 2km 이내 우선이지만 부족하면 거리 무관 채워줌 (지도가 비어있지 않게)
   const nearbyPhotos = myLocation
-    ? artworks
-        .filter((a) => a.location_mode !== '숨김')
-        .map((a) => {
-          let lat = a.lat, lng = a.lng;
-          if (lat == null || lng == null) {
-            const place = places.find((p) => p.id === a.place_id);
-            if (!place || place.lat == null) return null;
-            lat = place.lat; lng = place.lng;
-          }
-          return { ...a, distance: distanceMeters(myLocation.lat, myLocation.lng, lat, lng) };
-        })
-        .filter((a) => a && a.distance <= 2000)
-        .sort((a, b) => a.distance - b.distance)
-        .slice(0, 12)
+    ? (() => {
+        const all = artworks
+          .filter((a) => a.location_mode !== '숨김')
+          .map((a) => {
+            let lat = a.lat, lng = a.lng;
+            if (lat == null || lng == null) {
+              const place = places.find((p) => p.id === a.place_id);
+              if (!place || place.lat == null) return null;
+              lat = place.lat; lng = place.lng;
+            }
+            return { ...a, distance: distanceMeters(myLocation.lat, myLocation.lng, lat, lng) };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.distance - b.distance);
+        const within = all.filter((a) => a.distance <= 2000);
+        // 2km 이내가 부족하면 가장 가까운 12장으로 채움
+        return within.length >= 6 ? within.slice(0, 12) : all.slice(0, 12);
+      })()
     : [];
 
   return (
@@ -215,7 +219,7 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
 
         {myLocation && (
           <section className="rounded-[18px] bg-[var(--ink)] p-4 text-white">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-white/70">📍 내 주변 2km</p>
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-white/70">📍 가까운 곳</p>
             <p className="mt-1 text-[20px] font-extrabold tracking-[-0.06em]">
               사진 {nearbyPhotos.length}장 · 동네 {nearbyPlaces.length}곳
             </p>

@@ -271,7 +271,7 @@ export default function RecordScreen({ setScreen, openArtwork }) {
                 오늘 네 장 다 썼어요
               </p>
               <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-muted)]">
-                필름은 잠들었어요. 내일 다시 만나요.
+                냥이는 잠들었어요. 내일 다시 만나요.
               </p>
               <div className="mt-4 grid w-full grid-cols-4 gap-1.5">
                 {todayWorks.map((art) => (

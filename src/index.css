@@ -161,19 +161,31 @@
   --hero-to: #000000;
 }
 
-/* 점박이 패턴 — 검정 도트가 다닥다닥. html/body 둘 다 강제로 (Shell 안쪽까지 비치게) */
+/* 점박이 패턴 — 백그라운드만 도트, 카드/텍스트 박스는 surface로 가려짐.
+   두 layer를 살짝 다른 위치/크기로 겹쳐서 진짜 점박이 고양이 털 같은 흩어진 느낌. */
 html[data-theme="spotted"],
 html[data-theme="spotted"] body,
 html[data-theme="spotted"] #root {
   background-color: var(--bg);
-  background-image: radial-gradient(circle, rgba(20, 20, 20, 0.32) 4px, transparent 4.5px);
-  background-size: 28px 28px;
+  background-image:
+    radial-gradient(circle, rgba(20, 20, 20, 0.42) 1.6px, transparent 2px),
+    radial-gradient(circle, rgba(20, 20, 20, 0.28) 1.1px, transparent 1.5px);
+  background-size: 14px 14px, 19px 19px;
+  background-position: 0 0, 7px 9px;
   background-attachment: fixed;
 }
-/* Shell 안의 max-width 박스도 같은 패턴으로 (검은 점이 자연스럽게 이어짐) */
+/* Shell 안 main도 같은 패턴 (max-width 박스 안에서도 자연스럽게 이어짐) */
 html[data-theme="spotted"] main {
-  background-image: radial-gradient(circle, rgba(20, 20, 20, 0.32) 4px, transparent 4.5px);
-  background-size: 28px 28px;
+  background-image:
+    radial-gradient(circle, rgba(20, 20, 20, 0.42) 1.6px, transparent 2px),
+    radial-gradient(circle, rgba(20, 20, 20, 0.28) 1.1px, transparent 1.5px);
+  background-size: 14px 14px, 19px 19px;
+  background-position: 0 0, 7px 9px;
+}
+/* TopBar / BottomNav / 카드는 surface로 도트 가려서 텍스트 가독성 보호 — 이미 그러나 명시 */
+html[data-theme="spotted"] header.sticky,
+html[data-theme="spotted"] nav.sticky {
+  background-color: rgba(255, 255, 255, 0.95);
 }
 
 /* 고등어 — 은빛 줄무늬 + 차콜 */

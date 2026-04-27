@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 import { AuthProvider, useAuth } from './lib/auth-context';
 import { DataProvider, useData } from './lib/data-context';
@@ -39,7 +39,8 @@ const ConversationScreen = lazy(() => import('./screens/ConversationScreen'));
 const GuideScreen = lazy(() => import('./screens/GuideScreen'));
 
 function MainApp() {
-  const [screen, setScreen] = useState('home');
+  const [screenStack, setScreenStack] = useState(['home']);
+  const screen = screenStack[screenStack.length - 1];
   const [selectedArtworkId, setSelectedArtworkId] = useState(null);
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
@@ -48,6 +49,55 @@ function MainApp() {
   const [selectedCollectionId, setSelectedCollectionId] = useState(null);
   const [selectedConvOtherId, setSelectedConvOtherId] = useState(null);
   const [collectionPickerArtwork, setCollectionPickerArtwork] = useState(null);
+
+  // 모바일 back 버튼: history.pushState로 화면별 entry 만들고, popstate에서 stack pop.
+  // 하단 nav 5개(home/space/record/archive/profile)는 root 레벨로 취급 → 새 root 누르면 스택 리셋.
+  const ROOT_SCREENS = useRef(new Set(['home', 'space', 'record', 'archive', 'profile']));
+  const isInternalNav = useRef(false);
+
+  const setScreen = useCallback((next) => {
+    setScreenStack((prev) => {
+      const cur = prev[prev.length - 1];
+      if (next === cur) return prev;
+      // root 화면이면 stack 리셋, 그 외엔 push
+      const newStack = ROOT_SCREENS.current.has(next) ? [next] : [...prev, next];
+      // history entry 추가 (popstate에서 안 잡히도록 isInternalNav 플래그)
+      try {
+        isInternalNav.current = true;
+        window.history.pushState({ kadennyang: newStack.length }, '', '');
+      } catch {
+        // pushState 실패 무시
+      }
+      return newStack;
+    });
+  }, []);
+
+  // 첫 진입 시 history 초기화 (root entry 1개)
+  useEffect(() => {
+    try {
+      window.history.replaceState({ kadennyang: 1 }, '', '');
+    } catch {
+      // 환경에 따라 실패 무시
+    }
+  }, []);
+
+  // 뒤로가기 처리 — stack pop. stack 길이 1이면 그대로 (앱 종료 방지: 다시 push)
+  useEffect(() => {
+    const onPop = () => {
+      setScreenStack((prev) => {
+        if (prev.length <= 1) {
+          // 홈 상태에서 back — 히스토리 entry 다시 추가해 앱 안 나가게
+          try { window.history.pushState({ kadennyang: 1 }, '', ''); } catch {
+            // 환경에 따라 실패 무시
+          }
+          return prev;
+        }
+        return prev.slice(0, -1);
+      });
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   const openArtwork = (id) => { setSelectedArtworkId(id); setScreen('detail'); };
   const openPlace = (id) => { setSelectedPlaceId(id); setScreen('place'); };
