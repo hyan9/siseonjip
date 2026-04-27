@@ -1,0 +1,183 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useData } from '../lib/data-context';
+import { useNotifications } from '../lib/notifications-context';
+import { useTheme } from '../lib/theme-context';
+import {
+  Header,
+  ImageBox,
+  SearchBar,
+  EmptyState,
+  GpsStatusBadge,
+  Splash,
+  ThemeToggleButton,
+  StatCell,
+  GoogleLogo,
+} from '../components/ui';
+import Icon from '../components/Icon';
+import MapView from '../components/MapView';
+import HypeButton from '../components/HypeButton';
+import ShareButton from '../components/ShareButton';
+import { FourPhotoWall, PhotoTile, PersonRow, PlaceRow } from '../components/Cards';
+import CommentSection from '../components/CommentSection';
+import ReportModal from '../components/ReportModal';
+import LocationPickerModal from '../components/LocationPickerModal';
+import PhotoZoomModal from '../components/PhotoZoomModal';
+import {
+  uploadPhoto,
+  upsertPlace,
+  insertArtwork,
+  toggleHype,
+  postComment,
+  setCurateOrder,
+  setTwentyFive,
+  updateProfile,
+  seedDemoArtworks,
+  deleteArtwork,
+  updateArtwork,
+  toggleFollow,
+  toggleCommentReaction,
+  deleteComment,
+  bulkUpdateArtworkLocationMode,
+  setHeroArtwork,
+  toggleSave,
+  createCollection,
+  updateCollection,
+  deleteCollection,
+  addArtworkToCollection,
+  removeArtworkFromCollection,
+  sendMessage,
+  markMessagesRead,
+  reportContent,
+  toggleBlock,
+} from '../lib/db';
+import { readPhotoMeta } from '../lib/exif';
+import { reverseGeocode, getCurrentPosition, distanceMeters, searchPlaces } from '../lib/geocoding';
+import {
+  formatTime,
+  dateOf,
+  getMonthDays,
+  placeLabel,
+  profileLabel,
+  timeAgo,
+  renderTextWithMentions,
+  LOCATION_MODES,
+} from '../lib/utils';
+import { signInWithEmail, signInWithGoogle, signInAnonymous, signOut } from '../lib/auth-context';
+import {
+  shareFourCutCard,
+  shareSinglePhotoCard,
+  shareWeeklyRecapCard,
+} from '../lib/share-card';
+import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+export default function CalendarScreen({ setScreen, openArtwork }) {
+  const { userId, getUserArtworks } = useData();
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth() + 1);
+
+  const myWorks = getUserArtworks(userId);
+  const days = useMemo(() => getMonthDays(myWorks, year, month), [myWorks, year, month]);
+  const activeDays = days.filter((d) => d.artworkIds.length > 0);
+
+  const goPrev = () => {
+    if (month === 1) { setYear(year - 1); setMonth(12); } else setMonth(month - 1);
+  };
+  const goNext = () => {
+    if (month === 12) { setYear(year + 1); setMonth(1); } else setMonth(month + 1);
+  };
+
+  return (
+    <>
+      <Header title="필름" subtitle="날짜별로 보관된 내 사진." kicker="아카이브" />
+      <div className="space-y-5">
+        <section className="rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
+          <div className="mb-5 flex items-center justify-between">
+            <button type="button" onClick={goPrev} className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)]"><Icon name="chevronLeft" size={18} /></button>
+            <h2 className="text-[22px] font-extrabold tracking-[-0.07em]">{year}년 {month}월</h2>
+            <button type="button" onClick={goNext} className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)]"><Icon name="chevronRight" size={18} /></button>
+          </div>
+          <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[10px] text-[var(--text-muted)]">
+            {['일', '월', '화', '수', '목', '금', '토'].map((d) => <span key={d}>{d}</span>)}
+          </div>
+          <div className="grid grid-cols-7 gap-1.5">
+            {Array.from({ length: new Date(year, month - 1, 1).getDay() }).map((_, i) => (
+              <div key={`pad-${i}`} className="aspect-[0.78]" />
+            ))}
+            {days.map((day) => {
+              const art = day.artworkIds[0] ? myWorks.find((a) => a.id === day.artworkIds[0]) : null;
+              return (
+                <button
+                  key={day.day}
+                  type="button"
+                  onClick={() => (art ? openArtwork(art.id) : setScreen('record'))}
+                  className="relative aspect-[0.78] overflow-hidden rounded-[12px] bg-[var(--surface-2)]"
+                >
+                  {art && <img src={art.imageUrl} alt={art.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
+                  <span className={`absolute left-1 top-1 rounded-full px-1.5 py-0.5 text-[9px] ${art ? 'bg-white/85 text-[var(--text)]' : 'text-[var(--text-faint)]'}`}>
+                    {day.day}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {activeDays.length > 0 && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-[22px] font-extrabold tracking-[-0.07em]">날짜별 보기</h2>
+              <button type="button" onClick={() => setScreen('twentyFive')} className="text-xs text-[var(--text-muted)]">
+                25번째 사진 고르기
+              </button>
+            </div>
+            {activeDays.map((day) => (
+              <FilmDayGrid key={day.day} year={year} month={month} day={day.day} artworkIds={day.artworkIds} works={myWorks} openArtwork={openArtwork} />
+            ))}
+          </section>
+        )}
+
+        {myWorks.length === 0 && (
+          <EmptyState title="아직 필름이 비어있어요" hint="첫 사진을 올려보세요." onAction={() => setScreen('record')} actionLabel="사진 올리기" />
+        )}
+      </div>
+    </>
+  );
+}
+function FilmDayGrid({ year, month, day, artworkIds, works, openArtwork }) {
+  const photos = artworkIds.map((id) => works.find((a) => a.id === id)).filter(Boolean);
+  if (photos.length === 0) return null;
+  return (
+    <section className="rounded-[24px] bg-[var(--surface)] p-3 shadow-[0_0_0_1px_var(--border)]">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
+            {year}.{String(month).padStart(2, '0')}.{String(day).padStart(2, '0')}
+          </p>
+          <h3 className="text-[20px] font-extrabold tracking-[-0.065em]">{photos.length}컷</h3>
+        </div>
+      </div>
+      <div className={`grid gap-1.5 ${photos.length === 1 ? 'grid-cols-1' : photos.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+        {photos.slice(0, 6).map((art) => (
+          <button key={art.id} type="button" onClick={() => openArtwork(art.id)} className="overflow-hidden rounded-[16px]">
+            <ImageBox src={art.imageUrl} alt={art.title} className="h-32" />
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
