@@ -90,7 +90,7 @@ export default function CommentSection({ artworkId, openPerson }) {
         <input
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder={replyingTo ? '답글…' : '댓글 남기기 (@닉네임 멘션)'}
+          placeholder={replyingTo ? '답글…' : '댓글…'}
           className="flex-1 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2 text-[13px] text-[var(--text)] outline-none focus:border-[var(--ink)]"
         />
         <button
