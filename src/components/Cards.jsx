@@ -3,63 +3,61 @@ import { ImageBox } from './ui';
 import { profileLabel, timeAgo } from '../lib/utils';
 import { IconHype } from './icons/AppIcons';
 
-function ExhibitionSlot({ artwork, onOpen }) {
+function ExhibitionSlot({ artwork, onOpen, aspect = '3/4' }) {
   if (!artwork) return null;
   return (
     <button
       type="button"
       onClick={() => onOpen(artwork.id)}
-      className="group relative h-full w-full overflow-hidden rounded-[20px] bg-[var(--surface-3)] text-left"
+      className="group relative w-full overflow-hidden rounded-[14px] bg-[var(--surface-3)] text-left"
+      style={{ aspectRatio: aspect }}
     >
       <ImageBox src={artwork.imageUrl} alt={artwork.title} className="h-full w-full" />
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 transition group-hover:opacity-100">
-        <p className="line-clamp-2 text-sm font-semibold leading-5 text-white">{artwork.title}</p>
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2.5 opacity-0 transition group-hover:opacity-100">
+        <p className="line-clamp-2 text-[12px] font-semibold leading-5 text-white">{artwork.title}</p>
       </div>
     </button>
   );
 }
 
-export function FourPhotoWall({ photos, onOpen, mini = false, compact = false }) {
+// 세로(3/4) 비율의 갤러리 4컷. 1/2/3장도 자연스럽게.
+export function FourPhotoWall({ photos, onOpen }) {
   const list = photos.filter(Boolean);
   const count = list.length;
-  const heightClass = mini ? 'h-[150px]' : compact ? 'h-[204px]' : 'h-[254px]';
-
   if (count === 0) return null;
 
   if (count === 1) {
     return (
-      <div className={heightClass}>
-        <ExhibitionSlot artwork={list[0]} onOpen={onOpen} />
+      <div className="mx-auto" style={{ width: '70%' }}>
+        <ExhibitionSlot artwork={list[0]} onOpen={onOpen} aspect="3/4" />
       </div>
     );
   }
 
   if (count === 2) {
     return (
-      <div className={`grid grid-cols-2 gap-1.5 ${heightClass}`}>
-        <ExhibitionSlot artwork={list[0]} onOpen={onOpen} />
-        <ExhibitionSlot artwork={list[1]} onOpen={onOpen} />
+      <div className="grid grid-cols-2 gap-1.5">
+        <ExhibitionSlot artwork={list[0]} onOpen={onOpen} aspect="3/4" />
+        <ExhibitionSlot artwork={list[1]} onOpen={onOpen} aspect="3/4" />
       </div>
     );
   }
 
   if (count === 3) {
     return (
-      <div className={`grid grid-cols-2 gap-1.5 ${heightClass}`}>
-        <ExhibitionSlot artwork={list[0]} onOpen={onOpen} />
-        <div className="grid min-h-0 grid-rows-2 gap-1.5">
-          <ExhibitionSlot artwork={list[1]} onOpen={onOpen} />
-          <ExhibitionSlot artwork={list[2]} onOpen={onOpen} />
-        </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        <ExhibitionSlot artwork={list[0]} onOpen={onOpen} aspect="3/4" />
+        <ExhibitionSlot artwork={list[1]} onOpen={onOpen} aspect="3/4" />
+        <ExhibitionSlot artwork={list[2]} onOpen={onOpen} aspect="3/4" />
       </div>
     );
   }
 
-  // 4장 — 균등 2×2
+  // 4장 — 2×2, 각 칸 세로 비율 (갤러리 카드 느낌)
   return (
-    <div className={`grid grid-cols-2 grid-rows-2 gap-1.5 overflow-hidden ${heightClass}`}>
+    <div className="grid grid-cols-2 gap-1.5">
       {list.slice(0, 4).map((art) => (
-        <ExhibitionSlot key={art.id} artwork={art} onOpen={onOpen} />
+        <ExhibitionSlot key={art.id} artwork={art} onOpen={onOpen} aspect="3/4" />
       ))}
     </div>
   );

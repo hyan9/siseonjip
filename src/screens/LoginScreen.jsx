@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   GoogleLogo,
 } from '../components/ui';
+import { CatStarlit } from '../components/Mascot';
 
 
 
@@ -64,6 +65,10 @@ export default function LoginScreen() {
       <div className="mx-auto flex min-h-screen max-w-[430px] flex-col justify-between p-5">
         <section className="relative min-h-[560px] flex-1 overflow-hidden rounded-[32px] bg-gradient-to-br from-[var(--hero-from)] via-[var(--hero-via)] to-[var(--hero-to)]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,200,140,0.18),transparent_60%)]" />
+          {/* 우상단에 별빛 카든냥 — 우아한 hero 포인트 */}
+          <div className="pointer-events-none absolute right-0 top-0 opacity-90">
+            <CatStarlit size={220} />
+          </div>
           <div className="relative flex h-full min-h-[560px] flex-col justify-between p-6">
             <div className="flex items-center justify-between text-[12px] font-semibold tracking-[0.16em]">
               <span>카든냥</span>

@@ -159,7 +159,7 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
           <p className="text-[10px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
             {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
           </p>
-          <h1 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.07em]">오늘의 셔터들</h1>
+          <h1 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.07em]">오늘의 냥이들</h1>
         </div>
       )}
 
@@ -254,29 +254,34 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
               <button
                 type="button"
                 onClick={() => openArtwork(featured.id)}
-                className="block w-full overflow-hidden rounded-[20px] bg-[var(--surface)] text-left shadow-[0_0_0_1px_var(--border)]"
+                className="flex w-full items-stretch gap-3 overflow-hidden rounded-[20px] bg-[var(--surface)] p-2.5 text-left shadow-[0_0_0_1px_var(--border)]"
               >
-                <div className="relative">
-                  <ImageBox src={featured.imageUrl} alt={featured.title} className="h-[260px] w-full" />
-                  <div className="absolute right-2 top-2 rounded-full bg-[var(--surface)]/90 p-1 text-[var(--ink)] backdrop-blur">
-                    <CatPhotographer size={26} animate />
-                  </div>
-                  <span className="absolute left-3 top-3 rounded-full bg-[var(--ink)]/85 px-2 py-0.5 text-[9px] font-semibold tracking-[0.18em] text-white">
+                {/* 좌측 — 세로 비율 사진 (갤러리 느낌) */}
+                <div className="relative shrink-0 overflow-hidden rounded-[14px]" style={{ width: '52%', aspectRatio: '3/4' }}>
+                  <ImageBox src={featured.imageUrl} alt={featured.title} className="h-full w-full" priority />
+                  <span className="absolute left-2 top-2 rounded-full bg-[var(--ink)]/85 px-2 py-0.5 text-[9px] font-semibold tracking-[0.16em] text-white">
                     오늘의 한 컷
                   </span>
                 </div>
-                <div className="p-4">
-                  <h2 className="line-clamp-2 text-[28px] font-extrabold leading-[1.05] tracking-[-0.08em]">
-                    {featured.title}
-                  </h2>
-                  <p className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-[var(--text-muted)]">
-                    <span className="font-semibold text-[var(--text-body)]">
-                      {profileLabel(getProfile(featured.user_id))}
-                    </span>
-                    <span className="text-[var(--text-faint)]">·</span>
-                    <IconHype size={12} filled />
-                    <span>{getHypeCount(featured.id)}</span>
-                  </p>
+                {/* 우측 — 제목 + 작가 + hype */}
+                <div className="flex min-w-0 flex-1 flex-col justify-between py-1.5 pr-1">
+                  <div>
+                    <h2 className="line-clamp-4 text-[22px] font-extrabold leading-[1.1] tracking-[-0.07em]">
+                      {featured.title}
+                    </h2>
+                    <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
+                      <span className="font-semibold text-[var(--text-body)]">
+                        {profileLabel(getProfile(featured.user_id))}
+                      </span>
+                      <span className="text-[var(--text-faint)]">·</span>
+                      <IconHype size={11} filled />
+                      <span>{getHypeCount(featured.id)}</span>
+                    </p>
+                  </div>
+                  {/* 별빛 마스코트 — 작게 우하단 */}
+                  <div className="flex justify-end text-[var(--ink)]">
+                    <CatPhotographer size={28} animate />
+                  </div>
                 </div>
               </button>
             </section>

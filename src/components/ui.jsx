@@ -4,7 +4,7 @@ import { useNotifications } from '../lib/notifications-context';
 import { useTheme } from '../lib/theme-context';
 import { transformedPhotoUrl } from '../lib/db';
 import Icon from './Icon';
-import { CatPhotographer, CatLoaf, CatShutter, CatAlien } from './Mascot';
+import { CatPhotographer, CatLoaf, CatShutter, CatAlien, CatStarlit } from './Mascot';
 
 // 디시·인스티즈처럼 — 상단바 고정 / 하단바 고정 / 가운데만 스크롤
 export function Shell({ children, screen, setScreen, showNav = true }) {
@@ -270,11 +270,10 @@ export function EmptyState({ title, hint, onAction, actionLabel, mascot = true }
 
 export function Splash({ message = '불러오는 중…' }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[var(--bg)] p-6 text-center">
-      <div className="text-[var(--ink)]">
-        <CatPhotographer size={96} animate />
-      </div>
-      <p className="text-sm text-[var(--text-muted)]">{message}</p>
+    <div className="relative flex min-h-screen flex-col items-center justify-center gap-3 overflow-hidden bg-gradient-to-br from-[#1f2436] via-[#191b2a] to-[#0d0e16] p-6 text-center text-white">
+      {/* 별빛 카든냥 */}
+      <CatStarlit size={220} />
+      <p className="relative text-sm tracking-[-0.04em] text-white/80">{message}</p>
     </div>
   );
 }

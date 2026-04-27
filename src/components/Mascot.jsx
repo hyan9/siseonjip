@@ -263,6 +263,72 @@ export function CatShutter({ size = 100, className = '' }) {
   );
 }
 
+// 별빛 실루엣 냥이 — 빛나는 흰 실루엣 + 카메라
+// 홈 hero / 로딩 / 빈 상태에 큼지막하게. 그라데이션 배경 위에 글로우.
+export function CatStarlit({ size = 220, className = '' }) {
+  return (
+    <svg
+      viewBox="0 0 240 240"
+      width={size}
+      height={size}
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="별빛 카든냥"
+      className={className}
+    >
+      <defs>
+        <radialGradient id="starlit-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
+          <stop offset="40%" stopColor="rgba(255,255,255,0.6)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        </radialGradient>
+        <filter id="starlit-blur">
+          <feGaussianBlur stdDeviation="2.5" />
+        </filter>
+      </defs>
+      {/* 큰 글로우 — 뒤에서 빛나듯 */}
+      <circle cx="120" cy="120" r="110" fill="url(#starlit-glow)" />
+      {/* 작은 별 — 주변에 흩뿌림 */}
+      <g fill="rgba(255,255,255,0.9)">
+        <circle cx="40" cy="55" r="2" />
+        <circle cx="200" cy="65" r="1.5" />
+        <circle cx="55" cy="180" r="2.2" />
+        <circle cx="195" cy="175" r="1.8" />
+        <circle cx="30" cy="120" r="1.2" />
+        <circle cx="215" cy="130" r="1.4" />
+        <circle cx="120" cy="25" r="1.6" />
+        <circle cx="115" cy="220" r="1.3" />
+      </g>
+      {/* 카든냥 실루엣 — 흰색 발광 */}
+      <g fill="rgba(255,255,255,0.98)" filter="url(#starlit-blur)">
+        {/* 꼬리 */}
+        <path d="M 172 200 Q 204 176 192 144 Q 184 132 168 138" />
+        {/* 몸 */}
+        <ellipse cx="120" cy="184" rx="64" ry="40" />
+        {/* 발 */}
+        <ellipse cx="92" cy="216" rx="10" ry="6" />
+        <ellipse cx="148" cy="216" rx="10" ry="6" />
+        {/* 머리 */}
+        <circle cx="120" cy="96" r="60" />
+        {/* 귀 */}
+        <path d="M 72 72 L 80 36 L 104 64 Z" />
+        <path d="M 168 72 L 160 36 L 136 64 Z" />
+        {/* 카메라 — 머리 앞 */}
+        <rect x="64" y="80" width="112" height="52" rx="6" />
+        <rect x="92" y="68" width="28" height="12" rx="2" />
+        {/* 렌즈 — 가운데 큰 동그라미 (실루엣 더 강조) */}
+        <circle cx="120" cy="106" r="22" />
+      </g>
+      {/* 렌즈 안쪽 — 어둡게 (실루엣 안 카메라처럼) */}
+      <g fill="rgba(120, 180, 255, 0.4)">
+        <circle cx="120" cy="106" r="14" />
+      </g>
+      {/* 렌즈 셔터 표시 */}
+      <circle cx="120" cy="106" r="6" fill="rgba(255,255,255,0.95)" />
+    </svg>
+  );
+}
+
 // 외계 냥이 — 더듬이 + 카메라
 export function CatAlien({ size = 100, className = '' }) {
   return (
