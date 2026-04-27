@@ -1,17 +1,53 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useData } from '../lib/data-context';
 import { postComment, deleteComment, toggleCommentReaction } from '../lib/db';
 import { profileLabel, timeAgo, renderTextWithMentions } from '../lib/utils';
-import Icon from './Icon';
+
+// 아바타 — 닉네임 첫 글자, 색은 user_id 해시 기반
+function Avatar({ profile, size = 32 }) {
+  const name = profile?.nickname || '?';
+  const initial = (name[0] || '?').toUpperCase();
+  // user_id 해시 → hue
+  const hash = String(profile?.id || name)
+    .split('')
+    .reduce((a, c) => a + c.charCodeAt(0), 0);
+  const hue = hash % 360;
+  return (
+    <div
+      className="flex shrink-0 items-center justify-center rounded-full font-bold text-white"
+      style={{
+        width: size,
+        height: size,
+        background: `linear-gradient(135deg, hsl(${hue} 65% 55%), hsl(${(hue + 40) % 360} 60% 45%))`,
+        fontSize: size * 0.42,
+      }}
+    >
+      {initial}
+    </div>
+  );
+}
 
 export default function CommentSection({ artworkId, openPerson }) {
-  const { userId, getProfile, getRootCommentsFor, refresh } = useData();
+  const { userId, getProfile, getRootCommentsFor, getRepliesFor, refresh } = useData();
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
 
-  const rootComments = getRootCommentsFor(artworkId).sort(
-    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  const rootComments = useMemo(
+    () =>
+      getRootCommentsFor(artworkId).sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      ),
+    [artworkId, getRootCommentsFor]
+  );
+
+  const totalCount = useMemo(
+    () =>
+      rootComments.reduce(
+        (sum, c) => sum + 1 + getRepliesFor(c.id).length,
+        0
+      ),
+    [rootComments, getRepliesFor]
   );
 
   const handleSubmit = async (event) => {
@@ -32,42 +68,43 @@ export default function CommentSection({ artworkId, openPerson }) {
 
   const replyTarget = replyingTo
     ? rootComments.find((c) => c.id === replyingTo) ||
-      rootComments.flatMap((r) => [r]).find((c) => c.id === replyingTo)
+      rootComments.flatMap((r) => getRepliesFor(r.id)).find((c) => c.id === replyingTo)
     : null;
 
   return (
-    <section className="rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
-      <div className="mb-4">
-        <p className="text-[11px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">감상 노트</p>
-        <h2 className="mt-1 text-[22px] font-extrabold tracking-[-0.06em]">이 사진 앞에서</h2>
+    <section>
+      <div className="mb-2 flex items-baseline justify-between px-1">
+        <h3 className="text-[13px] font-bold text-[var(--text)]">
+          댓글 <span className="text-[var(--ink)]">{totalCount}</span>
+        </h3>
       </div>
 
       {replyingTo && replyTarget && (
-        <div className="mb-2 flex items-center justify-between rounded-[14px] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-body)]">
+        <div className="mb-2 flex items-center justify-between rounded-[10px] bg-[var(--surface-2)] px-3 py-1.5 text-[11px] text-[var(--text-body)]">
           <span>↳ {profileLabel(getProfile(replyTarget.user_id))}에게 답글</span>
           <button type="button" onClick={() => setReplyingTo(null)} className="text-[var(--text-muted)]">취소</button>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="mb-4 flex gap-2">
+      <form onSubmit={handleSubmit} className="mb-3 flex items-center gap-2">
         <input
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder={replyingTo ? '답글… (@닉네임으로 멘션 가능)' : '짧게 남기기 (@닉네임 멘션 가능)'}
-          className="flex-1 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--text)] outline-none"
+          placeholder={replyingTo ? '답글…' : '댓글 남기기 (@닉네임 멘션)'}
+          className="flex-1 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2 text-[13px] text-[var(--text)] outline-none focus:border-[var(--ink)]"
         />
         <button
           type="submit"
           disabled={busy || !text.trim()}
-          className="rounded-full bg-[var(--ink)] px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
+          className="rounded-full bg-[var(--ink)] px-3.5 py-2 text-[12px] font-semibold text-white disabled:opacity-40"
         >
-          {replyingTo ? '답글' : '남기기'}
+          {replyingTo ? '답글' : '등록'}
         </button>
       </form>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {rootComments.length === 0 && (
-          <p className="text-xs text-[var(--text-faint)]">아직 노트가 없어요. 첫 감상을 남겨보세요.</p>
+          <p className="px-1 py-2 text-[12px] text-[var(--text-faint)]">아직 댓글이 없어요. 첫 감상을 남겨보세요.</p>
         )}
         {rootComments.map((comment) => (
           <CommentItem
@@ -96,8 +133,7 @@ function CommentItem({ comment, onReply, isReply = false, openPerson }) {
   const isMine = comment.user_id === userId;
   const liked = isCommentLikedByMe(comment.id);
   const likeCount = getCommentReactionCount(comment.id);
-  const replies = getRepliesFor(comment.id);
-  const [showReplies, setShowReplies] = useState(replies.length > 0 && replies.length <= 3);
+  const replies = isReply ? [] : getRepliesFor(comment.id);
   const [busy, setBusy] = useState(false);
 
   const handleLike = async () => {
@@ -123,57 +159,64 @@ function CommentItem({ comment, onReply, isReply = false, openPerson }) {
     }
   };
 
+  const avatarSize = isReply ? 26 : 32;
+
   return (
-    <article className={`${isReply ? 'ml-5 border-l border-[var(--border)] pl-3' : 'border-l border-[var(--ink)] pl-4'}`}>
-      <p className="text-[15px] leading-7 text-[var(--text-quote)]">
-        "{renderTextWithMentions(comment.text, profiles, openPerson)}"
-      </p>
-      <p className="mt-1 text-[11px] tracking-[0.12em] text-[var(--text-meta)]">
-        <button type="button" onClick={() => openPerson?.(author?.id)} className="hover:underline">
-          {profileLabel(author)}
-        </button>
-        {' · '}{timeAgo(comment.created_at)}
-      </p>
-      <div className="mt-1.5 flex items-center gap-3 text-[11px] text-[var(--text-muted)]">
+    <div>
+      <div className="flex items-start gap-2.5">
         <button
           type="button"
-          onClick={handleLike}
-          disabled={busy || !userId}
-          className={`inline-flex items-center gap-1 ${liked ? 'text-red-500' : 'text-[var(--text-muted)]'}`}
+          onClick={() => openPerson?.(author?.id)}
+          className="shrink-0"
         >
-          <Icon name={liked ? 'heartFilled' : 'heart'} size={13} />
-          {likeCount > 0 && <span>{likeCount}</span>}
+          <Avatar profile={author} size={avatarSize} />
         </button>
-        {!isReply && (
-          <button type="button" onClick={onReply} className="inline-flex items-center gap-1">
-            <Icon name="reply" size={13} />
-            답글
-          </button>
-        )}
-        {isMine && (
-          <button type="button" onClick={handleDelete} className="text-red-500">삭제</button>
-        )}
+        <div className="min-w-0 flex-1">
+          <p className="text-[12px] leading-tight">
+            <button
+              type="button"
+              onClick={() => openPerson?.(author?.id)}
+              className="font-bold text-[var(--text)]"
+            >
+              {profileLabel(author)}
+            </button>
+            <span className="ml-1.5 text-[10px] text-[var(--text-muted)]">{timeAgo(comment.created_at)}</span>
+          </p>
+          <p className="mt-0.5 break-words text-[13.5px] leading-snug text-[var(--text)]">
+            {renderTextWithMentions(comment.text, profiles, openPerson)}
+          </p>
+          <div className="mt-1 flex items-center gap-3 text-[11px] text-[var(--text-muted)]">
+            <button
+              type="button"
+              onClick={handleLike}
+              disabled={busy || !userId}
+              className={liked ? 'text-red-500' : ''}
+            >
+              {liked ? '♥' : '♡'} {likeCount > 0 ? likeCount : ''}
+            </button>
+            {!isReply && (
+              <button type="button" onClick={onReply}>
+                답글
+              </button>
+            )}
+            {isMine && (
+              <button type="button" onClick={handleDelete} className="text-red-500">
+                삭제
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {!isReply && replies.length > 0 && (
-        <div className="mt-2">
-          {!showReplies ? (
-            <button
-              type="button"
-              onClick={() => setShowReplies(true)}
-              className="text-[11px] text-[var(--text-muted)] underline"
-            >
-              답글 {replies.length}개 보기
-            </button>
-          ) : (
-            <div className="mt-2 space-y-3">
-              {replies.map((r) => (
-                <CommentItem key={r.id} comment={r} isReply onReply={() => {}} openPerson={openPerson} />
-              ))}
-            </div>
-          )}
+        <div className="mt-2 ml-[18px] border-l border-[var(--border)] pl-4">
+          <div className="space-y-3">
+            {replies.map((r) => (
+              <CommentItem key={r.id} comment={r} isReply onReply={() => {}} openPerson={openPerson} />
+            ))}
+          </div>
         </div>
       )}
-    </article>
+    </div>
   );
 }
