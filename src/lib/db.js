@@ -284,6 +284,23 @@ export async function setTwentyFive(userId, artworkId) {
   return data;
 }
 
+export async function updateArtwork(artworkId, userId, fields) {
+  const allowed = ['title', 'note', 'daily_vision', 'location_mode', 'lat', 'lng', 'place_id'];
+  const sanitized = {};
+  for (const key of allowed) {
+    if (key in fields) sanitized[key] = fields[key];
+  }
+  const { data, error } = await supabase
+    .from('artworks')
+    .update(sanitized)
+    .eq('id', artworkId)
+    .eq('user_id', userId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function deleteArtwork(artworkId, userId, storagePath) {
   // RLS가 본인 것만 삭제 가능하도록 막아주지만 명시적으로 user_id도 매칭
   const { error } = await supabase

@@ -9,6 +9,7 @@ import {
   signOut,
 } from './lib/auth-context';
 import { DataProvider, useData } from './lib/data-context';
+import { NotificationsProvider, useNotifications } from './lib/notifications-context';
 import { hasSupabaseConfig } from './lib/supabase';
 import { readPhotoMeta } from './lib/exif';
 import { reverseGeocode, getCurrentPosition, distanceMeters } from './lib/geocoding';
@@ -23,6 +24,7 @@ import {
   updateProfile,
   seedDemoArtworks,
   deleteArtwork,
+  updateArtwork,
 } from './lib/db';
 
 import Icon from './components/Icon';
@@ -82,12 +84,13 @@ function Shell({ children, screen, setScreen, showNav = true }) {
 }
 
 function BottomNav({ screen, setScreen }) {
+  const { unreadCount } = useNotifications();
   const tabs = [
     { id: 'home', label: '홈', icon: 'eye' },
     { id: 'space', label: '지도', icon: 'map' },
     { id: 'record', label: '기록', icon: 'plus', primary: true },
     { id: 'archive', label: '필름', icon: 'archive' },
-    { id: 'profile', label: '내 전시', icon: 'user' },
+    { id: 'profile', label: '내 전시', icon: 'user', dot: unreadCount > 0 },
   ];
   return (
     <nav className="sticky bottom-0 z-40 border-t border-[#e4dccd] bg-[#fbf8f2]/95 px-3 py-2 backdrop-blur">
@@ -96,8 +99,11 @@ function BottomNav({ screen, setScreen }) {
           const active = screen === tab.id;
           return (
             <button key={tab.id} type="button" onClick={() => setScreen(tab.id)} className="flex flex-col items-center gap-1 text-[11px]">
-              <span className={`flex items-center justify-center rounded-full ${tab.primary ? 'h-11 w-11 bg-[#151515] text-white' : active ? 'h-8 w-8 bg-[#eee6d8] text-[#151515]' : 'h-8 w-8 text-[#7a746b]'}`}>
+              <span className={`relative flex items-center justify-center rounded-full ${tab.primary ? 'h-11 w-11 bg-[#151515] text-white' : active ? 'h-8 w-8 bg-[#eee6d8] text-[#151515]' : 'h-8 w-8 text-[#7a746b]'}`}>
                 <Icon name={tab.icon} size={tab.primary ? 20 : 17} />
+                {tab.dot && (
+                  <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-[#fbf8f2] bg-red-500" />
+                )}
               </span>
               <span className={active ? 'font-semibold text-[#151515]' : 'text-[#7a746b]'}>{tab.label}</span>
             </button>
@@ -105,6 +111,26 @@ function BottomNav({ screen, setScreen }) {
         })}
       </div>
     </nav>
+  );
+}
+
+function ToastStack() {
+  const { toasts, dismissToast } = useNotifications();
+  if (toasts.length === 0) return null;
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-3 z-50 flex flex-col items-center gap-2 px-3">
+      {toasts.map((toast) => (
+        <button
+          key={toast.id}
+          type="button"
+          onClick={() => dismissToast(toast.id)}
+          className="pointer-events-auto w-full max-w-[400px] rounded-[18px] bg-[#151515] px-4 py-3 text-left text-white shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition"
+        >
+          <p className="text-[13px] font-bold tracking-[-0.04em]">{toast.title}</p>
+          {toast.body && <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-white/80">{toast.body}</p>}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -440,9 +466,14 @@ function HomeScreen({ setScreen, openArtwork, openPlace }) {
           <p className="text-[12px] font-semibold tracking-[0.18em] text-[#746e66]">시선집</p>
           <h1 className="mt-0.5 text-[27px] font-extrabold tracking-[-0.08em]">근방 네컷 전시</h1>
         </div>
-        <button type="button" onClick={() => setScreen('profile')} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e4dccd] bg-[#fbf8f2]">
-          <Icon name="user" size={17} />
-        </button>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setScreen('search')} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e4dccd] bg-[#fbf8f2]" aria-label="탐색">
+            <Icon name="search" size={17} />
+          </button>
+          <button type="button" onClick={() => setScreen('profile')} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e4dccd] bg-[#fbf8f2]" aria-label="내 전시">
+            <Icon name="user" size={17} />
+          </button>
+        </div>
       </div>
 
       {artworks.length === 0 ? (
@@ -487,24 +518,62 @@ function HomeScreen({ setScreen, openArtwork, openPlace }) {
    ====================================================================== */
 
 function SearchScreen({ openArtwork, openPerson, openPlace }) {
-  const { artworks, profiles, places, getProfile, getPlace } = useData();
+  const { artworks, profiles, places, getProfile, getPlace, getHypeCount, getUserArtworks } = useData();
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState('사진');
+  const [sort, setSort] = useState('최신');
+  const [keywordFilter, setKeywordFilter] = useState(null);
   const q = query.trim().toLowerCase();
 
   const matches = (text) => text?.toLowerCase().includes(q);
 
-  const filteredArts = artworks.filter((art) =>
-    [art.title, art.note, art.daily_vision, getProfile(art.user_id)?.nickname, placeLabel(getPlace(art.place_id))]
-      .filter(Boolean)
-      .some(matches)
-  );
-  const filteredUsers = profiles.filter((p) =>
-    [p.nickname, p.exhibition_title, p.bio, ...(p.words || [])]
-      .filter(Boolean)
-      .some(matches)
-  );
+  const allKeywords = useMemo(() => {
+    const counts = new Map();
+    for (const art of artworks) {
+      if (!art.daily_vision) continue;
+      counts.set(art.daily_vision, (counts.get(art.daily_vision) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12)
+      .map(([word]) => word);
+  }, [artworks]);
+
+  const filteredArts = useMemo(() => {
+    let arr = artworks.filter((art) =>
+      !q ||
+      [art.title, art.note, art.daily_vision, getProfile(art.user_id)?.nickname, placeLabel(getPlace(art.place_id))]
+        .filter(Boolean)
+        .some(matches)
+    );
+    if (keywordFilter) arr = arr.filter((art) => art.daily_vision === keywordFilter);
+    if (sort === '인기') {
+      arr = [...arr].sort((a, b) => getHypeCount(b.id) - getHypeCount(a.id));
+    } else {
+      arr = [...arr].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+    return arr;
+  }, [artworks, q, keywordFilter, sort, getProfile, getPlace, getHypeCount]);
+
+  const filteredUsers = useMemo(() => {
+    const arr = profiles.filter((p) =>
+      !q ||
+      [p.nickname, p.exhibition_title, p.bio, ...(p.words || [])]
+        .filter(Boolean)
+        .some(matches)
+    );
+    if (sort === '인기') {
+      return [...arr].sort((a, b) => {
+        const aHype = getUserArtworks(a.id).reduce((sum, art) => sum + getHypeCount(art.id), 0);
+        const bHype = getUserArtworks(b.id).reduce((sum, art) => sum + getHypeCount(art.id), 0);
+        return bHype - aHype;
+      });
+    }
+    return [...arr].sort((a, b) => getUserArtworks(b.id).length - getUserArtworks(a.id).length);
+  }, [profiles, q, sort, getUserArtworks, getHypeCount]);
+
   const filteredPlaces = places.filter((p) =>
+    !q ||
     [p.name, p.neighborhood, ...(p.words || [])]
       .filter(Boolean)
       .some(matches)
@@ -515,6 +584,7 @@ function SearchScreen({ openArtwork, openPerson, openPlace }) {
       <Header title="탐색" subtitle="사진·사람·위치를 따라갑니다." kicker="찾아보기" />
       <div className="space-y-4">
         <SearchBar query={query} setQuery={setQuery} />
+
         <div className="flex gap-2 overflow-x-auto pb-1">
           {['사진', '사람', '위치'].map((item) => (
             <button
@@ -527,6 +597,45 @@ function SearchScreen({ openArtwork, openPerson, openPlace }) {
             </button>
           ))}
         </div>
+
+        {tab !== '위치' && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-[#9a948b]">정렬</span>
+            {['최신', '인기'].map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setSort(item)}
+                className={`rounded-full px-3 py-1 ${sort === item ? 'bg-[#eee6d8] font-semibold text-[#151515]' : 'text-[#746e66]'}`}
+              >
+                {item === '인기' ? '🔥 인기' : item}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {tab === '사진' && allKeywords.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            <button
+              type="button"
+              onClick={() => setKeywordFilter(null)}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs ${!keywordFilter ? 'bg-[#151515] text-white' : 'border border-[#e4dccd] bg-[#fbf8f2] text-[#746e66]'}`}
+            >
+              전체
+            </button>
+            {allKeywords.map((word) => (
+              <button
+                key={word}
+                type="button"
+                onClick={() => setKeywordFilter(word === keywordFilter ? null : word)}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs ${keywordFilter === word ? 'bg-[#151515] text-white' : 'border border-[#e4dccd] bg-[#fbf8f2] text-[#746e66]'}`}
+              >
+                #{word}
+              </button>
+            ))}
+          </div>
+        )}
+
         {tab === '사진' && (
           filteredArts.length === 0
             ? <EmptyState title="검색 결과 없음" hint="다른 키워드를 시도해보세요." />
@@ -548,10 +657,20 @@ function SearchScreen({ openArtwork, openPerson, openPlace }) {
 }
 
 function PhotoTile({ artwork, onOpen }) {
+  const { getHypeCount } = useData();
+  const hypes = getHypeCount(artwork.id);
   return (
     <button type="button" onClick={() => onOpen(artwork.id)} className="overflow-hidden rounded-[20px] bg-[#fbf8f2] text-left shadow-[0_0_0_1px_#e4dccd]">
-      <div className="relative"><ImageBox src={artwork.imageUrl} alt={artwork.title} className="h-44" /></div>
-      <div className="p-3"><p className="line-clamp-2 text-sm font-semibold tracking-[-0.04em]">{artwork.title || '제목 없음'}</p></div>
+      <div className="relative">
+        <ImageBox src={artwork.imageUrl} alt={artwork.title} className="h-44" />
+        {hypes > 0 && (
+          <span className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white">🔥 {hypes}</span>
+        )}
+      </div>
+      <div className="p-3">
+        <p className="line-clamp-2 text-sm font-semibold tracking-[-0.04em]">{artwork.title || '제목 없음'}</p>
+        {artwork.daily_vision && <p className="mt-1 text-[11px] text-[#9a948b]">#{artwork.daily_vision}</p>}
+      </div>
     </button>
   );
 }
@@ -897,14 +1016,23 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace }) {
           <div className="mt-4 flex items-center gap-2">
             <HypeButton artwork={art} />
             {isMine && (
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deleting}
-                className="ml-auto rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 disabled:opacity-50"
-              >
-                {deleting ? '삭제 중…' : '🗑 삭제'}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setScreen('artworkEdit')}
+                  className="ml-auto rounded-full border border-[#d8cfbf] px-3 py-1.5 text-xs font-semibold text-[#151515]"
+                >
+                  편집
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 disabled:opacity-50"
+                >
+                  {deleting ? '삭제 중…' : '🗑'}
+                </button>
+              </>
             )}
           </div>
         </section>
@@ -988,16 +1116,128 @@ function CommentSection({ artworkId, comments }) {
 }
 
 /* ========================================================================
+   Artwork edit
+   ====================================================================== */
+
+function ArtworkEditScreen({ artworkId, setScreen }) {
+  const { userId, getArtwork, refresh } = useData();
+  const art = getArtwork(artworkId);
+  const [title, setTitle] = useState(art?.title || '');
+  const [note, setNote] = useState(art?.note || '');
+  const [dailyVision, setDailyVision] = useState(art?.daily_vision || '');
+  const [mode, setMode] = useState(art?.location_mode || '동네');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  if (!art) return <EmptyState title="사진을 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
+  if (art.user_id !== userId) {
+    return <EmptyState title="내 사진만 편집할 수 있어요" onAction={() => setScreen('detail')} actionLabel="돌아가기" />;
+  }
+
+  const handleSave = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const fields = {
+        title: title || null,
+        note: note || null,
+        daily_vision: dailyVision || null,
+        location_mode: mode,
+      };
+      // 정확한 위치에서 다른 모드로 바꾸면 좌표 노출 안 되도록 정리
+      if (mode !== '정확한 위치' && (art.lat != null || art.lng != null)) {
+        fields.lat = null;
+        fields.lng = null;
+      }
+      await updateArtwork(art.id, userId, fields);
+      await refresh();
+      setScreen('detail');
+    } catch (err) {
+      setError(err.message || '저장 실패');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <Header title="사진 편집" kicker="수정" onBack={() => setScreen('detail')} />
+      <div className="space-y-4">
+        <div className="overflow-hidden rounded-[24px]">
+          <ImageBox src={art.imageUrl} alt={art.title} className="h-64" />
+        </div>
+
+        <section className="space-y-4 rounded-[24px] bg-[#fbf8f2] p-4 shadow-[0_0_0_1px_#e4dccd]">
+          <input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            className="w-full bg-transparent text-[24px] font-bold tracking-[-0.06em] outline-none placeholder:text-[#aaa399]"
+            placeholder="제목"
+          />
+          <textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            className="min-h-20 w-full resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-[#aaa399]"
+            placeholder="이 사진의 노트"
+          />
+          <input
+            value={dailyVision}
+            onChange={(event) => setDailyVision(event.target.value)}
+            className="w-full rounded-full border border-[#e4dccd] bg-transparent px-4 py-2 text-xs outline-none placeholder:text-[#aaa399]"
+            placeholder="오늘의 시선"
+          />
+
+          <div>
+            <p className="mb-2 text-[12px] font-semibold tracking-[0.14em] text-[#746e66]">공개 방식</p>
+            <div className="flex flex-wrap gap-2">
+              {LOCATION_MODES.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setMode(item)}
+                  className={`rounded-full px-3 py-2 text-xs ${mode === item ? 'bg-[#151515] text-white' : 'border border-[#e4dccd] text-[#746e66]'}`}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+            {mode !== art.location_mode && mode !== '정확한 위치' && (art.lat != null) && (
+              <p className="mt-2 text-xs text-[#746e66]">정확한 좌표는 저장 시 제거됩니다.</p>
+            )}
+          </div>
+
+          {error && <p className="rounded-[12px] bg-red-50 p-3 text-xs text-red-700">{error}</p>}
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={busy}
+            className="w-full rounded-full bg-[#151515] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {busy ? '저장 중…' : '저장'}
+          </button>
+        </section>
+      </div>
+    </>
+  );
+}
+
+/* ========================================================================
    Person Exhibition (개인전)
    ====================================================================== */
 
 function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
   const { userId, getProfile, getUserArtworks, getCurateForUser, refresh } = useData();
+  const { clearUnread } = useNotifications();
   const profile = getProfile(viewedId);
   const works = getUserArtworks(viewedId);
   const wall = getCurateForUser(viewedId);
   const isMe = viewedId === userId;
   const [seeding, setSeeding] = useState(false);
+
+  useEffect(() => {
+    if (isMe) clearUnread();
+  }, [isMe, clearUnread]);
 
   if (!profile) return <EmptyState title="사용자를 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
@@ -1685,6 +1925,7 @@ function MainApp() {
   if (screen === 'space') content = <SpaceScreen openPlace={openPlace} openArtwork={openArtwork} />;
   if (screen === 'record') content = <RecordScreen setScreen={setScreen} />;
   if (screen === 'detail') content = <ArtworkDetail artworkId={selectedArtworkId} setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} />;
+  if (screen === 'artworkEdit') content = <ArtworkEditScreen artworkId={selectedArtworkId} setScreen={setScreen} />;
   if (screen === 'person') content = <PersonExhibition userId={selectedUserId} setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'profile') content = <PersonExhibitionMe setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'profileEdit') content = <ProfileEditScreen setScreen={setScreen} />;
@@ -1753,7 +1994,10 @@ function Router() {
   return (
     <DataProvider>
       <DataGate>
-        <MainApp />
+        <NotificationsProvider>
+          <MainApp />
+          <ToastStack />
+        </NotificationsProvider>
       </DataGate>
     </DataProvider>
   );
