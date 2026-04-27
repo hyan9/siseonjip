@@ -271,8 +271,8 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
             )}
             <div className="absolute right-3 top-3"><ShareButton title={art.title || '카든냥'} /></div>
 
-            {/* 사진 우하단 — Hype floating (화염) */}
-            {!isMine && userId && (
+            {/* 사진 우하단 — Hype floating (화염). 자기 사진도 허용. */}
+            {userId && (
               <button
                 type="button"
                 onClick={handleHypeToggle}
@@ -323,8 +323,8 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={userId && !isMine && !busyHype ? handleHypeToggle : undefined}
-                disabled={!userId || isMine || busyHype}
+                onClick={userId && !busyHype ? handleHypeToggle : undefined}
+                disabled={!userId || busyHype}
                 className={`flex items-center gap-1 text-[13px] font-bold transition ${
                   hyped ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
                 } disabled:opacity-40`}

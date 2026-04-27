@@ -77,18 +77,32 @@ export default function NotificationsScreen({ setScreen, openArtwork, openPerson
     // follow 그룹(여러 명)이면 별도 화면 없이 그대로
   };
 
+  // 한글 마지막 음절 받침 유무로 주격조사(이/가) 결정
+  const subjectParticle = (name) => {
+    if (!name) return '';
+    const last = name.charCodeAt(name.length - 1);
+    if (last >= 0xAC00 && last <= 0xD7A3) {
+      const hasJongseong = (last - 0xAC00) % 28 !== 0;
+      return hasJongseong ? '이' : '가';
+    }
+    return ''; // 영문 등은 조사 생략
+  };
+
   const renderHeadline = (g) => {
     const first = g.actors[0];
     const more = g.items.length - 1;
-    const who = more > 0 ? `${first} 외 ${more}명` : first;
+    // 여러 명: "이끼 외 2명이". 한 명: "이끼가" / "리넨이"
+    const subj = more > 0
+      ? `${first} 외 ${more}명이`
+      : `${first}${subjectParticle(first)}`;
     switch (g.kind) {
-      case 'hype': return `${who}이(가) 화염을 보냈어요`;
-      case 'comment': return more > 0 ? `${who}이(가) 댓글을 남겼어요` : `${first}이(가) 댓글을 남겼어요`;
-      case 'comment_reply': return `${who}이(가) 답글을 남겼어요`;
-      case 'comment_reaction': return `${who}이(가) 댓글에 ❤`;
-      case 'mention': return `${who}이(가) @멘션했어요`;
-      case 'follow': return `${who}이(가) 팔로우했어요`;
-      case 'message': return `${who}이(가) 메시지를 보냈어요`;
+      case 'hype': return `${subj} 🔥를 보냈어요`;
+      case 'comment': return `${subj} 댓글을 남겼어요`;
+      case 'comment_reply': return `${subj} 답글을 남겼어요`;
+      case 'comment_reaction': return `${subj} 댓글에 반응했어요`;
+      case 'mention': return `${subj} 나를 멘션했어요`;
+      case 'follow': return `${subj} 팔로우했어요`;
+      case 'message': return `${subj} 메시지를 보냈어요`;
       case 'milestone': return '개념글 등극!';
       default: return '새 알림';
     }
@@ -146,7 +160,7 @@ export default function NotificationsScreen({ setScreen, openArtwork, openPerson
                   <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--surface)] text-[9px] shadow">{icon}</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] leading-tight font-bold">
+                  <p className="line-clamp-2 text-[13px] leading-snug font-bold">
                     {headline}
                   </p>
                   {art?.title && <p className="mt-0.5 truncate text-[11px] text-[var(--text-muted)]">"{art.title}"</p>}
