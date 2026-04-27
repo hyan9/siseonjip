@@ -14,6 +14,7 @@ import {
   GoogleLogo,
 } from '../components/ui';
 import Icon from '../components/Icon';
+import Avatar from '../components/Avatar';
 import MapView from '../components/MapView';
 import HypeButton from '../components/HypeButton';
 import ShareButton from '../components/ShareButton';
@@ -133,28 +134,40 @@ export default function NotificationsScreen({ setScreen, openArtwork, openPerson
                 default: return '새 알림';
               }
             })();
+            const kindIcon = (() => {
+              switch (n.kind) {
+                case 'hype': case 'milestone': return '🔥';
+                case 'comment': case 'comment_reply': case 'comment_reaction': case 'mention': return '💬';
+                case 'follow': return '👋';
+                case 'message': return '✉️';
+                default: return '✨';
+              }
+            })();
             return (
               <button
                 key={n.id}
                 type="button"
                 onClick={() => handleClick(n)}
-                className={`flex w-full items-center gap-3 rounded-[18px] p-3 text-left ${
-                  n.read_at ? 'bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]' : 'bg-white shadow-[0_0_0_1px_var(--ink)]'
+                className={`flex w-full items-start gap-2.5 border-b border-[var(--border)] px-1 py-2.5 text-left last:border-b-0 ${
+                  n.read_at ? '' : 'bg-[var(--surface-2)]'
                 }`}
               >
-                {art ? (
-                  <ImageBox src={art.imageUrl} alt={art.title} className="h-12 w-12 shrink-0 rounded-[10px]" />
-                ) : (
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] bg-[var(--surface-2)] text-lg">
-                    {n.kind === 'follow' ? '👋' : '✨'}
-                  </div>
-                )}
+                <div className="relative shrink-0">
+                  <Avatar profile={source} size={36} />
+                  <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--surface)] text-[9px] shadow">{kindIcon}</span>
+                </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold tracking-[-0.04em]">{headline}</p>
-                  {art?.title && <p className="truncate text-[11px] text-[var(--text-muted)]">{art.title}</p>}
+                  <p className="truncate text-[13px] leading-tight">
+                    <span className="font-bold">{sourceName}</span>
+                    <span className="text-[var(--text-muted)]"> {headline.replace(`${sourceName}이(가) `, '').replace(sourceName, '')}</span>
+                  </p>
+                  {art?.title && <p className="mt-0.5 truncate text-[11px] text-[var(--text-muted)]">"{art.title}"</p>}
                   <p className="mt-0.5 text-[10px] text-[var(--text-faint)]">{timeAgo(n.created_at)}</p>
                 </div>
-                {!n.read_at && <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />}
+                {art && (
+                  <ImageBox src={art.imageUrl} alt={art.title} className="h-10 w-10 shrink-0 rounded-[8px]" />
+                )}
+                {!n.read_at && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-red-500" />}
               </button>
             );
           })}

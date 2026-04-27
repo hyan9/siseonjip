@@ -2,44 +2,27 @@ import { useMemo, useState } from 'react';
 import { useData } from '../lib/data-context';
 import { postComment, deleteComment, toggleCommentReaction } from '../lib/db';
 import { profileLabel, timeAgo, renderTextWithMentions } from '../lib/utils';
-
-// 아바타 — 닉네임 첫 글자, 색은 user_id 해시 기반
-function Avatar({ profile, size = 32 }) {
-  const name = profile?.nickname || '?';
-  const initial = (name[0] || '?').toUpperCase();
-  // user_id 해시 → hue
-  const hash = String(profile?.id || name)
-    .split('')
-    .reduce((a, c) => a + c.charCodeAt(0), 0);
-  const hue = hash % 360;
-  return (
-    <div
-      className="flex shrink-0 items-center justify-center rounded-full font-bold text-white"
-      style={{
-        width: size,
-        height: size,
-        background: `linear-gradient(135deg, hsl(${hue} 65% 55%), hsl(${(hue + 40) % 360} 60% 45%))`,
-        fontSize: size * 0.42,
-      }}
-    >
-      {initial}
-    </div>
-  );
-}
+import Avatar from './Avatar';
 
 export default function CommentSection({ artworkId, openPerson }) {
   const { userId, getProfile, getRootCommentsFor, getRepliesFor, refresh } = useData();
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
+  const [sort, setSort] = useState('최신순');
 
-  const rootComments = useMemo(
-    () =>
-      getRootCommentsFor(artworkId).sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at)
-      ),
-    [artworkId, getRootCommentsFor]
-  );
+  const rootComments = useMemo(() => {
+    const list = [...getRootCommentsFor(artworkId)];
+    if (sort === '등록순') {
+      list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    } else if (sort === '답글순') {
+      list.sort((a, b) => getRepliesFor(b.id).length - getRepliesFor(a.id).length);
+    } else {
+      // 최신순 (default)
+      list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+    return list;
+  }, [artworkId, getRootCommentsFor, getRepliesFor, sort]);
 
   const totalCount = useMemo(
     () =>
@@ -77,6 +60,20 @@ export default function CommentSection({ artworkId, openPerson }) {
         <h3 className="text-[13px] font-bold text-[var(--text)]">
           댓글 <span className="text-[var(--ink)]">{totalCount}</span>
         </h3>
+        {totalCount > 1 && (
+          <div className="flex gap-2 text-[10px]">
+            {['등록순', '최신순', '답글순'].map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setSort(s)}
+                className={sort === s ? 'font-bold text-[var(--ink)]' : 'text-[var(--text-muted)]'}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {replyingTo && replyTarget && (

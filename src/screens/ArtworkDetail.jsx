@@ -14,6 +14,7 @@ import {
   GoogleLogo,
 } from '../components/ui';
 import Icon from '../components/Icon';
+import Avatar from '../components/Avatar';
 import MapView from '../components/MapView';
 import HypeButton from '../components/HypeButton';
 import ShareButton from '../components/ShareButton';
@@ -224,33 +225,42 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
       <div className="space-y-3">
         {/* 통합 본문 카드 — 제목 / 작성자 / 사진 / 노트 / 추천바 / 부가 액션 */}
         <article className="overflow-hidden rounded-[20px] bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]">
-          {/* 헤더: 제목 + 작성자 + 메타 */}
+          {/* 헤더: 제목 + 작성자 아바타 + 메타 */}
           <header className="border-b border-[var(--border)] p-4">
             <h1 className="text-[22px] font-extrabold leading-tight tracking-[-0.06em]">
               {art.title || '제목 없음'}
             </h1>
-            <div className="mt-2 flex flex-wrap items-center gap-x-2 text-[11px] text-[var(--text-muted)]">
+            <div className="mt-2 flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => openPerson?.(art.user_id)}
-                className="font-semibold text-[var(--text)]"
+                className="shrink-0"
               >
-                {profileLabel(profile)}
+                <Avatar profile={profile} size={28} />
               </button>
-              <span className="text-[var(--text-faint)]">·</span>
-              <span>{formatTime(art.taken_at) || formatTime(art.created_at)}</span>
-              <span className="text-[var(--text-faint)]">·</span>
-              <button
-                type="button"
-                onClick={() => place && openPlace(place.id)}
-                className="hover:underline"
-              >
-                📍 {art.location_mode === '개인전만' || art.location_mode === '숨김'
-                  ? '장소 비공개'
-                  : place
-                  ? placeLabel(place)
-                  : '장소 미상'}
-              </button>
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 text-[11px] text-[var(--text-muted)]">
+                <button
+                  type="button"
+                  onClick={() => openPerson?.(art.user_id)}
+                  className="font-semibold text-[var(--text)]"
+                >
+                  {profileLabel(profile)}
+                </button>
+                <span className="text-[var(--text-faint)]">·</span>
+                <span>{formatTime(art.taken_at) || formatTime(art.created_at)}</span>
+                <span className="text-[var(--text-faint)]">·</span>
+                <button
+                  type="button"
+                  onClick={() => place && openPlace(place.id)}
+                  className="hover:underline"
+                >
+                  📍 {art.location_mode === '개인전만' || art.location_mode === '숨김'
+                    ? '장소 비공개'
+                    : place
+                    ? placeLabel(place)
+                    : '장소 미상'}
+                </button>
+              </div>
             </div>
           </header>
 

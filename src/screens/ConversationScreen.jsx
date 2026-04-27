@@ -14,6 +14,7 @@ import {
   GoogleLogo,
 } from '../components/ui';
 import Icon from '../components/Icon';
+import Avatar from '../components/Avatar';
 import MapView from '../components/MapView';
 import HypeButton from '../components/HypeButton';
 import ShareButton from '../components/ShareButton';
@@ -123,45 +124,58 @@ export default function ConversationScreen({ otherId, setScreen, openPerson }) {
 
   return (
     <>
-      <div className="mb-3 flex items-center justify-between">
-        <button type="button" onClick={() => setScreen('messages')} className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]">
+      <div className="mb-3 flex items-center gap-3">
+        <button type="button" onClick={() => setScreen('messages')} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]">
           <Icon name="back" size={16} />
         </button>
         <button
           type="button"
           onClick={() => openPerson(otherId)}
-          className="text-center"
+          className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
         >
-          <p className="text-xs font-semibold tracking-[0.16em] text-[var(--text-muted)]">대화</p>
-          <p className="text-lg font-extrabold tracking-[-0.06em]">{other.nickname}</p>
+          <Avatar profile={other} size={36} />
+          <div className="min-w-0">
+            <p className="truncate text-[15px] font-bold tracking-[-0.04em]">{other.nickname}</p>
+            <p className="truncate text-[10px] text-[var(--text-muted)]">대화</p>
+          </div>
         </button>
-        <span className="h-9 w-9" />
       </div>
 
       <div
         ref={scrollRef}
-        className="space-y-2 overflow-y-auto rounded-[20px] bg-[var(--surface)] p-3 shadow-[0_0_0_1px_var(--border)]"
+        className="space-y-1 overflow-y-auto rounded-[16px] bg-[var(--surface)] p-3 shadow-[0_0_0_1px_var(--border)]"
         style={{ minHeight: '60vh', maxHeight: '70vh' }}
       >
         {thread.length === 0 && (
           <p className="py-12 text-center text-xs text-[var(--text-muted)]">첫 메시지를 보내보세요.</p>
         )}
-        {thread.map((m) => {
+        {thread.map((m, i) => {
           const mine = m.sender_id === userId;
+          const prev = thread[i - 1];
+          const groupedWithPrev = prev && prev.sender_id === m.sender_id &&
+            (new Date(m.created_at) - new Date(prev.created_at)) < 60000;
+          const showAvatar = !mine && !groupedWithPrev;
           return (
-            <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+            <div key={m.id} className={`flex items-end gap-1.5 ${mine ? 'justify-end' : 'justify-start'} ${groupedWithPrev ? '' : 'mt-2'}`}>
+              {!mine && (
+                showAvatar
+                  ? <Avatar profile={other} size={26} />
+                  : <span className="w-[26px] shrink-0" />
+              )}
               <div
-                className={`max-w-[75%] rounded-[16px] px-3 py-2 ${
+                className={`max-w-[72%] px-3 py-1.5 text-[14px] leading-snug ${
                   mine
-                    ? 'bg-[var(--ink)] text-white'
-                    : 'bg-[var(--surface-2)] text-[var(--text)]'
+                    ? `bg-[var(--ink)] text-white ${groupedWithPrev ? 'rounded-[14px] rounded-tr-md' : 'rounded-[14px]'}`
+                    : `bg-[var(--surface-2)] text-[var(--text)] ${groupedWithPrev ? 'rounded-[14px] rounded-tl-md' : 'rounded-[14px]'}`
                 }`}
               >
-                <p className="whitespace-pre-wrap text-sm leading-5">{m.text}</p>
-                <p className={`mt-1 text-[10px] ${mine ? 'text-white/60' : 'text-[var(--text-faint)]'}`}>
-                  {timeAgo(m.created_at)}
-                </p>
+                <p className="whitespace-pre-wrap break-words">{m.text}</p>
               </div>
+              {!groupedWithPrev && (
+                <span className={`shrink-0 text-[9px] ${mine ? 'text-[var(--text-faint)]' : 'text-[var(--text-faint)]'}`}>
+                  {timeAgo(m.created_at)}
+                </span>
+              )}
             </div>
           );
         })}
