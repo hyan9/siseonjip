@@ -86,7 +86,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerson, openKeyword, openCamera, openCollectionPicker }) {
-  const { userId, artworks, getArtwork, getProfile, getPlace, getUserArtworks, getHypeCount, isSavedByMe, refresh } = useData();
+  const { userId, artworks, getArtwork, getProfile, getPlace, getUserArtworks, getHypeCount, getCommentsFor, isSavedByMe, refresh } = useData();
   const { theme } = useTheme();
   const art = getArtwork(artworkId);
   const [deleting, setDeleting] = useState(false);
@@ -109,6 +109,8 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
   if (!art) return <EmptyState title="사진을 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
   const profile = getProfile(art.user_id);
+  const hypeCount = getHypeCount(art.id);
+  const commentCount = getCommentsFor(art.id).length;
   const exifLine = [art.camera_make, art.camera_model, art.lens].filter(Boolean).join(' · ');
   const takenLabel = art.taken_at
     ? new Date(art.taken_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')
@@ -287,6 +289,22 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
           <div className="absolute right-3 top-3"><ShareButton title={art.title || '시선집'} /></div>
         </section>
 
+        {/* DC식 prominent 액션바 — 별점/댓글/공유/저장 */}
+        <section className="grid grid-cols-4 gap-1.5 rounded-[16px] bg-[var(--surface)] p-1.5 shadow-[0_0_0_1px_var(--border)]">
+          <DcActionItem icon="⭐" label={`추천 ${hypeCount}`} />
+          <DcActionItem icon="💬" label={`댓글 ${commentCount}`} onClick={() => {
+            const el = document.getElementById('comment-section-anchor');
+            el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }} />
+          <DcActionItem icon="👀" label={`조회 ${art.view_count ?? 0}`} />
+          <DcActionItem
+            icon={saved ? '🔖' : '🏷'}
+            label={saved ? '저장됨' : '저장'}
+            onClick={userId && !isMine ? handleSave : null}
+            highlight={saved}
+          />
+        </section>
+
         {/* 본문 노트 + 키워드 */}
         {(art.note || art.daily_vision) && (
           <section className="rounded-[20px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
@@ -389,6 +407,7 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
           </section>
         )}
 
+        <div id="comment-section-anchor" />
         <CommentSection artworkId={art.id} openPerson={openPerson} />
 
         {(feedNav.prev || feedNav.next) && (
@@ -498,5 +517,25 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
         />
       )}
     </>
+  );
+}
+
+function DcActionItem({ icon, label, onClick, highlight }) {
+  const Tag = onClick ? 'button' : 'div';
+  return (
+    <Tag
+      type={onClick ? 'button' : undefined}
+      onClick={onClick || undefined}
+      className={`flex flex-col items-center justify-center gap-0.5 rounded-[12px] py-2.5 text-[10px] font-semibold ${
+        highlight
+          ? 'bg-[var(--ink)] text-white'
+          : onClick
+          ? 'bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--surface-2)]'
+          : 'text-[var(--text-muted)]'
+      }`}
+    >
+      <span className="text-[18px] leading-none">{icon}</span>
+      <span className="leading-tight">{label}</span>
+    </Tag>
   );
 }

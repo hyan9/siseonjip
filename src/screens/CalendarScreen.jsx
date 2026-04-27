@@ -94,6 +94,23 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
   const days = useMemo(() => getMonthDays(myWorks, year, month), [myWorks, year, month]);
   const activeDays = days.filter((d) => d.artworkIds.length > 0);
 
+  // 일주일 뷰: 오늘 중앙으로, 앞 3일 + 오늘 + 뒤 3일
+  const todayStr = now.toDateString();
+  const weekDays = useMemo(() => {
+    const arr = [];
+    for (let i = -3; i <= 3; i++) {
+      const d = new Date(now);
+      d.setDate(now.getDate() + i);
+      const photos = myWorks.filter((a) => {
+        const t = new Date(a.taken_at || a.created_at);
+        return t.toDateString() === d.toDateString();
+      }).slice(0, 4);
+      arr.push({ date: d, photos });
+    }
+    return arr;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myWorks]);
+
   const goPrev = () => {
     if (month === 1) { setYear(year - 1); setMonth(12); } else setMonth(month - 1);
   };
@@ -101,10 +118,68 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
     if (month === 12) { setYear(year + 1); setMonth(1); } else setMonth(month + 1);
   };
 
+  const monthShort = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][now.getMonth()];
+
   return (
     <>
-      <Header title="필름" subtitle="날짜별로 보관된 내 사진." kicker="아카이브" />
+      <Header
+        title={`필름 · ${myWorks.length} × 4`}
+        subtitle="매일 네 장. 25번째 자리는 가장 아름다운 사진을 위해 비어 있어요."
+        kicker={`ROLL · ${monthShort} ${now.getFullYear()}`}
+      />
       <div className="space-y-5">
+        {/* 이번 주 (오늘 중앙) */}
+        <section>
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-[16px] font-extrabold tracking-[-0.05em]">📅 이번 주</h2>
+            <span className="text-[10px] text-[var(--text-muted)]">오늘이 가운데</span>
+          </div>
+          <div className="space-y-2">
+            {weekDays.map((wd) => {
+              const dayLabel = `DAY ${String(wd.date.getDate()).padStart(2, '0')}`;
+              const isToday = wd.date.toDateString() === todayStr;
+              return (
+                <div
+                  key={wd.date.toISOString()}
+                  className={`flex gap-3 rounded-[14px] p-2 ${
+                    isToday ? 'bg-[var(--ink)] text-white' : 'bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]'
+                  }`}
+                >
+                  <div className="w-[64px] shrink-0 self-center text-center">
+                    <p className={`text-[9px] font-semibold tracking-[0.14em] ${isToday ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
+                      {['일','월','화','수','목','금','토'][wd.date.getDay()]}
+                    </p>
+                    <p className="text-[20px] font-extrabold leading-tight tracking-[-0.05em]">
+                      {dayLabel.split(' ')[1]}
+                    </p>
+                  </div>
+                  <div className="grid flex-1 grid-cols-4 gap-1">
+                    {[0,1,2,3].map((slot) => {
+                      const art = wd.photos[slot];
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => art && openArtwork(art.id)}
+                          disabled={!art}
+                          className={`relative aspect-square overflow-hidden rounded-[8px] ${
+                            art
+                              ? ''
+                              : isToday
+                              ? 'border border-dashed border-white/20 bg-white/5'
+                              : 'border border-dashed border-[var(--border)] bg-[var(--bg)]'
+                          }`}
+                        >
+                          {art && <img src={art.imageUrl} alt={art.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
         <section className="rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
           <div className="mb-5 flex items-center justify-between">
             <button type="button" onClick={goPrev} className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)]"><Icon name="chevronLeft" size={18} /></button>

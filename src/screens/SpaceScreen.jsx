@@ -156,11 +156,24 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
       setMyLocation({ lat: pos.lat, lng: pos.lng });
       setFlyTarget({ lat: pos.lat, lng: pos.lng, zoom: 15, _ts: Date.now() });
     } catch (error) {
-      alert('위치 정보를 가져올 수 없어요: ' + error.message);
+      console.warn('locate fail', error);
     } finally {
       setLocating(false);
     }
   };
+
+  // 페이지 진입 시 권한이 이미 있으면 조용히 자동 위치 (denial은 무시)
+  useEffect(() => {
+    let cancelled = false;
+    if (!myLocation && navigator.permissions) {
+      navigator.permissions.query({ name: 'geolocation' }).then((p) => {
+        if (cancelled) return;
+        if (p.state === 'granted') handleLocate();
+      }).catch(() => {});
+    }
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const nearbyPlaces = myLocation
     ? places
@@ -168,6 +181,24 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
         .map((p) => ({ ...p, distance: distanceMeters(myLocation.lat, myLocation.lng, p.lat, p.lng) }))
         .sort((a, b) => a.distance - b.distance)
         .slice(0, 5)
+    : [];
+
+  // 내 주변 1km 이내 사진들 (place 좌표 기반)
+  const nearbyPhotos = myLocation
+    ? artworks
+        .filter((a) => a.location_mode !== '숨김')
+        .map((a) => {
+          let lat = a.lat, lng = a.lng;
+          if (lat == null || lng == null) {
+            const place = places.find((p) => p.id === a.place_id);
+            if (!place || place.lat == null) return null;
+            lat = place.lat; lng = place.lng;
+          }
+          return { ...a, distance: distanceMeters(myLocation.lat, myLocation.lng, lat, lng) };
+        })
+        .filter((a) => a && a.distance <= 2000)
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 12)
     : [];
 
   return (
@@ -228,6 +259,47 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
             </div>
           )}
         </div>
+
+        {!myLocation && (
+          <button
+            type="button"
+            onClick={handleLocate}
+            disabled={locating}
+            className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-[var(--ink)] bg-[var(--surface)] p-4 text-left disabled:opacity-50"
+          >
+            <div>
+              <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">📍 내 위치</p>
+              <p className="mt-0.5 text-[15px] font-bold tracking-[-0.04em]">
+                {locating ? '위치 확인 중…' : '내 주변 사진 보기'}
+              </p>
+            </div>
+            <span className="text-[var(--ink)]">›</span>
+          </button>
+        )}
+
+        {myLocation && (
+          <section className="rounded-[18px] bg-[var(--ink)] p-4 text-white">
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-white/70">📍 내 주변 2km</p>
+            <p className="mt-1 text-[20px] font-extrabold tracking-[-0.06em]">
+              사진 {nearbyPhotos.length}장 · 동네 {nearbyPlaces.length}곳
+            </p>
+            {nearbyPhotos.length > 0 && (
+              <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
+                {nearbyPhotos.map((art) => (
+                  <button
+                    key={art.id}
+                    type="button"
+                    onClick={() => openArtwork(art.id)}
+                    className="shrink-0 text-left"
+                  >
+                    <ImageBox src={art.imageUrl} alt={art.title} className="h-[110px] w-[110px] rounded-[12px]" />
+                    <p className="mt-1 truncate text-[10px] text-white/80">{Math.round(art.distance)}m</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {points.length === 0 ? (
           <EmptyState
