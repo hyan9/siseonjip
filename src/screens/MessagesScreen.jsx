@@ -1,88 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
 import { useData } from '../lib/data-context';
-import { useNotifications } from '../lib/notifications-context';
-import { useTheme } from '../lib/theme-context';
 import {
   Header,
-  ImageBox,
-  SearchBar,
   EmptyState,
-  GpsStatusBadge,
-  Splash,
-  ThemeToggleButton,
-  StatCell,
-  GoogleLogo,
 } from '../components/ui';
-import Icon from '../components/Icon';
-import MapView from '../components/MapView';
-import HypeButton from '../components/HypeButton';
-import ShareButton from '../components/ShareButton';
-import { FourPhotoWall, PhotoTile, PersonRow, PlaceRow } from '../components/Cards';
-import CommentSection from '../components/CommentSection';
-import ReportModal from '../components/ReportModal';
-import LocationPickerModal from '../components/LocationPickerModal';
-import PhotoZoomModal from '../components/PhotoZoomModal';
+
+
 import {
-  uploadPhoto,
-  upsertPlace,
-  insertArtwork,
-  toggleHype,
-  postComment,
-  setCurateOrder,
-  setTwentyFive,
-  updateProfile,
-  seedDemoArtworks,
-  deleteArtwork,
-  updateArtwork,
-  toggleFollow,
-  toggleCommentReaction,
-  deleteComment,
-  bulkUpdateArtworkLocationMode,
-  setHeroArtwork,
-  toggleSave,
-  createCollection,
-  updateCollection,
-  deleteCollection,
-  addArtworkToCollection,
-  removeArtworkFromCollection,
-  sendMessage,
-  markMessagesRead,
-  reportContent,
-  toggleBlock,
-} from '../lib/db';
-import { readPhotoMeta } from '../lib/exif';
-import { reverseGeocode, getCurrentPosition, distanceMeters, searchPlaces } from '../lib/geocoding';
-import {
-  formatTime,
-  dateOf,
-  getMonthDays,
-  placeLabel,
-  profileLabel,
   timeAgo,
-  renderTextWithMentions,
-  LOCATION_MODES,
 } from '../lib/utils';
-import { signInWithEmail, signInWithGoogle, signInAnonymous, signOut } from '../lib/auth-context';
-import {
-  shareFourCutCard,
-  shareSinglePhotoCard,
-  shareWeeklyRecapCard,
-} from '../lib/share-card';
-import {
-  DndContext,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  closestCenter,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  rectSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+
+
+
+
+
+
 
 export default function MessagesScreen({ setScreen, openConversation }) {
   const { userId, getConversations, getProfile } = useData();

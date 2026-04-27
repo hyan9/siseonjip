@@ -1,92 +1,37 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useData } from '../lib/data-context';
-import { useNotifications } from '../lib/notifications-context';
 import { useTheme } from '../lib/theme-context';
 import {
-  Header,
   ImageBox,
-  SearchBar,
   EmptyState,
-  GpsStatusBadge,
-  Splash,
-  ThemeToggleButton,
-  StatCell,
-  GoogleLogo,
 } from '../components/ui';
 import Icon from '../components/Icon';
 import Avatar from '../components/Avatar';
 import { IconShare, IconCollections, IconReport, IconStar, IconEdit, IconTrash, IconBookmark } from '../components/icons/AppIcons';
-import MapView from '../components/MapView';
-import HypeButton from '../components/HypeButton';
 import ShareButton from '../components/ShareButton';
-import { FourPhotoWall, PhotoTile, PersonRow, PlaceRow } from '../components/Cards';
 import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
-import LocationPickerModal from '../components/LocationPickerModal';
 import PhotoZoomModal from '../components/PhotoZoomModal';
-import { blockIfBotAction, isBotArtworkId } from '../lib/bot-seed';
+import { blockIfBotAction } from '../lib/bot-seed';
 import {
-  uploadPhoto,
-  upsertPlace,
-  insertArtwork,
   toggleHype,
-  postComment,
-  setCurateOrder,
-  setTwentyFive,
-  updateProfile,
-  seedDemoArtworks,
   deleteArtwork,
-  updateArtwork,
-  toggleFollow,
-  toggleCommentReaction,
-  deleteComment,
-  bulkUpdateArtworkLocationMode,
   setHeroArtwork,
   toggleSave,
-  createCollection,
-  updateCollection,
-  deleteCollection,
-  addArtworkToCollection,
-  removeArtworkFromCollection,
-  sendMessage,
-  markMessagesRead,
-  reportContent,
-  toggleBlock,
   incrementArtworkView,
 } from '../lib/db';
-import { readPhotoMeta } from '../lib/exif';
-import { reverseGeocode, getCurrentPosition, distanceMeters, searchPlaces } from '../lib/geocoding';
 import {
   formatTime,
-  dateOf,
-  getMonthDays,
   placeLabel,
   profileLabel,
-  timeAgo,
-  renderTextWithMentions,
-  LOCATION_MODES,
 } from '../lib/utils';
-import { signInWithEmail, signInWithGoogle, signInAnonymous, signOut } from '../lib/auth-context';
 import {
-  shareFourCutCard,
   shareSinglePhotoCard,
-  shareWeeklyRecapCard,
 } from '../lib/share-card';
-import {
-  DndContext,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  closestCenter,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  rectSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+
+
+
+
 
 export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerson, openKeyword, openCamera, openCollectionPicker }) {
   const { userId, artworks, getArtwork, getProfile, getPlace, getUserArtworks, getHypeCount, getCommentsFor, isHypedByMe, isSavedByMe, refresh } = useData();
@@ -254,9 +199,14 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
                 <button
                   type="button"
                   onClick={() => openPerson?.(art.user_id)}
-                  className="font-semibold text-[var(--text)]"
+                  className="inline-flex items-center gap-1 font-semibold text-[var(--text)]"
                 >
                   {profileLabel(profile)}
+                  {profile?.is_bot && (
+                    <span className="rounded-[3px] border border-[var(--border-strong)] px-1 text-[8px] font-bold uppercase tracking-wider text-[var(--text-faint)]">
+                      demo
+                    </span>
+                  )}
                 </button>
                 <span className="text-[var(--text-faint)]">·</span>
                 <span>{formatTime(art.taken_at) || formatTime(art.created_at)}</span>

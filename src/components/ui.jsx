@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNotifications } from '../lib/notifications-context';
 import { useTheme } from '../lib/theme-context';
+import { transformedPhotoUrl } from '../lib/db';
 import Icon from './Icon';
 import { CatPhotographer } from './Mascot';
 
@@ -187,12 +188,15 @@ export function Header({ title, subtitle, kicker, onBack, right }) {
   );
 }
 
-export function ImageBox({ src, alt, className = '', fit = 'cover', priority = false }) {
+export function ImageBox({ src, alt, className = '', fit = 'cover', priority = false, width = 800, transform = true }) {
+  // Supabase Storage URL이면 transform 적용 (width/quality 줄여 빠르게).
+  // 외부 URL은 그대로 사용.
+  const finalSrc = transform && src ? transformedPhotoUrl(src, { width }) : src;
   return (
     <div className={`overflow-hidden bg-[var(--image-bg)] ${className}`}>
-      {src ? (
+      {finalSrc ? (
         <img
-          src={src}
+          src={finalSrc}
           alt={alt || ''}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"

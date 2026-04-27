@@ -102,6 +102,25 @@ export function publicPhotoUrl(storagePath) {
   return data?.publicUrl ?? null;
 }
 
+// Supabase Storage Image Transform — width/quality/format 적용해 더 작은 이미지 받기.
+// /storage/v1/object/public/...  → /storage/v1/render/image/public/...?width=...&quality=...&format=origin|webp|avif
+// 외부 URL(Unsplash 등)은 transform 안 함.
+export function transformedPhotoUrl(url, { width = 800, quality = 70 } = {}) {
+  if (!url) return null;
+  // Supabase Storage URL 패턴
+  const marker = '/storage/v1/object/public/';
+  const idx = url.indexOf(marker);
+  if (idx === -1) return url; // 외부 URL은 그대로
+  const base = url.slice(0, idx);
+  const path = url.slice(idx + marker.length);
+  const params = new URLSearchParams({
+    width: String(width),
+    quality: String(quality),
+    resize: 'contain',
+  });
+  return `${base}/storage/v1/render/image/public/${path}?${params.toString()}`;
+}
+
 async function compressIfImage(file) {
   if (!file?.type?.startsWith('image/')) return file;
   try {

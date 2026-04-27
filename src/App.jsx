@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 
 import { AuthProvider, useAuth } from './lib/auth-context';
 import { DataProvider, useData } from './lib/data-context';
@@ -10,29 +10,32 @@ import { Shell, Splash, ToastStack } from './components/ui';
 import OnboardingModal from './components/OnboardingModal';
 import AddToCollectionPicker from './components/AddToCollectionPicker';
 
+// 즉시 로딩: 첫 진입에서 반드시 보임
 import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
-import SearchScreen from './screens/SearchScreen';
-import SpaceScreen from './screens/SpaceScreen';
-import RecordScreen from './screens/RecordScreen';
-import ArtworkDetail from './screens/ArtworkDetail';
-import ArtworkEditScreen from './screens/ArtworkEditScreen';
-import PersonExhibition from './screens/PersonExhibition';
-import ProfileEditScreen from './screens/ProfileEditScreen';
-import CurateScreen from './screens/CurateScreen';
-import PlaceExhibition from './screens/PlaceExhibition';
-import CalendarScreen from './screens/CalendarScreen';
-import TwentyFiveScreen from './screens/TwentyFiveScreen';
-import NotificationsScreen from './screens/NotificationsScreen';
-import KeywordScreen from './screens/KeywordScreen';
-import CameraScreen from './screens/CameraScreen';
-import BulkPrivacyScreen from './screens/BulkPrivacyScreen';
-import SavedScreen from './screens/SavedScreen';
-import ActivityScreen from './screens/ActivityScreen';
-import CollectionsScreen from './screens/CollectionsScreen';
-import CollectionDetailScreen from './screens/CollectionDetailScreen';
-import MessagesScreen from './screens/MessagesScreen';
-import ConversationScreen from './screens/ConversationScreen';
+
+// 지연 로딩: 사용자가 탭/메뉴를 누른 시점에 fetch
+const SearchScreen = lazy(() => import('./screens/SearchScreen'));
+const SpaceScreen = lazy(() => import('./screens/SpaceScreen'));
+const RecordScreen = lazy(() => import('./screens/RecordScreen'));
+const ArtworkDetail = lazy(() => import('./screens/ArtworkDetail'));
+const ArtworkEditScreen = lazy(() => import('./screens/ArtworkEditScreen'));
+const PersonExhibition = lazy(() => import('./screens/PersonExhibition'));
+const ProfileEditScreen = lazy(() => import('./screens/ProfileEditScreen'));
+const CurateScreen = lazy(() => import('./screens/CurateScreen'));
+const PlaceExhibition = lazy(() => import('./screens/PlaceExhibition'));
+const CalendarScreen = lazy(() => import('./screens/CalendarScreen'));
+const TwentyFiveScreen = lazy(() => import('./screens/TwentyFiveScreen'));
+const NotificationsScreen = lazy(() => import('./screens/NotificationsScreen'));
+const KeywordScreen = lazy(() => import('./screens/KeywordScreen'));
+const CameraScreen = lazy(() => import('./screens/CameraScreen'));
+const BulkPrivacyScreen = lazy(() => import('./screens/BulkPrivacyScreen'));
+const SavedScreen = lazy(() => import('./screens/SavedScreen'));
+const ActivityScreen = lazy(() => import('./screens/ActivityScreen'));
+const CollectionsScreen = lazy(() => import('./screens/CollectionsScreen'));
+const CollectionDetailScreen = lazy(() => import('./screens/CollectionDetailScreen'));
+const MessagesScreen = lazy(() => import('./screens/MessagesScreen'));
+const ConversationScreen = lazy(() => import('./screens/ConversationScreen'));
 
 function MainApp() {
   const [screen, setScreen] = useState('home');
@@ -81,7 +84,9 @@ function MainApp() {
 
   return (
     <>
-      <Shell screen={screen} setScreen={setScreen}>{content}</Shell>
+      <Shell screen={screen} setScreen={setScreen}>
+        <Suspense fallback={<Splash />}>{content}</Suspense>
+      </Shell>
       <OnboardingModal />
       {collectionPickerArtwork && (
         <AddToCollectionPicker

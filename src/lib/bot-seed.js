@@ -182,6 +182,57 @@ export function buildBotMemoryGraph(userId) {
   };
 }
 
+// 알림 화면을 풍성하게 — 봇이 사용자를 follow / 사용자 작품에 hype·comment.
+// 사용자 작품이 0개여도 follow 알림은 항상 보임.
+export function buildBotNotifications({ userId, userArtworks = [] }) {
+  if (!userId) return [];
+  const items = [];
+  // 1) 모든 봇이 사용자를 follow (각각 시점 살짝 다르게)
+  BOT_PROFILES.forEach((b, i) => {
+    items.push({
+      id: `bot-noti:follow:${b.id}`,
+      user_id: userId,
+      kind: 'follow',
+      source_user_id: b.id,
+      artwork_id: null,
+      comment_id: null,
+      read_at: null,
+      created_at: new Date(Date.now() - (i + 1) * 1.7 * 3600000).toISOString(),
+    });
+  });
+  // 2) 사용자 작품이 있으면 봇들이 hype + 댓글
+  const recent = [...userArtworks]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 3);
+  recent.forEach((art, idx) => {
+    BOT_PROFILES.slice(0, 3).forEach((b, i) => {
+      items.push({
+        id: `bot-noti:hype:${art.id}:${b.id}`,
+        user_id: userId,
+        kind: 'hype',
+        source_user_id: b.id,
+        artwork_id: art.id,
+        comment_id: null,
+        read_at: null,
+        created_at: new Date(Date.now() - (idx * 4 + i + 1) * 1800000).toISOString(),
+      });
+    });
+    // 댓글 한 개
+    const commenter = BOT_PROFILES[idx % BOT_PROFILES.length];
+    items.push({
+      id: `bot-noti:comment:${art.id}:${commenter.id}`,
+      user_id: userId,
+      kind: 'comment',
+      source_user_id: commenter.id,
+      artwork_id: art.id,
+      comment_id: null,
+      read_at: null,
+      created_at: new Date(Date.now() - (idx * 4 + 6) * 1800000).toISOString(),
+    });
+  });
+  return items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+
 export function isBotId(id) {
   return typeof id === 'string' && id.startsWith('bot:');
 }

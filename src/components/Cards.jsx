@@ -104,7 +104,12 @@ export function PostListRow({ artwork, onOpen }) {
           )}
         </p>
         <p className="flex items-center gap-1.5 text-[11px] leading-tight text-[var(--text-muted)]">
-          <span className="truncate font-semibold text-[var(--text-body)]">{profileLabel(profile)}</span>
+          <span className="inline-flex items-center gap-1 truncate font-semibold text-[var(--text-body)]">
+            {profileLabel(profile)}
+            {profile?.is_bot && (
+              <span className="rounded-[3px] border border-[var(--border-strong)] px-1 text-[8px] font-bold uppercase tracking-wider text-[var(--text-faint)]">demo</span>
+            )}
+          </span>
           <span className="text-[var(--text-faint)]">·</span>
           <span className="shrink-0">{timeAgo(artwork.created_at)}</span>
           {hype > 0 && (

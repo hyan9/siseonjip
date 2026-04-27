@@ -1,15 +1,16 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from './supabase';
 import { useData } from './data-context';
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from './db';
+import { buildBotNotifications } from './bot-seed';
 
 const NotificationsContext = createContext(null);
 
 const TOAST_TTL_MS = 4500;
 
 export function NotificationsProvider({ children }) {
-  const { userId, getArtwork, getProfile, refresh } = useData();
-  const [notifications, setNotifications] = useState([]);
+  const { userId, getArtwork, getProfile, getUserArtworks, refresh } = useData();
+  const [dbNotifications, setDbNotifications] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [error, setError] = useState(null);
 
@@ -18,13 +19,28 @@ export function NotificationsProvider({ children }) {
     dataRef.current = { getArtwork, getProfile, refresh };
   });
 
+  // 봇 활동 알림(client-side 시뮬레이션) — 사용자 작품과 함께 변화
+  const userArtworks = userId ? getUserArtworks(userId) : [];
+  const botNotifications = useMemo(
+    () => buildBotNotifications({ userId, userArtworks }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userId, userArtworks.length]
+  );
+  const notifications = useMemo(
+    () =>
+      [...botNotifications, ...dbNotifications].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      ),
+    [botNotifications, dbNotifications]
+  );
+
   const unreadCount = notifications.filter((n) => !n.read_at).length;
 
   const reloadNotifications = useCallback(async () => {
     if (!userId) return;
     try {
       const list = await fetchNotifications(userId);
-      setNotifications(list);
+      setDbNotifications(list);
     } catch (err) {
       // 003 마이그레이션 안 돌렸으면 notifications 테이블 없음
       console.warn('[notifications] fetch 실패 (마이그레이션 003 실행 필요):', err.message);
@@ -50,7 +66,9 @@ export function NotificationsProvider({ children }) {
   const markRead = useCallback(
     async (notificationId) => {
       if (!userId) return;
-      setNotifications((prev) =>
+      // 봇 알림은 client-side 시뮬이라 DB 호출 불필요
+      if (typeof notificationId === 'string' && notificationId.startsWith('bot-noti:')) return;
+      setDbNotifications((prev) =>
         prev.map((n) => (n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n))
       );
       try {
@@ -64,7 +82,7 @@ export function NotificationsProvider({ children }) {
 
   const clearUnread = useCallback(async () => {
     if (!userId) return;
-    setNotifications((prev) => prev.map((n) => (n.read_at ? n : { ...n, read_at: new Date().toISOString() })));
+    setDbNotifications((prev) => prev.map((n) => (n.read_at ? n : { ...n, read_at: new Date().toISOString() })));
     try {
       await markAllNotificationsRead(userId);
     } catch (err) {
@@ -93,7 +111,7 @@ export function NotificationsProvider({ children }) {
         },
         (payload) => {
           const n = payload.new;
-          setNotifications((prev) => [n, ...prev]);
+          setDbNotifications((prev) => [n, ...prev]);
 
           const { getProfile, getArtwork, refresh } = dataRef.current;
           const source = getProfile(n.source_user_id);
