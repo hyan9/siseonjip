@@ -113,7 +113,7 @@ async function processPickedFile(file) {
   };
 }
 
-export default function RecordScreen({ setScreen }) {
+export default function RecordScreen({ setScreen, openArtwork }) {
   const { userId, places, getUserArtworks, refresh } = useData();
   const [items, setItems] = useState([]);
   const [mode, setMode] = useState('동네');
@@ -213,8 +213,26 @@ export default function RecordScreen({ setScreen }) {
   // 오늘 이미 올린 사진 수 (하루 4장 cap)
   const myWorks = userId ? getUserArtworks(userId) : [];
   const todayKey = new Date().toLocaleDateString('ko-KR');
-  const todayCount = myWorks.filter((a) => new Date(a.created_at).toLocaleDateString('ko-KR') === todayKey).length;
+  const todayWorks = myWorks
+    .filter((a) => new Date(a.created_at).toLocaleDateString('ko-KR') === todayKey)
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  const todayCount = todayWorks.length;
   const dailyRemaining = Math.max(0, 4 - todayCount);
+
+  const [deletingId, setDeletingId] = useState(null);
+  const handleDeleteToday = async (artwork) => {
+    if (!userId) return;
+    if (!window.confirm('이 사진을 삭제할까요?')) return;
+    setDeletingId(artwork.id);
+    try {
+      await deleteArtwork(artwork.id, userId, artwork.storage_path);
+      await refresh();
+    } catch (err) {
+      alert('삭제 실패: ' + err.message);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleSaveAll = async () => {
     if (items.length === 0 || !userId) return;
@@ -290,6 +308,51 @@ export default function RecordScreen({ setScreen }) {
         kicker="새 장면"
       />
       <div className="space-y-4">
+        {/* 오늘의 필름 — 이미 올린 사진 미리보기 + 삭제/편집 */}
+        {todayWorks.length > 0 && (
+          <section>
+            <p className="mb-2 px-1 text-[11px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
+              오늘의 필름 · {todayCount}/4
+            </p>
+            <div className="grid grid-cols-4 gap-1.5">
+              {[0,1,2,3].map((slot) => {
+                const art = todayWorks[slot];
+                if (!art) {
+                  return (
+                    <div
+                      key={slot}
+                      className="flex aspect-square items-center justify-center rounded-[10px] border border-dashed border-[var(--border)] bg-[var(--bg)] text-[10px] text-[var(--text-faint)]"
+                    >
+                      {slot + 1}
+                    </div>
+                  );
+                }
+                return (
+                  <div key={art.id} className="group relative aspect-square overflow-hidden rounded-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => openArtwork?.(art.id)}
+                      className="block h-full w-full"
+                      title="상세 보기 (편집 가능)"
+                    >
+                      <img src={art.imageUrl} alt={art.title} className="h-full w-full object-cover" loading="lazy" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteToday(art); }}
+                      disabled={deletingId === art.id}
+                      className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-[10px] text-white backdrop-blur-sm disabled:opacity-50"
+                      title="삭제"
+                    >
+                      {deletingId === art.id ? '…' : '✕'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {dailyRemaining === 0 && (
           <div className="rounded-[20px] bg-[var(--surface)] p-5 text-center shadow-[0_0_0_1px_var(--border)]">
             <div className="mx-auto text-[var(--ink)]">

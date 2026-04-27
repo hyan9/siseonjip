@@ -102,7 +102,8 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
       const d = new Date(now);
       d.setDate(now.getDate() + i);
       const photos = myWorks.filter((a) => {
-        const t = new Date(a.taken_at || a.created_at);
+        // 업로드 일자 기준 (시선집은 매일 4장 일기 컨셉)
+        const t = new Date(a.created_at);
         return t.toDateString() === d.toDateString();
       }).slice(0, 4);
       arr.push({ date: d, photos });

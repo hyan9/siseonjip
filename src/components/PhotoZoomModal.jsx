@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Icon from './Icon';
 
-// 사진 캐러셀 — scroll-snap 기반 부드러운 좌우 스와이프
-// 위/아래 바 없음, 사진만 풀스크린
+// 사진 캐러셀 — 위아래 스크롤 (오늘의 4컷을 한번에 감상)
+// scroll-snap-y, 사진만 풀스크린
 export default function PhotoZoomModal({ photos, initialIndex = 0, onClose }) {
   const [index, setIndex] = useState(initialIndex);
   const scrollerRef = useRef(null);
@@ -12,7 +12,7 @@ export default function PhotoZoomModal({ photos, initialIndex = 0, onClose }) {
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
-    el.scrollTo({ left: initialIndex * el.clientWidth, behavior: 'instant' });
+    el.scrollTo({ top: initialIndex * el.clientHeight, behavior: 'instant' });
   }, [initialIndex]);
 
   // body 스크롤 잠금
@@ -22,18 +22,19 @@ export default function PhotoZoomModal({ photos, initialIndex = 0, onClose }) {
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  // 키보드: Esc 닫기, 좌우 화살표 이동
+  // 키보드: Esc 닫기, 위아래 화살표 이동
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') onClose();
-      else if (e.key === 'ArrowLeft') {
+      else if (e.key === 'ArrowUp') {
         const el = scrollerRef.current;
         if (!el) return;
-        el.scrollTo({ left: Math.max(0, (index - 1) * el.clientWidth), behavior: 'smooth' });
-      } else if (e.key === 'ArrowRight') {
+        el.scrollTo({ top: Math.max(0, (index - 1) * el.clientHeight), behavior: 'smooth' });
+      } else if (e.key === 'ArrowDown' || e.key === ' ') {
+        e.preventDefault();
         const el = scrollerRef.current;
         if (!el) return;
-        el.scrollTo({ left: Math.min((photos.length - 1) * el.clientWidth, (index + 1) * el.clientWidth), behavior: 'smooth' });
+        el.scrollTo({ top: Math.min((photos.length - 1) * el.clientHeight, (index + 1) * el.clientHeight), behavior: 'smooth' });
       }
     };
     window.addEventListener('keydown', onKey);
@@ -43,7 +44,7 @@ export default function PhotoZoomModal({ photos, initialIndex = 0, onClose }) {
   // 스크롤 → 인덱스 동기화
   const handleScroll = (e) => {
     const el = e.currentTarget;
-    const i = Math.round(el.scrollLeft / el.clientWidth);
+    const i = Math.round(el.scrollTop / el.clientHeight);
     if (i !== index) setIndex(i);
   };
 
@@ -54,30 +55,26 @@ export default function PhotoZoomModal({ photos, initialIndex = 0, onClose }) {
       <div
         ref={scrollerRef}
         onScroll={handleScroll}
-        className="h-full w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
+        className="h-full w-full overflow-x-hidden overflow-y-auto"
+        style={{ scrollSnapType: 'y mandatory', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}
       >
-        <style>{`
-          .siseonjip-zoom-scroller::-webkit-scrollbar { display: none; }
-        `}</style>
-        <div className="flex h-full">
-          {photos.map((p) => (
-            <div
-              key={p.id}
-              className="flex h-full w-full shrink-0 snap-center items-center justify-center"
-              style={{ scrollSnapAlign: 'center' }}
-            >
-              <img
-                src={p.imageUrl}
-                alt={p.title || ''}
-                className="max-h-full max-w-full select-none object-contain"
-                draggable={false}
-              />
-            </div>
-          ))}
-        </div>
+        {photos.map((p) => (
+          <div
+            key={p.id}
+            className="flex h-screen w-full items-center justify-center"
+            style={{ scrollSnapAlign: 'center' }}
+          >
+            <img
+              src={p.imageUrl}
+              alt={p.title || ''}
+              className="max-h-full max-w-full select-none object-contain"
+              draggable={false}
+            />
+          </div>
+        ))}
       </div>
 
+      {/* 닫기 */}
       <button
         type="button"
         onClick={onClose}
@@ -86,6 +83,19 @@ export default function PhotoZoomModal({ photos, initialIndex = 0, onClose }) {
       >
         <Icon name="x" size={16} />
       </button>
+
+      {/* 인덱스 인디케이터 — 우측 세로 도트 */}
+      {photos.length > 1 && (
+        <div className="absolute right-4 top-1/2 flex -translate-y-1/2 flex-col gap-1.5">
+          {photos.map((_, i) => (
+            <span
+              key={i}
+              className={`h-1.5 rounded-full transition-all ${i === index ? 'h-4 bg-white' : 'h-1.5 w-1.5 bg-white/40'}`}
+              style={{ width: 6 }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

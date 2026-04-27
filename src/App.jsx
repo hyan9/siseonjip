@@ -58,7 +58,7 @@ function MainApp() {
   if (screen === 'home') content = <HomeScreen setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} openPerson={openPerson} openKeyword={openKeyword} />;
   if (screen === 'search') content = <SearchScreen openArtwork={openArtwork} openPerson={openPerson} openPlace={openPlace} />;
   if (screen === 'space') content = <SpaceScreen openPlace={openPlace} openArtwork={openArtwork} />;
-  if (screen === 'record') content = <RecordScreen setScreen={setScreen} />;
+  if (screen === 'record') content = <RecordScreen setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'detail') content = <ArtworkDetail artworkId={selectedArtworkId} setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} openPerson={openPerson} openKeyword={openKeyword} openCamera={openCamera} openCollectionPicker={openCollectionPicker} />;
   if (screen === 'artworkEdit') content = <ArtworkEditScreen artworkId={selectedArtworkId} setScreen={setScreen} />;
   if (screen === 'person') content = <PersonExhibition userId={selectedUserId} setScreen={setScreen} openArtwork={openArtwork} openConversation={openConversation} />;

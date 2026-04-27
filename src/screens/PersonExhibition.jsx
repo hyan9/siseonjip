@@ -523,7 +523,8 @@ function FilmTimeline({ works, openArtwork }) {
   const groups = useMemo(() => {
     const map = new Map();
     for (const art of works) {
-      const d = new Date(art.taken_at || art.created_at);
+      // 업로드 일자 기준
+      const d = new Date(art.created_at);
       const key = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(art);
