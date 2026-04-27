@@ -17,7 +17,7 @@ import Icon from '../components/Icon';
 import MapView from '../components/MapView';
 import HypeButton from '../components/HypeButton';
 import ShareButton from '../components/ShareButton';
-import { FourPhotoWall, PhotoTile, PersonRow, PlaceRow } from '../components/Cards';
+import { FourPhotoWall, PhotoTile, PersonRow, PlaceRow, PostListRow } from '../components/Cards';
 import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
 import LocationPickerModal from '../components/LocationPickerModal';
@@ -149,9 +149,14 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
     [places, getPlaceArtworks, visibleArtworks]
   );
 
-  // 새로 올라온 사진
-  const latest = visibleArtworks
+  // 전체글 (최신순)
+  const feedList = visibleArtworks
     .filter((a) => a.location_mode !== '숨김')
+    .slice(0, 30);
+  // 인기글 (🔥 추천 5+ 또는 댓글 많은 순)
+  const hotList = visibleArtworks
+    .filter((a) => a.location_mode !== '숨김' && getHypeCount(a.id) >= 3)
+    .sort((a, b) => getHypeCount(b.id) - getHypeCount(a.id))
     .slice(0, 8);
 
   return (
@@ -325,32 +330,42 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
             </section>
           )}
 
-          {latest.length > 0 && (
-            <section>
-              <div className="mb-3 flex items-end justify-between">
-                <div>
-                  <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">최근</p>
-                  <h2 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.075em]">새로 올라온 사진</h2>
+          {hotList.length > 0 && (
+            <section className="rounded-[20px] bg-[var(--surface)] px-4 py-2 shadow-[0_0_0_1px_var(--border)]">
+              <div className="flex items-end justify-between border-b border-[var(--border)] py-2">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[18px]">🔥</span>
+                  <h2 className="text-[18px] font-extrabold tracking-[-0.06em]">개념글</h2>
+                  <span className="text-[10px] text-[var(--text-faint)]">추천 3+ 사진</span>
                 </div>
               </div>
-              <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1">
-                {latest.map((art) => (
-                  <button
-                    key={art.id}
-                    type="button"
-                    onClick={() => openArtwork(art.id)}
-                    className="min-w-[140px] overflow-hidden rounded-[18px] bg-[var(--surface)] text-left shadow-[0_0_0_1px_var(--border)]"
-                  >
-                    <ImageBox src={art.imageUrl} alt={art.title} className="h-[180px]" />
-                    <div className="p-2">
-                      <p className="truncate text-[12px] font-bold tracking-[-0.04em]">
-                        {art.title || '제목 없음'}
-                      </p>
-                      <p className="mt-0.5 truncate text-[10px] text-[var(--text-faint)]">
-                        {profileLabel(getProfile(art.user_id))}
-                      </p>
-                    </div>
-                  </button>
+              <div>
+                {hotList.map((art) => (
+                  <PostListRow key={art.id} artwork={art} onOpen={openArtwork} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {feedList.length > 0 && (
+            <section className="rounded-[20px] bg-[var(--surface)] px-4 py-2 shadow-[0_0_0_1px_var(--border)]">
+              <div className="flex items-end justify-between border-b border-[var(--border)] py-2">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[18px]">📋</span>
+                  <h2 className="text-[18px] font-extrabold tracking-[-0.06em]">전체글</h2>
+                  <span className="text-[10px] text-[var(--text-faint)]">{feedList.length}건</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setScreen('search')}
+                  className="text-[11px] font-semibold text-[var(--text-muted)]"
+                >
+                  더보기 ›
+                </button>
+              </div>
+              <div>
+                {feedList.map((art) => (
+                  <PostListRow key={art.id} artwork={art} onOpen={openArtwork} />
                 ))}
               </div>
             </section>

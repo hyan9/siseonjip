@@ -163,17 +163,49 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
         <Icon name="back" size={18} />
       </button>
       <div className="space-y-4">
-        <section className="relative overflow-hidden rounded-[28px] bg-[var(--ink)] shadow-[0_0_0_1px_var(--ink)]">
+        {/* 게시물 헤더 — 제목/작성자/메타 (DC 게시물 스타일) */}
+        <section className="rounded-t-[20px] border-b border-[var(--border)] bg-[var(--surface)] p-4">
+          <h1 className="text-[22px] font-extrabold leading-tight tracking-[-0.06em]">
+            <span className="mr-1.5 align-middle text-[14px] font-semibold text-[var(--text-muted)]">[사진 📷]</span>
+            {art.title || '제목 없음'}
+          </h1>
+          <button
+            type="button"
+            onClick={() => openPerson?.(art.user_id)}
+            className="mt-2 inline-flex items-center gap-1.5 text-[13px] font-semibold"
+          >
+            <span>{profileLabel(profile)}</span>
+            <span className="text-[var(--text-faint)]">›</span>
+          </button>
+          <p className="mt-2 text-[11px] text-[var(--text-muted)]">
+            <span>📅 {formatTime(art.taken_at) || formatTime(art.created_at)}</span>
+            <span className="mx-1.5 text-[var(--text-faint)]">|</span>
+            <button
+              type="button"
+              onClick={() => place && openPlace(place.id)}
+              className="underline-offset-2 hover:underline"
+            >
+              📍 {art.location_mode === '개인전만' || art.location_mode === '숨김'
+                ? '장소 비공개'
+                : place
+                ? placeLabel(place)
+                : '장소 미상'}
+            </button>
+          </p>
+        </section>
+
+        {/* 사진 본문 — DC식 풀 폭 사진 */}
+        <section className="relative overflow-hidden rounded-[20px] bg-[var(--ink)] shadow-[0_0_0_1px_var(--ink)]">
           <button
             type="button"
             onClick={() => setZoomOpen(true)}
-            className="relative flex min-h-[620px] w-full items-center justify-center bg-[var(--ink)]"
+            className="relative flex min-h-[480px] w-full items-center justify-center bg-[var(--ink)]"
             aria-label="사진 확대해서 보기"
           >
-            <ImageBox src={art.imageUrl} alt={art.title} fit="contain" className="h-[620px] w-full bg-[var(--ink)]" priority />
+            <ImageBox src={art.imageUrl} alt={art.title} fit="contain" className="h-[560px] w-full bg-[var(--ink)]" priority />
             {art.is_twenty_five && (
               <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--text)]">
-                가장 아름다운 사진
+                🌟 25번째 사진
               </span>
             )}
             {isHero && (
@@ -185,38 +217,25 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
           <div className="absolute right-3 top-3"><ShareButton title={art.title || '시선집'} /></div>
         </section>
 
-        <CommentSection artworkId={art.id} openPerson={openPerson} />
-
-        <section className="rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="text-[29px] font-extrabold leading-tight tracking-[-0.08em]">{art.title || '제목 없음'}</h1>
+        {/* 본문 노트 + 키워드 */}
+        {(art.note || art.daily_vision) && (
+          <section className="rounded-[20px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
+            {art.note && <p className="text-[15px] leading-7 text-[var(--text-quote)]">{art.note}</p>}
+            {art.daily_vision && (
               <button
                 type="button"
-                onClick={() => place && openPlace(place.id)}
-                className="mt-3 text-left text-sm text-[var(--text-muted)]"
+                onClick={() => openKeyword?.(art.daily_vision)}
+                className={`${art.note ? 'mt-3' : ''} inline-block rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--text)]`}
               >
-                {profileLabel(profile)} ·{' '}
-                {art.location_mode === '개인전만' || art.location_mode === '숨김'
-                  ? '장소 비공개'
-                  : place
-                  ? placeLabel(place)
-                  : '장소 미상'}{' '}
-                · {formatTime(art.taken_at) || formatTime(art.created_at)}
+                #{art.daily_vision}
               </button>
-            </div>
-          </div>
-          {art.note && <p className="mt-4 text-[15px] leading-7 text-[var(--text-quote)]">{art.note}</p>}
-          {art.daily_vision && (
-            <button
-              type="button"
-              onClick={() => openKeyword?.(art.daily_vision)}
-              className="mt-3 inline-block rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--text)]"
-            >
-              #{art.daily_vision}
-            </button>
-          )}
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+            )}
+          </section>
+        )}
+
+        {/* 추천/저장/공유 액션바 */}
+        <section className="rounded-[20px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
+          <div className="flex flex-wrap items-center gap-2">
             <HypeButton artwork={art} />
             {userId && !isMine && (
               <>
@@ -292,6 +311,8 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
             )}
           </div>
         </section>
+
+        <CommentSection artworkId={art.id} openPerson={openPerson} />
 
         {related.length > 0 && (
           <section>

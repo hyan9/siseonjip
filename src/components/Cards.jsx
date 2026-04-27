@@ -1,5 +1,6 @@
 import { useData } from '../lib/data-context';
 import { ImageBox } from './ui';
+import { profileLabel, timeAgo } from '../lib/utils';
 
 function ExhibitionSlot({ artwork, onOpen }) {
   if (!artwork) return null;
@@ -64,6 +65,59 @@ export function FourPhotoWall({ photos, onOpen, mini = false, compact = false })
         <ExhibitionSlot artwork={list[3]} onOpen={onOpen} />
       </div>
     </div>
+  );
+}
+
+export function PostListRow({ artwork, onOpen }) {
+  const { getProfile, getHypeCount, getCommentsFor } = useData();
+  const profile = getProfile(artwork.user_id);
+  const hype = getHypeCount(artwork.id);
+  const commentCount = getCommentsFor(artwork.id).length;
+  const hot = hype >= 5;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(artwork.id)}
+      className="flex w-full items-stretch gap-3 border-b border-[var(--border)] py-3 text-left last:border-b-0"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-[15px] font-bold leading-tight tracking-[-0.04em]">
+          <span className={`mr-1 ${hot ? 'text-yellow-500' : 'text-[var(--text-faint)]'}`}>
+            {hot ? '⭐' : '☆'}
+          </span>
+          <span className="break-words">{artwork.title || '제목 없음'}</span>
+          {commentCount > 0 && (
+            <span className="ml-1.5 align-middle text-[13px] font-bold text-[var(--ink)]">
+              [{commentCount}]
+            </span>
+          )}
+        </p>
+        <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
+          <span className="font-semibold">{profileLabel(profile)}</span>
+          <span className="text-[var(--text-faint)]">·</span>
+          <span>조회 {artwork.view_count ?? '–'}</span>
+          <span className="text-[var(--text-faint)]">·</span>
+          <span className="font-semibold text-[var(--ink)]">🔥 {hype}</span>
+          {artwork.daily_vision && (
+            <>
+              <span className="text-[var(--text-faint)]">·</span>
+              <span className="truncate">#{artwork.daily_vision}</span>
+            </>
+          )}
+        </p>
+        <p className="mt-1 text-[10px] text-[var(--text-faint)]">
+          📷 {timeAgo(artwork.created_at)}
+        </p>
+      </div>
+      {artwork.imageUrl && (
+        <ImageBox
+          src={artwork.imageUrl}
+          alt={artwork.title}
+          className="h-[68px] w-[68px] shrink-0 self-center rounded-[10px]"
+        />
+      )}
+    </button>
   );
 }
 
