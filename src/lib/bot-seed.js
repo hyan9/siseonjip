@@ -53,6 +53,24 @@ export const BOT_PROFILES = [
 // 일자별 분산 — 오늘 ~ 30일 전
 const dayAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
 
+// 메모리 봇 장소 — 같은 동네에 여러 봇 작품이 모이도록
+export const BOT_PLACES = [
+  { id: 'bot-place:mangwon', name: '망원동', neighborhood: '망원동', lat: 37.556, lng: 126.902 },
+  { id: 'bot-place:hapjeong', name: '합정동', neighborhood: '합정동', lat: 37.549, lng: 126.914 },
+  { id: 'bot-place:euljiro',  name: '을지로', neighborhood: '을지로', lat: 37.566, lng: 126.991 },
+  { id: 'bot-place:yeonnam',  name: '연남동', neighborhood: '연남동', lat: 37.562, lng: 126.923 },
+  { id: 'bot-place:itaewon',  name: '이태원', neighborhood: '이태원', lat: 37.534, lng: 126.994 },
+];
+
+// 봇별 동네 매핑 — 같은 동네끼리 묶이게
+const BOT_PLACE_BY_USER = {
+  'bot:moss':   'bot-place:mangwon',  // 이끼: 망원
+  'bot:salt':   'bot-place:hapjeong', // 소금: 합정
+  'bot:linen':  'bot-place:yeonnam',  // 리넨: 연남
+  'bot:noir':   'bot-place:euljiro',  // 느와르: 을지로
+  'bot:kettle': 'bot-place:itaewon',  // 주전자: 이태원
+};
+
 // Unsplash 이미지로 작품 구성. 각 봇이 8~12장. 다양한 카테고리.
 const BOT_ARTWORK_BLUEPRINTS = [
   // ── 이끼 (bot:moss) — 비, 골목, 돌담, 식물 ──────
@@ -125,8 +143,8 @@ export const BOT_ARTWORKS = BOT_ARTWORK_BLUEPRINTS.map((a, i) => ({
   daily_vision: a.daily_vision,
   location_mode: '동네',
   storage_path: null,
-  image_url: a.url, // enrichedArtworks가 image_url || publicPhotoUrl(...) 사용
-  place_id: null,
+  image_url: a.url,
+  place_id: BOT_PLACE_BY_USER[a.user_id] ?? null,
   lat: null,
   lng: null,
   is_twenty_five: BOT_TWENTY_FIVE_BY_USER.get(a.user_id) === i,
@@ -202,7 +220,7 @@ export const BOT_COMMENTS = generateBotComments();
 // — 봇들끼리도 약간의 follow가 있어서 stats가 0이 아니게
 export function buildBotMemoryGraph(userId) {
   if (!userId) {
-    return { profiles: BOT_PROFILES, artworks: BOT_ARTWORKS, follows: [], hypes: [], comments: BOT_COMMENTS };
+    return { profiles: BOT_PROFILES, artworks: BOT_ARTWORKS, follows: [], hypes: [], comments: BOT_COMMENTS, places: BOT_PLACES };
   }
   const follows = [
     // 모든 봇 → 사용자
@@ -239,6 +257,7 @@ export function buildBotMemoryGraph(userId) {
     follows,
     hypes,
     comments: BOT_COMMENTS,
+    places: BOT_PLACES,
   };
 }
 

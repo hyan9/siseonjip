@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useData } from '../lib/data-context';
 import { useTheme } from '../lib/theme-context';
 import {
@@ -276,27 +276,13 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
                   <IconMessage size={16} />
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => setReportOpen(true)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]"
-                title="신고"
-              >
-                <IconReport size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setBlockOpen(true)}
-                disabled={blockBusy}
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full disabled:opacity-50 ${
-                  blocked
-                    ? 'border border-red-300 bg-red-50 text-red-600'
-                    : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'
-                }`}
-                title={blocked ? '차단 해제' : '차단'}
-              >
-                <IconBlock size={16} />
-              </button>
+              {/* 신고/차단 통합 — ⋯ 더보기 메뉴 안에 */}
+              <PersonMoreMenu
+                blocked={blocked}
+                blockBusy={blockBusy}
+                onReport={() => setReportOpen(true)}
+                onBlockToggle={() => setBlockOpen(true)}
+              />
             </div>
           )}
 
@@ -519,6 +505,56 @@ function FollowListModal({ title, rows, onClose, onOpenPerson }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// 신고/차단 통합 — ⋯ 더보기 드롭다운
+function PersonMoreMenu({ blocked, blockBusy, onReport, onBlockToggle }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDoc = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        disabled={blockBusy}
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] disabled:opacity-50"
+        title="더보기"
+        aria-label="더보기"
+      >
+        <span className="text-[18px] leading-none">⋯</span>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-30 mt-1 w-40 overflow-hidden rounded-[12px] bg-[var(--surface)] shadow-[0_12px_32px_rgba(0,0,0,0.18),0_0_0_1px_var(--border)]">
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onReport(); }}
+            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] font-semibold text-[var(--text)] hover:bg-[var(--surface-2)]"
+          >
+            <IconReport size={14} className="text-[var(--text-muted)]" />
+            신고
+          </button>
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onBlockToggle(); }}
+            className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] font-semibold hover:bg-[var(--surface-2)] ${
+              blocked ? 'text-red-600' : 'text-[var(--text)]'
+            }`}
+          >
+            <IconBlock size={14} className={blocked ? 'text-red-600' : 'text-[var(--text-muted)]'} />
+            {blocked ? '차단 해제' : '차단'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -98,6 +98,7 @@ export function DataProvider({ children }) {
     const mergedFollows = [...follows, ...bot.follows];
     const mergedHypes = [...hypes, ...bot.hypes];
     const mergedComments = [...comments, ...bot.comments, ...localBotComments];
+    const mergedPlaces = [...places, ...(bot.places ?? [])];
 
     const enrichedArtworks = mergedArtworks.map((art) => ({
       ...art,
@@ -105,7 +106,7 @@ export function DataProvider({ children }) {
     }));
 
     const getProfile = (id) => mergedProfiles.find((p) => p.id === id) || null;
-    const getPlace = (id) => places.find((p) => p.id === id) || null;
+    const getPlace = (id) => mergedPlaces.find((p) => p.id === id) || null;
     const getArtwork = (id) => enrichedArtworks.find((a) => a.id === id) || null;
     const getUserArtworks = (uid) => enrichedArtworks.filter((a) => a.user_id === uid);
     const getPlaceArtworks = (pid) =>
@@ -338,7 +339,7 @@ export function DataProvider({ children }) {
       refresh,
       userId,
       profiles: mergedProfiles,
-      places,
+      places: mergedPlaces,
       artworks: enrichedArtworks,
       comments: mergedComments,
       hypes: mergedHypes,

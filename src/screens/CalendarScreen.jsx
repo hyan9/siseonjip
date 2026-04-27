@@ -91,8 +91,15 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
 
   const monthShort = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][now.getMonth()];
 
-  // 상단 탭 — 롤(25칸 진행률) / 일주일 / 월별
-  const [filmView, setFilmView] = useState('roll');
+  // 상단 탭 — 롤(25칸 진행률) / 일주일 / 월별. 마지막 선택 기억.
+  const [filmView, setFilmView] = useState(() => {
+    try { return sessionStorage.getItem('kadennyang:film:view') || 'roll'; } catch { return 'roll'; }
+  });
+  useEffect(() => {
+    try { sessionStorage.setItem('kadennyang:film:view', filmView); } catch {
+      // sessionStorage 사용 불가 — 무시
+    }
+  }, [filmView]);
 
   return (
     <>

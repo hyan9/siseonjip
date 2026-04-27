@@ -36,7 +36,15 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
   } = useData();
   const { unreadCount } = useNotifications();
   const [feedFilter, setFeedFilter] = useState('전체');
-  const [feedMode, setFeedMode] = useState('추천'); // 추천 / 실시간
+  const [feedMode, setFeedMode] = useState(() => {
+    try { return sessionStorage.getItem('kadennyang:home:mode') || '추천'; } catch { return '추천'; }
+  });
+  // 탭 상태 저장
+  useEffect(() => {
+    try { sessionStorage.setItem('kadennyang:home:mode', feedMode); } catch {
+      // sessionStorage 사용 불가 (Safari private mode 등) — 무시
+    }
+  }, [feedMode]);
 
   const followingIds = useMemo(
     () => new Set(getFollowing(userId).map((f) => f.followee_id)),
@@ -197,57 +205,12 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
       ) : feedMode === '추천' ? (
         // === 추천: 오늘의 주제 + 오늘의 한 컷 + 카드형 피드 + 작가 추천 ===
         <div className="space-y-5 pt-3">
-          {/* 오늘의 주제 — 일일 사진전 (한 줄 미니멀 카드) */}
-          {(() => {
-            const today = getTodayKeyword();
-            const todaysList = artworks.filter((a) => a.daily_vision === today);
-            const todaysCount = todaysList.length;
-            const previewPhotos = todaysList.slice(0, 3);
-            return (
-              <button
-                type="button"
-                onClick={() => openKeyword?.(today)}
-                className="flex w-full items-center gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-left transition hover:bg-[var(--surface-2)]"
-              >
-                {/* 좌측 — 작은 별 모양 인디케이터 */}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)]">
-                  <span className="text-[16px]">✦</span>
-                </div>
-                {/* 본문 */}
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold tracking-[0.14em] text-[var(--text-muted)]">
-                    오늘의 주제
-                  </p>
-                  <p className="mt-0.5 truncate text-[15px] font-extrabold tracking-[-0.05em] text-[var(--text)]">
-                    #{today}
-                    <span className="ml-2 text-[11px] font-semibold text-[var(--text-faint)]">
-                      {todaysCount}장
-                    </span>
-                  </p>
-                </div>
-                {/* 우측 — 참여한 사진 미니 썸네일 (있으면) */}
-                {previewPhotos.length > 0 && (
-                  <div className="flex shrink-0 -space-x-1.5">
-                    {previewPhotos.map((art) => (
-                      <span
-                        key={art.id}
-                        className="h-7 w-7 overflow-hidden rounded-full border-2 border-[var(--surface)]"
-                        style={{ background: 'var(--image-bg)' }}
-                      >
-                        <img
-                          src={art.imageUrl}
-                          alt=""
-                          loading="lazy"
-                          className="h-full w-full object-cover"
-                        />
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <span className="shrink-0 text-[var(--text-faint)]">›</span>
-              </button>
-            );
-          })()}
+          {/* 오늘의 주제 — 이벤트 카드 (대형 + 별빛 + 펄스 애니메이션) */}
+          <DailyThemeCard
+            artworks={artworks}
+            onOpenKeyword={openKeyword}
+          />
+
 
           {featured && (
             <section>
@@ -368,5 +331,77 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
         </section>
       )}
     </>
+  );
+}
+
+// 오늘의 주제 — 풀폭 이벤트 카드 (별빛 + 펄스 애니메이션)
+function DailyThemeCard({ artworks, onOpenKeyword }) {
+  const today = getTodayKeyword();
+  const todaysList = artworks.filter((a) => a.daily_vision === today);
+  const todaysCount = todaysList.length;
+  const previews = todaysList.slice(0, 4);
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenKeyword?.(today)}
+      className="relative block w-full overflow-hidden rounded-[24px] bg-gradient-to-br from-[var(--accent)] via-[#3a2a18] to-[#1a1d1f] p-6 text-left text-white shadow-[0_12px_36px_rgba(0,0,0,0.22)]"
+    >
+      <style>{`
+        @keyframes kadennyang-pulse {
+          0%, 100% { opacity: 0.55; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.06); }
+        }
+        @keyframes kadennyang-spark {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 1; }
+        }
+      `}</style>
+      {/* 배경 별빛 — 펄스 */}
+      <div
+        className="pointer-events-none absolute -right-8 -top-8 h-44 w-44 rounded-full bg-white/12 blur-2xl"
+        style={{ animation: 'kadennyang-pulse 4s ease-in-out infinite' }}
+      />
+      <div
+        className="pointer-events-none absolute -left-12 bottom-0 h-32 w-32 rounded-full bg-white/8 blur-2xl"
+        style={{ animation: 'kadennyang-pulse 4.6s ease-in-out infinite 1s' }}
+      />
+      {/* 작은 별들 */}
+      <span className="pointer-events-none absolute right-6 top-3 text-white/80" style={{ animation: 'kadennyang-spark 1.8s ease-in-out infinite' }}>✦</span>
+      <span className="pointer-events-none absolute left-6 top-12 text-[10px] text-white/60" style={{ animation: 'kadennyang-spark 2.4s ease-in-out infinite 0.5s' }}>✦</span>
+      <span className="pointer-events-none absolute right-14 bottom-6 text-[8px] text-white/60" style={{ animation: 'kadennyang-spark 3s ease-in-out infinite 1.2s' }}>✦</span>
+
+      <div className="relative">
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
+          오늘의 일일전 · {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+        </p>
+        <h2 className="mt-2 text-[44px] font-extrabold leading-[0.98] tracking-[-0.08em] text-center">
+          #{today}
+        </h2>
+        <p className="mt-3 text-center text-[12px] leading-[1.7] text-white/85">
+          카든냥이 오늘 골라준 단어.<br />
+          이 단어로 셔터를 눌러 일일전에 참여하세요.
+        </p>
+
+        <div className="mt-4 flex items-center justify-center gap-3">
+          {/* 참여 사진 미리보기 */}
+          {previews.length > 0 ? (
+            <div className="flex -space-x-2">
+              {previews.map((art) => (
+                <span
+                  key={art.id}
+                  className="h-9 w-9 overflow-hidden rounded-full border-2 border-white/90"
+                >
+                  <img src={art.imageUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
+                </span>
+              ))}
+            </div>
+          ) : null}
+          <span className="rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold text-white backdrop-blur">
+            지금까지 {todaysCount}장 →
+          </span>
+        </div>
+      </div>
+    </button>
   );
 }
