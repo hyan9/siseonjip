@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   AuthProvider,
@@ -32,12 +32,42 @@ import {
   bulkUpdateArtworkLocationMode,
   setHeroArtwork,
   toggleSave,
+  createCollection,
+  updateCollection,
+  deleteCollection,
+  addArtworkToCollection,
+  removeArtworkFromCollection,
+  sendMessage,
+  markMessagesRead,
+  reportContent,
+  toggleBlock,
 } from './lib/db';
 import { searchPlaces } from './lib/geocoding';
+import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 
 import Icon from './components/Icon';
 import MapView from './components/MapView';
-import { downloadFourCutCard, shareFourCutCard } from './lib/share-card';
+import {
+  downloadFourCutCard,
+  shareFourCutCard,
+  shareSinglePhotoCard,
+  shareWeeklyRecapCard,
+} from './lib/share-card';
 
 /* ========================================================================
    유틸
@@ -1022,6 +1052,7 @@ function RecordScreen({ setScreen }) {
   const [error, setError] = useState(null);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [locatingId, setLocatingId] = useState(null);
+  const [pinPickingId, setPinPickingId] = useState(null);
 
   useEffect(() => {
     return () => {
@@ -1068,6 +1099,18 @@ function RecordScreen({ setScreen }) {
     } finally {
       setLocatingId(null);
     }
+  };
+
+  const handlePinConfirm = async ({ lat, lng }) => {
+    if (!pinPickingId) return;
+    const geo = await reverseGeocode(lat, lng).catch(() => null);
+    updateItem(pinPickingId, {
+      gps: { lat, lng },
+      gpsStatus: 'found',
+      gpsSource: 'manual',
+      neighborhood: geo?.neighborhood ?? null,
+    });
+    setPinPickingId(null);
   };
 
   const useMyLocationForAll = async () => {
@@ -1181,6 +1224,7 @@ function RecordScreen({ setScreen }) {
                   onRemove={() => removeItem(item.localId)}
                   onTitleChange={(title) => updateItem(item.localId, { title })}
                   onUseMyLocation={() => useMyLocationFor(item.localId)}
+                  onPickOnMap={() => setPinPickingId(item.localId)}
                   locating={locatingId === item.localId}
                 />
               ))}
@@ -1274,11 +1318,23 @@ function RecordScreen({ setScreen }) {
           </>
         )}
       </div>
+
+      {pinPickingId && (() => {
+        const item = items.find((i) => i.localId === pinPickingId);
+        return (
+          <LocationPickerModal
+            initialLat={item?.gps.lat}
+            initialLng={item?.gps.lng}
+            onConfirm={handlePinConfirm}
+            onClose={() => setPinPickingId(null)}
+          />
+        );
+      })()}
     </>
   );
 }
 
-function RecordItemCard({ item, onRemove, onTitleChange, onUseMyLocation, locating }) {
+function RecordItemCard({ item, onRemove, onTitleChange, onUseMyLocation, onPickOnMap, locating }) {
   const showLocationFallback = item.gpsStatus === 'empty' || item.gpsStatus === 'error';
   return (
     <div className="overflow-hidden rounded-[18px] bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]">
@@ -1301,7 +1357,7 @@ function RecordItemCard({ item, onRemove, onTitleChange, onUseMyLocation, locati
           )}
         </div>
       </div>
-      <div className="p-2">
+      <div className="p-2 space-y-1">
         <input
           value={item.title}
           onChange={(event) => onTitleChange(event.target.value)}
@@ -1309,14 +1365,23 @@ function RecordItemCard({ item, onRemove, onTitleChange, onUseMyLocation, locati
           className="w-full bg-transparent text-xs font-semibold outline-none placeholder:text-[var(--placeholder)]"
         />
         {showLocationFallback && (
-          <button
-            type="button"
-            onClick={onUseMyLocation}
-            disabled={locating}
-            className="mt-1 w-full rounded-full bg-[var(--ink)] px-2 py-1 text-[10px] font-semibold text-white disabled:opacity-50"
-          >
-            {locating ? '확인 중…' : '📍 내 위치'}
-          </button>
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              type="button"
+              onClick={onUseMyLocation}
+              disabled={locating}
+              className="rounded-full bg-[var(--ink)] px-2 py-1 text-[10px] font-semibold text-white disabled:opacity-50"
+            >
+              {locating ? '확인 중…' : '📍 내 위치'}
+            </button>
+            <button
+              type="button"
+              onClick={onPickOnMap}
+              className="rounded-full border border-[var(--border-strong)] px-2 py-1 text-[10px] font-semibold text-[var(--text)]"
+            >
+              📌 지도에서
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -1327,13 +1392,17 @@ function RecordItemCard({ item, onRemove, onTitleChange, onUseMyLocation, locati
    Artwork detail + comments
    ====================================================================== */
 
-function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerson, openKeyword }) {
+function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerson, openKeyword, openCollectionPicker }) {
   const { userId, getArtwork, getProfile, getPlace, getUserArtworks, isSavedByMe, refresh } = useData();
+  const { theme } = useTheme();
   const art = getArtwork(artworkId);
   const [deleting, setDeleting] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [zoomAutoplay, setZoomAutoplay] = useState(false);
   const [busyHero, setBusyHero] = useState(false);
   const [busySave, setBusySave] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [sharingCard, setSharingCard] = useState(false);
 
   if (!art) return <EmptyState title="사진을 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
@@ -1380,6 +1449,17 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerso
       alert('저장 실패: ' + err.message);
     } finally {
       setBusySave(false);
+    }
+  };
+
+  const handleShareSingle = async () => {
+    setSharingCard(true);
+    try {
+      await shareSinglePhotoCard({ photo: art, profile, theme });
+    } catch (err) {
+      alert('카드 생성 실패: ' + err.message);
+    } finally {
+      setSharingCard(false);
     }
   };
 
@@ -1447,17 +1527,47 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerso
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <HypeButton artwork={art} />
             {userId && !isMine && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={busySave}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
+                    saved
+                      ? 'border border-[var(--ink)] bg-[var(--ink)] text-white'
+                      : 'border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)]'
+                  }`}
+                >
+                  {saved ? '🔖 저장됨' : '🔖 저장'}
+                </button>
+                {openCollectionPicker && (
+                  <button
+                    type="button"
+                    onClick={() => openCollectionPicker(art.id)}
+                    className="rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text)]"
+                  >
+                    + 컬렉션
+                  </button>
+                )}
+              </>
+            )}
+            <button
+              type="button"
+              onClick={handleShareSingle}
+              disabled={sharingCard}
+              className="rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text)] disabled:opacity-50"
+              title="이 사진을 카드로 공유"
+            >
+              {sharingCard ? '카드 만드는 중…' : '📤 공유 카드'}
+            </button>
+            {userId && !isMine && (
               <button
                 type="button"
-                onClick={handleSave}
-                disabled={busySave}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
-                  saved
-                    ? 'border border-[var(--ink)] bg-[var(--ink)] text-white'
-                    : 'border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)]'
-                }`}
+                onClick={() => setReportOpen(true)}
+                className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600"
+                title="신고"
               >
-                {saved ? '🔖 저장됨' : '🔖 저장'}
+                🚩
               </button>
             )}
             {isMine && (
@@ -1509,7 +1619,15 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerso
         <PhotoZoomModal
           photos={userPhotos}
           initialIndex={zoomIndex}
-          onClose={() => setZoomOpen(false)}
+          autoplay={zoomAutoplay}
+          onClose={() => { setZoomOpen(false); setZoomAutoplay(false); }}
+        />
+      )}
+
+      {reportOpen && (
+        <ReportModal
+          target={{ artworkId: art.id, userId: art.user_id }}
+          onClose={() => setReportOpen(false)}
         />
       )}
     </>
@@ -1700,6 +1818,107 @@ function CommentItem({ comment, onReply, isReply = false, openPerson }) {
 }
 
 /* ========================================================================
+   ReportModal — 신고
+   ====================================================================== */
+
+const REPORT_REASONS = [
+  { id: 'spam', label: '스팸 / 광고' },
+  { id: 'harassment', label: '괴롭힘 / 혐오' },
+  { id: 'sexual', label: '부적절한 성적 콘텐츠' },
+  { id: 'violence', label: '폭력 / 위험' },
+  { id: 'misinformation', label: '허위 정보' },
+  { id: 'copyright', label: '저작권 침해' },
+  { id: 'other', label: '기타' },
+];
+
+function ReportModal({ target, onClose }) {
+  const { userId } = useData();
+  const [reason, setReason] = useState('spam');
+  const [detail, setDetail] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!userId) return;
+    setBusy(true);
+    try {
+      await reportContent(userId, target, reason, detail);
+      setDone(true);
+      setTimeout(onClose, 1200);
+    } catch (err) {
+      alert('신고 실패: ' + err.message);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-[400px] rounded-[24px] bg-[var(--surface)] p-6 shadow-xl">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[20px] font-extrabold tracking-[-0.06em]">콘텐츠 신고</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-2)]"
+          >
+            <Icon name="x" size={14} />
+          </button>
+        </div>
+
+        {done ? (
+          <p className="mt-4 rounded-[16px] bg-green-50 p-4 text-sm text-green-800">
+            신고가 접수됐어요. 검토 후 조치됩니다.
+          </p>
+        ) : (
+          <>
+            <p className="mt-2 text-xs text-[var(--text-muted)]">사유를 골라주세요. 익명으로 처리됩니다.</p>
+            <div className="mt-4 space-y-2">
+              {REPORT_REASONS.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setReason(r.id)}
+                  className={`flex w-full items-center gap-2 rounded-[14px] border p-3 text-left text-sm ${
+                    reason === r.id
+                      ? 'border-[var(--ink)] bg-[var(--ink)] text-white'
+                      : 'border-[var(--border)] text-[var(--text)]'
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={detail}
+              onChange={(event) => setDetail(event.target.value)}
+              placeholder="추가 설명 (선택)"
+              className="mt-3 min-h-20 w-full resize-none rounded-[14px] border border-[var(--border)] bg-[var(--bg)] p-3 text-sm outline-none"
+            />
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 rounded-full border border-[var(--border-strong)] px-4 py-3 text-sm font-semibold text-[var(--text)]"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={busy}
+                className="flex-1 rounded-full bg-red-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {busy ? '제출 중…' : '신고 제출'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ========================================================================
    Saved (북마크 모음)
    ====================================================================== */
 
@@ -1801,6 +2020,542 @@ function ActivityScreen({ setScreen, openArtwork, openPerson }) {
           })}
         </div>
       )}
+    </>
+  );
+}
+
+/* ========================================================================
+   Collections
+   ====================================================================== */
+
+function CollectionsScreen({ setScreen, openCollection }) {
+  const { userId, getCollectionsByUser, getCollectionArtworks, refresh } = useData();
+  const myCollections = getCollectionsByUser(userId);
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [isPublic, setIsPublic] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const handleCreate = async () => {
+    if (!name.trim() || !userId) return;
+    setBusy(true);
+    try {
+      await createCollection(userId, { name: name.trim(), description: description.trim() || null, isPublic });
+      await refresh();
+      setName('');
+      setDescription('');
+      setCreating(false);
+    } catch (err) {
+      alert('생성 실패: ' + err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <Header
+        title="컬렉션"
+        subtitle="테마별로 사진을 모아둡니다."
+        kicker="📚 모음"
+        onBack={() => setScreen('profile')}
+        right={
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="rounded-full bg-[var(--ink)] px-3 py-1.5 text-xs font-semibold text-white"
+          >
+            + 새 컬렉션
+          </button>
+        }
+      />
+
+      {myCollections.length === 0 && !creating ? (
+        <EmptyState
+          title="아직 컬렉션이 없어요"
+          hint={'예: "겨울의 빛", "도시의 모서리", "흔들리는 것들"\n사진들을 테마로 묶어 다시 보고 싶을 때 만들어요.'}
+          onAction={() => setCreating(true)}
+          actionLabel="첫 컬렉션 만들기"
+        />
+      ) : (
+        <div className="space-y-3">
+          {creating && (
+            <section className="rounded-[20px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
+              <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">새 컬렉션</p>
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="컬렉션 이름 (예: 겨울의 빛)"
+                autoFocus
+                className="mt-2 w-full rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm outline-none"
+              />
+              <textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="간단한 설명 (선택)"
+                className="mt-2 min-h-16 w-full resize-none rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm outline-none"
+              />
+              <label className="mt-2 flex items-center gap-2 text-xs">
+                <input type="checkbox" checked={isPublic} onChange={(event) => setIsPublic(event.target.checked)} className="h-4 w-4 accent-[var(--ink)]" />
+                <span>공개</span>
+                <span className="text-[var(--text-muted)]">— 다른 사람들도 볼 수 있어요</span>
+              </label>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCreating(false)}
+                  className="flex-1 rounded-full border border-[var(--border-strong)] px-3 py-2 text-xs font-semibold"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  disabled={busy || !name.trim()}
+                  className="flex-1 rounded-full bg-[var(--ink)] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                >
+                  {busy ? '생성 중…' : '만들기'}
+                </button>
+              </div>
+            </section>
+          )}
+
+          {myCollections.map((c) => {
+            const items = getCollectionArtworks(c.id);
+            const cover = items.find((a) => a.id === c.cover_artwork_id) || items[0];
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => openCollection(c.id)}
+                className="block w-full overflow-hidden rounded-[20px] bg-[var(--surface)] text-left shadow-[0_0_0_1px_var(--border)]"
+              >
+                <div className="grid grid-cols-[2fr_1fr] gap-1.5 p-2">
+                  <ImageBox src={cover?.imageUrl} alt={c.name} className="h-32 rounded-[14px]" />
+                  <div className="grid grid-rows-2 gap-1.5">
+                    <ImageBox src={items[1]?.imageUrl} alt="" className="h-full rounded-[10px]" />
+                    <ImageBox src={items[2]?.imageUrl} alt="" className="h-full rounded-[10px]" />
+                  </div>
+                </div>
+                <div className="px-3 pb-3">
+                  <p className="text-[16px] font-bold tracking-[-0.04em]">{c.name}</p>
+                  <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">
+                    {items.length}장 · {c.is_public ? '공개' : '비공개'}
+                  </p>
+                  {c.description && (
+                    <p className="mt-1 line-clamp-2 text-xs text-[var(--text-muted)]">{c.description}</p>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+function CollectionDetailScreen({ collectionId, setScreen, openArtwork }) {
+  const { userId, getCollection, getCollectionArtworks, refresh } = useData();
+  const collection = getCollection(collectionId);
+  const items = getCollectionArtworks(collectionId);
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(collection?.name || '');
+  const [description, setDescription] = useState(collection?.description || '');
+  const [isPublic, setIsPublic] = useState(collection?.is_public ?? true);
+  const [busy, setBusy] = useState(false);
+
+  if (!collection) return <EmptyState title="컬렉션을 찾을 수 없어요" onAction={() => setScreen('collections')} actionLabel="목록으로" />;
+
+  const isMine = collection.user_id === userId;
+
+  const handleSave = async () => {
+    if (!isMine) return;
+    setBusy(true);
+    try {
+      await updateCollection(collection.id, userId, { name: name.trim(), description, isPublic });
+      await refresh();
+      setEditing(false);
+    } catch (err) {
+      alert('수정 실패: ' + err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!isMine) return;
+    if (!window.confirm(`"${collection.name}" 컬렉션을 삭제할까요? 사진은 그대로 남아요.`)) return;
+    try {
+      await deleteCollection(collection.id, userId);
+      await refresh();
+      setScreen('collections');
+    } catch (err) {
+      alert('삭제 실패: ' + err.message);
+    }
+  };
+
+  const handleRemove = async (artworkId) => {
+    if (!isMine) return;
+    try {
+      await removeArtworkFromCollection(collection.id, artworkId);
+      await refresh();
+    } catch (err) {
+      alert('제거 실패: ' + err.message);
+    }
+  };
+
+  return (
+    <>
+      <Header
+        title={collection.name}
+        subtitle={collection.description || ''}
+        kicker={`📚 ${items.length}장`}
+        onBack={() => setScreen('collections')}
+      />
+
+      {isMine && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => { setEditing(!editing); setName(collection.name); setDescription(collection.description || ''); setIsPublic(collection.is_public); }}
+            className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold"
+          >
+            {editing ? '편집 취소' : '편집'}
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600"
+          >
+            🗑 삭제
+          </button>
+        </div>
+      )}
+
+      {editing && (
+        <section className="mb-4 rounded-[20px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
+          <input value={name} onChange={(event) => setName(event.target.value)} className="w-full rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm outline-none" />
+          <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="설명" className="mt-2 min-h-16 w-full resize-none rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-sm outline-none" />
+          <label className="mt-2 flex items-center gap-2 text-xs">
+            <input type="checkbox" checked={isPublic} onChange={(event) => setIsPublic(event.target.checked)} className="h-4 w-4 accent-[var(--ink)]" />
+            <span>공개</span>
+          </label>
+          <button type="button" onClick={handleSave} disabled={busy || !name.trim()} className="mt-3 w-full rounded-full bg-[var(--ink)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+            {busy ? '저장 중…' : '저장'}
+          </button>
+        </section>
+      )}
+
+      {items.length === 0 ? (
+        <EmptyState
+          title="아직 사진이 없어요"
+          hint={isMine ? '다른 사람 사진의 + 컬렉션 버튼으로 추가하세요.' : ''}
+        />
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {items.map((art) => (
+            <div key={art.id} className="relative">
+              <PhotoTile artwork={art} onOpen={openArtwork} />
+              {isMine && (
+                <button
+                  type="button"
+                  onClick={() => handleRemove(art.id)}
+                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white"
+                  aria-label="컬렉션에서 제거"
+                >
+                  <Icon name="x" size={12} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function AddToCollectionPicker({ artworkId, onClose }) {
+  const { userId, getCollectionsByUser, isInCollection, refresh } = useData();
+  const myCollections = getCollectionsByUser(userId);
+  const [busyId, setBusyId] = useState(null);
+  const [creatingNew, setCreatingNew] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [busyNew, setBusyNew] = useState(false);
+
+  const handleToggle = async (collectionId) => {
+    if (!userId) return;
+    setBusyId(collectionId);
+    try {
+      if (isInCollection(collectionId, artworkId)) {
+        await removeArtworkFromCollection(collectionId, artworkId);
+      } else {
+        await addArtworkToCollection(collectionId, artworkId);
+      }
+      await refresh();
+    } catch (err) {
+      alert('실패: ' + err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleCreateAndAdd = async () => {
+    if (!newName.trim() || !userId) return;
+    setBusyNew(true);
+    try {
+      const created = await createCollection(userId, { name: newName.trim(), isPublic: true });
+      await addArtworkToCollection(created.id, artworkId);
+      await refresh();
+      setCreatingNew(false);
+      setNewName('');
+    } catch (err) {
+      alert('실패: ' + err.message);
+    } finally {
+      setBusyNew(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 sm:items-center">
+      <div className="w-full max-w-[400px] rounded-t-[28px] bg-[var(--surface)] p-6 shadow-xl sm:rounded-[24px]">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-[20px] font-extrabold tracking-[-0.06em]">컬렉션에 추가</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-2)]"
+          >
+            <Icon name="x" size={14} />
+          </button>
+        </div>
+
+        <div className="max-h-72 space-y-2 overflow-y-auto">
+          {myCollections.length === 0 && !creatingNew && (
+            <p className="rounded-[14px] bg-[var(--bg)] p-4 text-xs text-[var(--text-muted)]">
+              아직 컬렉션이 없어요. 새 컬렉션을 만들어주세요.
+            </p>
+          )}
+          {myCollections.map((c) => {
+            const inCollection = isInCollection(c.id, artworkId);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => handleToggle(c.id)}
+                disabled={busyId === c.id}
+                className={`flex w-full items-center justify-between rounded-[14px] border p-3 text-left disabled:opacity-50 ${
+                  inCollection
+                    ? 'border-[var(--ink)] bg-[var(--ink)] text-white'
+                    : 'border-[var(--border)] text-[var(--text)]'
+                }`}
+              >
+                <span className="truncate text-sm font-semibold">{c.name}</span>
+                <span className="text-xs">{inCollection ? '✓ 추가됨' : '+ 추가'}</span>
+              </button>
+            );
+          })}
+          {creatingNew && (
+            <div className="rounded-[14px] border border-[var(--border)] bg-[var(--bg)] p-3">
+              <input
+                value={newName}
+                onChange={(event) => setNewName(event.target.value)}
+                placeholder="새 컬렉션 이름"
+                autoFocus
+                className="w-full bg-transparent text-sm outline-none"
+              />
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setCreatingNew(false); setNewName(''); }}
+                  className="flex-1 rounded-full border border-[var(--border-strong)] px-3 py-1.5 text-xs"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateAndAdd}
+                  disabled={busyNew || !newName.trim()}
+                  className="flex-1 rounded-full bg-[var(--ink)] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                >
+                  {busyNew ? '…' : '만들고 추가'}
+                </button>
+              </div>
+            </div>
+          )}
+          {!creatingNew && (
+            <button
+              type="button"
+              onClick={() => setCreatingNew(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-dashed border-[var(--border-dashed)] p-3 text-sm text-[var(--text-muted)]"
+            >
+              + 새 컬렉션 만들기
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ========================================================================
+   Messages (DM)
+   ====================================================================== */
+
+function MessagesScreen({ setScreen, openConversation }) {
+  const { userId, getConversations, getProfile } = useData();
+  const conversations = getConversations();
+
+  return (
+    <>
+      <Header
+        title="메시지"
+        subtitle="1:1 쪽지를 주고받습니다."
+        kicker="💬 DM"
+        onBack={() => setScreen('profile')}
+      />
+
+      {conversations.length === 0 ? (
+        <EmptyState
+          title="아직 대화가 없어요"
+          hint="다른 사람의 개인전에서 💬 메시지 버튼으로 시작해보세요."
+        />
+      ) : (
+        <div className="space-y-2">
+          {conversations.map((conv) => {
+            const other = getProfile(conv.otherId);
+            return (
+              <button
+                key={conv.otherId}
+                type="button"
+                onClick={() => openConversation(conv.otherId)}
+                className="flex w-full items-center gap-3 rounded-[18px] bg-[var(--surface)] p-3 text-left shadow-[0_0_0_1px_var(--border)]"
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--surface-2)] text-lg font-bold text-[var(--text)]">
+                  {other?.nickname?.[0] || '?'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-2 truncate text-sm font-semibold tracking-[-0.04em]">
+                    {other?.nickname || '익명'}
+                    {conv.unread > 0 && (
+                      <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        {conv.unread}
+                      </span>
+                    )}
+                  </p>
+                  <p className="mt-0.5 truncate text-[12px] text-[var(--text-muted)]">
+                    {conv.lastFromMe && '나: '}{conv.lastText}
+                  </p>
+                </div>
+                <span className="text-[10px] text-[var(--text-faint)]">{timeAgo(conv.lastAt)}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+function ConversationScreen({ otherId, setScreen, openPerson }) {
+  const { userId, getProfile, getThread, refresh } = useData();
+  const other = getProfile(otherId);
+  const thread = getThread(otherId);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const scrollRef = useRef(null);
+
+  // 진입/메시지 추가 시 자동 스크롤 + read 마킹
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [thread.length]);
+
+  useEffect(() => {
+    if (!userId || !otherId) return;
+    markMessagesRead(otherId, userId).then(() => refresh()).catch(() => {});
+  }, [userId, otherId, thread.length]);
+
+  if (!other) return <EmptyState title="사용자를 찾을 수 없어요" onAction={() => setScreen('messages')} actionLabel="목록으로" />;
+
+  const handleSend = async (event) => {
+    event.preventDefault();
+    if (!text.trim() || !userId) return;
+    setBusy(true);
+    try {
+      await sendMessage(userId, otherId, text.trim());
+      setText('');
+      await refresh();
+    } catch (err) {
+      alert('전송 실패: ' + err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="mb-3 flex items-center justify-between">
+        <button type="button" onClick={() => setScreen('messages')} className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]">
+          <Icon name="back" size={16} />
+        </button>
+        <button
+          type="button"
+          onClick={() => openPerson(otherId)}
+          className="text-center"
+        >
+          <p className="text-xs font-semibold tracking-[0.16em] text-[var(--text-muted)]">대화</p>
+          <p className="text-lg font-extrabold tracking-[-0.06em]">{other.nickname}</p>
+        </button>
+        <span className="h-9 w-9" />
+      </div>
+
+      <div
+        ref={scrollRef}
+        className="space-y-2 overflow-y-auto rounded-[20px] bg-[var(--surface)] p-3 shadow-[0_0_0_1px_var(--border)]"
+        style={{ minHeight: '60vh', maxHeight: '70vh' }}
+      >
+        {thread.length === 0 && (
+          <p className="py-12 text-center text-xs text-[var(--text-muted)]">첫 메시지를 보내보세요.</p>
+        )}
+        {thread.map((m) => {
+          const mine = m.sender_id === userId;
+          return (
+            <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className={`max-w-[75%] rounded-[16px] px-3 py-2 ${
+                  mine
+                    ? 'bg-[var(--ink)] text-white'
+                    : 'bg-[var(--surface-2)] text-[var(--text)]'
+                }`}
+              >
+                <p className="whitespace-pre-wrap text-sm leading-5">{m.text}</p>
+                <p className={`mt-1 text-[10px] ${mine ? 'text-white/60' : 'text-[var(--text-faint)]'}`}>
+                  {timeAgo(m.created_at)}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <form onSubmit={handleSend} className="mt-3 flex gap-2">
+        <input
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          placeholder="메시지 입력…"
+          className="flex-1 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm outline-none"
+        />
+        <button
+          type="submit"
+          disabled={busy || !text.trim()}
+          className="rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-40"
+        >
+          전송
+        </button>
+      </form>
     </>
   );
 }
@@ -2017,6 +2772,7 @@ function NotificationsScreen({ setScreen, openArtwork, openPerson }) {
                 case 'comment_reaction': return `${sourceName}이(가) 댓글에 ❤`;
                 case 'mention': return `${sourceName}이(가) @멘션`;
                 case 'follow': return `${sourceName}이(가) 팔로우`;
+                case 'message': return `${sourceName}이(가) 메시지`;
                 default: return '새 알림';
               }
             })();
@@ -2104,12 +2860,135 @@ function KeywordScreen({ keyword, setScreen, openArtwork }) {
 }
 
 /* ========================================================================
+   LocationPickerModal — 지도 클릭으로 좌표 직접 입력
+   ====================================================================== */
+
+function LocationClickHandler({ onPick }) {
+  useMapEvents({
+    click(event) {
+      onPick({ lat: event.latlng.lat, lng: event.latlng.lng });
+    },
+  });
+  return null;
+}
+
+function LocationPickerModal({ initialLat, initialLng, onConfirm, onClose }) {
+  const [picked, setPicked] = useState(
+    initialLat != null && initialLng != null ? { lat: initialLat, lng: initialLng } : null
+  );
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) { setSearchResults([]); return; }
+    let cancelled = false;
+    setSearching(true);
+    const timer = setTimeout(async () => {
+      const results = await searchPlaces(q);
+      if (!cancelled) setSearchResults(results);
+      setSearching(false);
+    }, 350);
+    return () => { cancelled = true; clearTimeout(timer); setSearching(false); };
+  }, [searchQuery]);
+
+  const fallbackCenter = picked
+    ? [picked.lat, picked.lng]
+    : initialLat != null
+    ? [initialLat, initialLng]
+    : [37.5665, 126.978];
+
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col bg-[var(--bg)]">
+      <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+        <p className="text-sm font-semibold">위치 선택 (지도 탭)</p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-2)]"
+        >
+          <Icon name="x" size={16} />
+        </button>
+      </div>
+
+      <div className="relative px-4 pt-3">
+        <div className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5">
+          <Icon name="search" size={15} className="text-[var(--text-muted)]" />
+          <input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="동네/주소 검색"
+            className="w-full bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-faint)]"
+          />
+          {searching && <span className="text-xs text-[var(--text-muted)]">검색 중…</span>}
+        </div>
+        {searchResults.length > 0 && (
+          <div className="absolute inset-x-4 top-full z-10 mt-2 max-h-64 overflow-y-auto rounded-[14px] bg-[var(--surface)] shadow-[0_8px_24px_rgba(0,0,0,0.12),0_0_0_1px_var(--border)]">
+            {searchResults.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => {
+                  setPicked({ lat: r.lat, lng: r.lng });
+                  setSearchResults([]);
+                  setSearchQuery(r.shortName || '');
+                }}
+                className="block w-full border-b border-[var(--border)] p-3 text-left last:border-b-0"
+              >
+                <p className="truncate text-sm font-semibold">{r.shortName}</p>
+                <p className="truncate text-[11px] text-[var(--text-muted)]">{r.name}</p>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 px-4 py-3">
+        <div className="h-full overflow-hidden rounded-[20px] shadow-[0_0_0_1px_var(--border-strong)]">
+          <MapContainer
+            center={fallbackCenter}
+            zoom={picked ? 15 : 12}
+            style={{ height: '100%', width: '100%' }}
+            scrollWheelZoom={true}
+          >
+            <TileLayer
+              attribution='&copy; OSM'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <LocationClickHandler onPick={setPicked} />
+            {picked && <Marker position={[picked.lat, picked.lng]} />}
+          </MapContainer>
+        </div>
+      </div>
+
+      <div className="border-t border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+        <p className="text-xs text-[var(--text-muted)]">
+          {picked
+            ? `좌표: ${picked.lat.toFixed(5)}, ${picked.lng.toFixed(5)} — 지도를 다시 탭해서 변경 가능`
+            : '지도를 탭하거나 검색해서 위치를 선택하세요'}
+        </p>
+        <button
+          type="button"
+          onClick={() => picked && onConfirm(picked)}
+          disabled={!picked}
+          className="mt-3 w-full rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+        >
+          이 위치로 설정
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ========================================================================
    PhotoZoomModal — fullscreen viewer with swipe + native pinch
    ====================================================================== */
 
-function PhotoZoomModal({ photos, initialIndex = 0, onClose, onOpenPerson }) {
+function PhotoZoomModal({ photos, initialIndex = 0, onClose, autoplay: initialAutoplay = false }) {
   const [index, setIndex] = useState(initialIndex);
   const [touchStart, setTouchStart] = useState(null);
+  const [autoplay, setAutoplay] = useState(initialAutoplay);
   const photo = photos[index];
 
   const goPrev = () => setIndex((i) => Math.max(0, i - 1));
@@ -2120,10 +2999,29 @@ function PhotoZoomModal({ photos, initialIndex = 0, onClose, onOpenPerson }) {
       if (event.key === 'Escape') onClose();
       else if (event.key === 'ArrowLeft') goPrev();
       else if (event.key === 'ArrowRight') goNext();
+      else if (event.key === ' ') {
+        event.preventDefault();
+        setAutoplay((v) => !v);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  // 슬라이드쇼: 4초마다 자동 다음
+  useEffect(() => {
+    if (!autoplay) return undefined;
+    const timer = setInterval(() => {
+      setIndex((i) => {
+        if (i >= photos.length - 1) {
+          setAutoplay(false);
+          return i;
+        }
+        return i + 1;
+      });
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [autoplay, photos.length]);
 
   // body 스크롤 막기
   useEffect(() => {
@@ -2160,14 +3058,24 @@ function PhotoZoomModal({ photos, initialIndex = 0, onClose, onOpenPerson }) {
           <p className="text-xs text-white/70">{index + 1} / {photos.length}</p>
           <p className="mt-0.5 text-sm font-semibold tracking-[-0.04em]">{photo.title || '제목 없음'}</p>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10"
-          aria-label="닫기"
-        >
-          <Icon name="x" size={16} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAutoplay((v) => !v)}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${autoplay ? 'bg-white text-black' : 'bg-white/10 text-white'}`}
+            title="슬라이드쇼 (스페이스)"
+          >
+            {autoplay ? '⏸ 정지' : '▶ 슬라이드쇼'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10"
+            aria-label="닫기"
+          >
+            <Icon name="x" size={16} />
+          </button>
+        </div>
       </div>
 
       <div
@@ -2341,7 +3249,7 @@ function StatCell({ label, value }) {
   );
 }
 
-function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
+function PersonExhibition({ userId: viewedId, setScreen, openArtwork, openConversation }) {
   const {
     userId,
     getProfile,
@@ -2349,6 +3257,7 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
     getCurateForUser,
     getStats,
     isFollowing,
+    isBlocked,
     getHypeCount,
     refresh,
   } = useData();
@@ -2359,9 +3268,13 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
   const isMe = viewedId === userId;
   const stats = getStats(viewedId);
   const following = isFollowing(viewedId);
+  const blocked = isBlocked(viewedId);
   const [seeding, setSeeding] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
+  const [blockBusy, setBlockBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [recapBusy, setRecapBusy] = useState(false);
 
   if (!profile) return <EmptyState title="사용자를 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
@@ -2404,14 +3317,53 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
     }
     setExporting(true);
     try {
-      const result = await shareFourCutCard({ photos: wall, profile, theme });
-      if (result === 'downloaded') {
-        // 별도 알림 없이 종료 (브라우저가 다운로드 표시함)
-      }
+      await shareFourCutCard({ photos: wall, profile, theme });
     } catch (err) {
       alert('카드 생성 실패: ' + err.message);
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleBlock = async () => {
+    if (!userId || isMe) return;
+    const confirmMsg = blocked
+      ? '차단을 해제할까요?'
+      : `${profile.nickname}을(를) 차단하면 서로의 콘텐츠가 보이지 않게 됩니다. 계속할까요?`;
+    if (!window.confirm(confirmMsg)) return;
+    setBlockBusy(true);
+    try {
+      await toggleBlock(viewedId, userId, blocked);
+      await refresh();
+    } catch (err) {
+      alert('실패: ' + err.message);
+    } finally {
+      setBlockBusy(false);
+    }
+  };
+
+  const handleWeeklyRecap = async () => {
+    setRecapBusy(true);
+    try {
+      const weekAgo = Date.now() - 7 * 86400000;
+      const recent = works
+        .filter((a) => new Date(a.created_at).getTime() >= weekAgo && a.location_mode !== '숨김')
+        .map((a) => ({ ...a, hype: getHypeCount(a.id) }))
+        .sort((a, b) => b.hype - a.hype || new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 5);
+      if (recent.length === 0) {
+        alert('이번 주 올린 사진이 없어요.');
+        return;
+      }
+      const today = new Date();
+      const start = new Date(today.getTime() - 6 * 86400000);
+      const fmt = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
+      const weekRange = `${fmt(start)} – ${fmt(today)}`;
+      await shareWeeklyRecapCard({ photos: recent, profile, theme, weekRange });
+    } catch (err) {
+      alert('회고 카드 실패: ' + err.message);
+    } finally {
+      setRecapBusy(false);
     }
   };
 
@@ -2479,19 +3431,53 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
           </div>
 
           {!isMe && userId && (
-            <button
-              type="button"
-              onClick={handleFollow}
-              disabled={followBusy}
-              className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${
-                following
-                  ? 'border border-[var(--ink)] bg-white text-[var(--text)]'
-                  : 'bg-[var(--ink)] text-white'
-              }`}
-            >
-              <Icon name={following ? 'checkFollow' : 'plusFollow'} size={16} />
-              {following ? '팔로잉' : '팔로우'}
-            </button>
+            <div className="mt-3 space-y-2">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleFollow}
+                  disabled={followBusy}
+                  className={`flex-1 inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${
+                    following
+                      ? 'border border-[var(--ink)] bg-[var(--surface)] text-[var(--text)]'
+                      : 'bg-[var(--ink)] text-white'
+                  }`}
+                >
+                  <Icon name={following ? 'checkFollow' : 'plusFollow'} size={16} />
+                  {following ? '팔로잉' : '팔로우'}
+                </button>
+                {openConversation && (
+                  <button
+                    type="button"
+                    onClick={() => openConversation(viewedId)}
+                    className="rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold"
+                  >
+                    💬 메시지
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReportOpen(true)}
+                  className="flex-1 rounded-full border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-muted)]"
+                >
+                  🚩 신고
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBlock}
+                  disabled={blockBusy}
+                  className={`flex-1 rounded-full px-3 py-1.5 text-xs disabled:opacity-50 ${
+                    blocked
+                      ? 'border border-red-300 bg-red-50 text-red-700'
+                      : 'border border-[var(--border)] text-[var(--text-muted)]'
+                  }`}
+                >
+                  {blocked ? '🚫 차단됨 (해제)' : '🚫 차단'}
+                </button>
+              </div>
+            </div>
           )}
 
           {isMe && (
@@ -2517,6 +3503,20 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
               >
                 내 활동
               </button>
+              <button
+                type="button"
+                onClick={() => setScreen('collections')}
+                className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold"
+              >
+                📚 컬렉션
+              </button>
+              <button
+                type="button"
+                onClick={() => setScreen('messages')}
+                className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold"
+              >
+                💬 메시지
+              </button>
               {wall.length >= 1 && (
                 <button
                   type="button"
@@ -2525,6 +3525,16 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
                   className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
                 >
                   {exporting ? '카드 만드는 중…' : '📤 4컷 카드'}
+                </button>
+              )}
+              {works.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleWeeklyRecap}
+                  disabled={recapBusy}
+                  className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                >
+                  {recapBusy ? '회고 만드는 중…' : '🗓 이번 주 회고'}
                 </button>
               )}
               {works.length > 0 && (
@@ -2593,6 +3603,13 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
             : <div className="grid grid-cols-2 gap-3">{works.map((art) => <PhotoTile key={art.id} artwork={art} onOpen={openArtwork} />)}</div>}
         </section>
       </div>
+
+      {reportOpen && (
+        <ReportModal
+          target={{ userId: viewedId }}
+          onClose={() => setReportOpen(false)}
+        />
+      )}
     </>
   );
 }
@@ -2897,6 +3914,51 @@ function PlaceExhibition({ placeId, setScreen, openArtwork }) {
    Curate (4컷 순서)
    ====================================================================== */
 
+function SortableCurateItem({ art, index, onRemove, onOpen }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: art.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <article
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 rounded-[22px] bg-[var(--surface)] p-2.5 shadow-[0_0_0_1px_var(--border)]"
+    >
+      <span
+        {...attributes}
+        {...listeners}
+        className="flex h-9 w-7 shrink-0 cursor-grab touch-none items-center justify-center text-[var(--text-muted)] active:cursor-grabbing"
+        title="끌어서 순서 변경"
+      >
+        ⋮⋮
+      </span>
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--ink)] text-[11px] font-semibold text-white">
+        {index + 1}
+      </span>
+      <button
+        type="button"
+        onClick={() => onOpen(art.id)}
+        className="h-16 w-16 shrink-0 overflow-hidden rounded-[14px]"
+      >
+        <ImageBox src={art.imageUrl} alt={art.title} className="h-full w-full" />
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-bold tracking-[-0.04em]">{art.title || '제목 없음'}</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => onRemove(art.id)}
+        className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-strong)] text-xs"
+      >
+        ×
+      </button>
+    </article>
+  );
+}
+
 function CurateScreen({ setScreen, openArtwork }) {
   const { userId, getUserArtworks, getCurateForUser, refresh } = useData();
   const initial = getCurateForUser(userId);
@@ -2907,13 +3969,19 @@ function CurateScreen({ setScreen, openArtwork }) {
   const ordered = orderedIds.map((id) => all.find((a) => a.id === id)).filter(Boolean);
   const remaining = all.filter((a) => !orderedIds.includes(a.id));
 
-  const move = (index, direction) => {
-    const nextIndex = index + direction;
-    if (nextIndex < 0 || nextIndex >= orderedIds.length) return;
-    setOrderedIds((prev) => {
-      const copy = [...prev];
-      [copy[index], copy[nextIndex]] = [copy[nextIndex], copy[index]];
-      return copy;
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+  );
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setOrderedIds((items) => {
+      const oldIndex = items.indexOf(active.id);
+      const newIndex = items.indexOf(over.id);
+      if (oldIndex === -1 || newIndex === -1) return items;
+      return arrayMove(items, oldIndex, newIndex);
     });
   };
 
@@ -2935,35 +4003,43 @@ function CurateScreen({ setScreen, openArtwork }) {
 
   return (
     <>
-      <Header title="전시 순서" subtitle="오늘 걸어둘 4컷을 정해보세요." kicker="수정" onBack={() => setScreen('profile')} />
+      <Header
+        title="전시 순서"
+        subtitle="끌어서 4컷의 순서를 바꿔보세요."
+        kicker="수정"
+        onBack={() => setScreen('profile')}
+      />
       <div className="space-y-4">
         <section className="rounded-[26px] border border-[var(--ink)] bg-[var(--surface)] p-3">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[22px] font-extrabold tracking-[-0.07em]">미리보기</h2>
-            <span className="rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-[11px] text-[var(--text-muted)]">{ordered.length}/4</span>
+            <span className="rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-[11px] text-[var(--text-muted)]">
+              {ordered.length}/4
+            </span>
           </div>
           <FourPhotoWall photos={ordered} onOpen={openArtwork} />
         </section>
 
         <section className="space-y-2">
-          <h3 className="text-sm font-semibold text-[var(--text-muted)]">선택된 사진</h3>
-          {ordered.length === 0 && <p className="text-xs text-[var(--text-faint)]">아래에서 사진을 골라 추가하세요.</p>}
-          {ordered.map((art, index) => (
-            <article key={art.id} className="flex items-center gap-3 rounded-[22px] bg-[var(--surface)] p-2.5 shadow-[0_0_0_1px_var(--border)]">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--ink)] text-[11px] font-semibold text-white">{index + 1}</span>
-              <button type="button" onClick={() => openArtwork(art.id)} className="h-16 w-16 shrink-0 overflow-hidden rounded-[14px]">
-                <ImageBox src={art.imageUrl} alt={art.title} className="h-full w-full" />
-              </button>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold tracking-[-0.04em]">{art.title || '제목 없음'}</p>
+          <h3 className="text-sm font-semibold text-[var(--text-muted)]">선택된 사진 (드래그로 순서 변경)</h3>
+          {ordered.length === 0 && (
+            <p className="text-xs text-[var(--text-faint)]">아래에서 사진을 골라 추가하세요.</p>
+          )}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={orderedIds} strategy={rectSortingStrategy}>
+              <div className="space-y-2">
+                {ordered.map((art, index) => (
+                  <SortableCurateItem
+                    key={art.id}
+                    art={art}
+                    index={index}
+                    onRemove={remove}
+                    onOpen={openArtwork}
+                  />
+                ))}
               </div>
-              <div className="flex gap-1">
-                <button type="button" onClick={() => move(index, -1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-strong)]"><Icon name="chevronLeft" size={15} /></button>
-                <button type="button" onClick={() => move(index, 1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-strong)]"><Icon name="chevronRight" size={15} /></button>
-                <button type="button" onClick={() => remove(art.id)} className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-strong)] text-xs">×</button>
-              </div>
-            </article>
-          ))}
+            </SortableContext>
+          </DndContext>
         </section>
 
         {remaining.length > 0 && ordered.length < 4 && (
@@ -3253,21 +4329,27 @@ function MainApp() {
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedKeyword, setSelectedKeyword] = useState(null);
+  const [selectedCollectionId, setSelectedCollectionId] = useState(null);
+  const [selectedConvOtherId, setSelectedConvOtherId] = useState(null);
+  const [collectionPickerArtwork, setCollectionPickerArtwork] = useState(null);
 
   const openArtwork = (id) => { setSelectedArtworkId(id); setScreen('detail'); };
   const openPlace = (id) => { setSelectedPlaceId(id); setScreen('place'); };
   const openPerson = (id) => { setSelectedUserId(id); setScreen('person'); };
   const openKeyword = (word) => { setSelectedKeyword(word); setScreen('keyword'); };
+  const openCollection = (id) => { setSelectedCollectionId(id); setScreen('collectionDetail'); };
+  const openConversation = (otherId) => { setSelectedConvOtherId(otherId); setScreen('conversation'); };
+  const openCollectionPicker = (artworkId) => { setCollectionPickerArtwork(artworkId); };
 
   let content = null;
   if (screen === 'home') content = <HomeScreen setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} openPerson={openPerson} openKeyword={openKeyword} />;
   if (screen === 'search') content = <SearchScreen openArtwork={openArtwork} openPerson={openPerson} openPlace={openPlace} />;
   if (screen === 'space') content = <SpaceScreen openPlace={openPlace} openArtwork={openArtwork} />;
   if (screen === 'record') content = <RecordScreen setScreen={setScreen} />;
-  if (screen === 'detail') content = <ArtworkDetail artworkId={selectedArtworkId} setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} openPerson={openPerson} openKeyword={openKeyword} />;
+  if (screen === 'detail') content = <ArtworkDetail artworkId={selectedArtworkId} setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} openPerson={openPerson} openKeyword={openKeyword} openCollectionPicker={openCollectionPicker} />;
   if (screen === 'artworkEdit') content = <ArtworkEditScreen artworkId={selectedArtworkId} setScreen={setScreen} />;
-  if (screen === 'person') content = <PersonExhibition userId={selectedUserId} setScreen={setScreen} openArtwork={openArtwork} />;
-  if (screen === 'profile') content = <PersonExhibitionMe setScreen={setScreen} openArtwork={openArtwork} />;
+  if (screen === 'person') content = <PersonExhibition userId={selectedUserId} setScreen={setScreen} openArtwork={openArtwork} openConversation={openConversation} />;
+  if (screen === 'profile') content = <PersonExhibitionMe setScreen={setScreen} openArtwork={openArtwork} openConversation={openConversation} />;
   if (screen === 'profileEdit') content = <ProfileEditScreen setScreen={setScreen} />;
   if (screen === 'curate') content = <CurateScreen setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'place') content = <PlaceExhibition placeId={selectedPlaceId} setScreen={setScreen} openArtwork={openArtwork} />;
@@ -3278,19 +4360,29 @@ function MainApp() {
   if (screen === 'bulkPrivacy') content = <BulkPrivacyScreen setScreen={setScreen} />;
   if (screen === 'saved') content = <SavedScreen setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'activity') content = <ActivityScreen setScreen={setScreen} openArtwork={openArtwork} openPerson={openPerson} />;
+  if (screen === 'collections') content = <CollectionsScreen setScreen={setScreen} openCollection={openCollection} />;
+  if (screen === 'collectionDetail') content = <CollectionDetailScreen collectionId={selectedCollectionId} setScreen={setScreen} openArtwork={openArtwork} />;
+  if (screen === 'messages') content = <MessagesScreen setScreen={setScreen} openConversation={openConversation} />;
+  if (screen === 'conversation') content = <ConversationScreen otherId={selectedConvOtherId} setScreen={setScreen} openPerson={openPerson} />;
 
   return (
     <>
       <Shell screen={screen} setScreen={setScreen}>{content}</Shell>
       <OnboardingModal />
+      {collectionPickerArtwork && (
+        <AddToCollectionPicker
+          artworkId={collectionPickerArtwork}
+          onClose={() => setCollectionPickerArtwork(null)}
+        />
+      )}
     </>
   );
 }
 
-function PersonExhibitionMe({ setScreen, openArtwork }) {
+function PersonExhibitionMe({ setScreen, openArtwork, openConversation }) {
   const { userId } = useData();
   if (!userId) return <Splash />;
-  return <PersonExhibition userId={userId} setScreen={setScreen} openArtwork={openArtwork} />;
+  return <PersonExhibition userId={userId} setScreen={setScreen} openArtwork={openArtwork} openConversation={openConversation} />;
 }
 
 function DataGate({ children }) {

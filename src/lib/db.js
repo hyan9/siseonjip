@@ -413,6 +413,193 @@ export async function updateArtwork(artworkId, userId, fields) {
 }
 
 // ============================================================
+// Collections
+// ============================================================
+
+export async function fetchCollections() {
+  const { data, error } = await supabase
+    .from('collections')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.warn('[db] collections fetch 실패 (마이그레이션 006 필요?)', error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function fetchCollectionItems() {
+  const { data, error } = await supabase
+    .from('collection_items')
+    .select('*')
+    .order('position', { ascending: true });
+  if (error) {
+    console.warn('[db] collection_items fetch 실패', error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function createCollection(userId, fields) {
+  const { data, error } = await supabase
+    .from('collections')
+    .insert({
+      user_id: userId,
+      name: fields.name,
+      description: fields.description ?? null,
+      cover_artwork_id: fields.coverArtworkId ?? null,
+      is_public: fields.isPublic ?? true,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateCollection(collectionId, userId, fields) {
+  const sanitized = {};
+  if ('name' in fields) sanitized.name = fields.name;
+  if ('description' in fields) sanitized.description = fields.description;
+  if ('coverArtworkId' in fields) sanitized.cover_artwork_id = fields.coverArtworkId;
+  if ('isPublic' in fields) sanitized.is_public = fields.isPublic;
+  const { data, error } = await supabase
+    .from('collections')
+    .update(sanitized)
+    .eq('id', collectionId)
+    .eq('user_id', userId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteCollection(collectionId, userId) {
+  const { error } = await supabase
+    .from('collections')
+    .delete()
+    .eq('id', collectionId)
+    .eq('user_id', userId);
+  if (error) throw error;
+}
+
+export async function addArtworkToCollection(collectionId, artworkId) {
+  // position을 가장 뒤로
+  const { data: existing } = await supabase
+    .from('collection_items')
+    .select('position')
+    .eq('collection_id', collectionId)
+    .order('position', { ascending: false })
+    .limit(1);
+  const nextPos = existing?.[0]?.position != null ? existing[0].position + 1 : 0;
+
+  const { data, error } = await supabase
+    .from('collection_items')
+    .insert({ collection_id: collectionId, artwork_id: artworkId, position: nextPos })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function removeArtworkFromCollection(collectionId, artworkId) {
+  const { error } = await supabase
+    .from('collection_items')
+    .delete()
+    .eq('collection_id', collectionId)
+    .eq('artwork_id', artworkId);
+  if (error) throw error;
+}
+
+// ============================================================
+// Messages (DM)
+// ============================================================
+
+export async function fetchMessagesFor(userId) {
+  if (!userId) return [];
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
+    .order('created_at', { ascending: false })
+    .limit(500);
+  if (error) {
+    console.warn('[db] messages fetch 실패 (마이그레이션 006 필요?)', error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function sendMessage(senderId, recipientId, text) {
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({ sender_id: senderId, recipient_id: recipientId, text })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function markMessagesRead(senderId, recipientId) {
+  // 상대방이 보낸 메시지 중 안 읽은 것 read_at 업데이트
+  const { error } = await supabase
+    .from('messages')
+    .update({ read_at: new Date().toISOString() })
+    .eq('sender_id', senderId)
+    .eq('recipient_id', recipientId)
+    .is('read_at', null);
+  if (error) console.warn('[db] markMessagesRead 실패', error);
+}
+
+// ============================================================
+// Reports & Blocks
+// ============================================================
+
+export async function reportContent(reporterId, target, reason, detail) {
+  const payload = {
+    reporter_id: reporterId,
+    reason: reason || 'unspecified',
+    detail: detail || null,
+  };
+  if (target.userId) payload.target_user_id = target.userId;
+  if (target.artworkId) payload.target_artwork_id = target.artworkId;
+  if (target.commentId) payload.target_comment_id = target.commentId;
+  const { data, error } = await supabase.from('reports').insert(payload).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchBlocks(userId) {
+  if (!userId) return [];
+  const { data, error } = await supabase
+    .from('blocks')
+    .select('*')
+    .eq('blocker_id', userId);
+  if (error) {
+    console.warn('[db] blocks fetch 실패', error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function toggleBlock(targetUserId, currentUserId, currentlyBlocked) {
+  if (currentUserId === targetUserId) throw new Error('자기 자신을 차단할 수 없어요');
+  if (currentlyBlocked) {
+    const { error } = await supabase
+      .from('blocks')
+      .delete()
+      .eq('blocker_id', currentUserId)
+      .eq('blocked_id', targetUserId);
+    if (error) throw error;
+    return false;
+  }
+  const { error } = await supabase
+    .from('blocks')
+    .insert({ blocker_id: currentUserId, blocked_id: targetUserId });
+  if (error) throw error;
+  return true;
+}
+
+// ============================================================
 // Saves (북마크)
 // ============================================================
 

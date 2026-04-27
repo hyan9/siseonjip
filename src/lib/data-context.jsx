@@ -9,6 +9,10 @@ import {
   fetchFollows,
   fetchCommentReactions,
   fetchSaves,
+  fetchCollections,
+  fetchCollectionItems,
+  fetchMessagesFor,
+  fetchBlocks,
   publicPhotoUrl,
 } from './db';
 import { useAuth } from './auth-context';
@@ -26,6 +30,10 @@ export function DataProvider({ children }) {
   const [follows, setFollows] = useState([]);
   const [commentReactions, setCommentReactions] = useState([]);
   const [saves, setSaves] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [collectionItems, setCollectionItems] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [blocks, setBlocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -34,7 +42,7 @@ export function DataProvider({ children }) {
   const refresh = useCallback(async () => {
     try {
       setError(null);
-      const [p, pl, a, c, h, cs, f, cr, sv] = await Promise.all([
+      const [p, pl, a, c, h, cs, f, cr, sv, col, ci, msgs, bl] = await Promise.all([
         fetchProfiles(),
         fetchPlaces(),
         fetchArtworks(),
@@ -44,6 +52,10 @@ export function DataProvider({ children }) {
         fetchFollows().catch(() => []),
         fetchCommentReactions().catch(() => []),
         userIdRef ? fetchSaves(userIdRef).catch(() => []) : Promise.resolve([]),
+        fetchCollections().catch(() => []),
+        fetchCollectionItems().catch(() => []),
+        userIdRef ? fetchMessagesFor(userIdRef).catch(() => []) : Promise.resolve([]),
+        userIdRef ? fetchBlocks(userIdRef).catch(() => []) : Promise.resolve([]),
       ]);
       setProfiles(p);
       setPlaces(pl);
@@ -54,6 +66,10 @@ export function DataProvider({ children }) {
       setFollows(f);
       setCommentReactions(cr);
       setSaves(sv);
+      setCollections(col);
+      setCollectionItems(ci);
+      setMessages(msgs);
+      setBlocks(bl);
     } catch (err) {
       console.error('[data] refresh 실패', err);
       setError(err);
@@ -149,6 +165,7 @@ export function DataProvider({ children }) {
     const getRecommendedArtworks = (limit = 12) => {
       const candidates = enrichedArtworks
         .filter((a) => a.location_mode !== '숨김')
+        .filter((a) => !blockedSet.has(a.user_id))
         .map((art) => ({ art, score: scoreArtwork(art) }))
         .sort((a, b) => b.score - a.score);
 
@@ -166,9 +183,9 @@ export function DataProvider({ children }) {
     };
 
     const getRecommendedCreators = (limit = 6) => {
-      // 작가 점수 = 받은 hype 합 + 최근 작품 보너스 + 자기 자신 제외
+      // 작가 점수 = 받은 hype 합 + 최근 작품 보너스 + 자기 자신 제외 + 차단 제외
       return profiles
-        .filter((p) => p.id !== userId)
+        .filter((p) => p.id !== userId && !blockedSet.has(p.id))
         .map((p) => {
           const works = enrichedArtworks.filter((a) => a.user_id === p.id);
           const totalHype = works.reduce((sum, art) => sum + getHypeCount(art.id), 0);
@@ -183,8 +200,62 @@ export function DataProvider({ children }) {
         .slice(0, limit);
     };
 
+    const blockedSet = new Set(blocks.filter((b) => b.blocker_id === userId).map((b) => b.blocked_id));
+    const isBlocked = (otherId) => userId != null && blockedSet.has(otherId);
+
     const isSavedByMe = (artworkId) =>
       userId != null && saves.some((s) => s.artwork_id === artworkId && s.user_id === userId);
+
+    const getCollectionsByUser = (uid) => collections.filter((c) => c.user_id === uid);
+    const getCollection = (id) => collections.find((c) => c.id === id) || null;
+    const getCollectionArtworks = (collectionId) =>
+      collectionItems
+        .filter((ci) => ci.collection_id === collectionId)
+        .sort((a, b) => a.position - b.position)
+        .map((ci) => getArtwork(ci.artwork_id))
+        .filter(Boolean);
+    const isInCollection = (collectionId, artworkId) =>
+      collectionItems.some((ci) => ci.collection_id === collectionId && ci.artwork_id === artworkId);
+
+    // DM helpers
+    const getConversations = () => {
+      if (!userId) return [];
+      const map = new Map();
+      for (const m of messages) {
+        const other = m.sender_id === userId ? m.recipient_id : m.sender_id;
+        if (!other) continue;
+        const existing = map.get(other);
+        const isUnread = m.recipient_id === userId && !m.read_at;
+        if (!existing || new Date(m.created_at) > new Date(existing.lastAt)) {
+          map.set(other, {
+            otherId: other,
+            lastText: m.text,
+            lastAt: m.created_at,
+            lastFromMe: m.sender_id === userId,
+            unread: existing?.unread ?? 0,
+          });
+        }
+        if (isUnread) {
+          const e = map.get(other);
+          if (e) e.unread = (e.unread ?? 0) + 1;
+        }
+      }
+      return Array.from(map.values()).sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt));
+    };
+    const getThread = (otherId) => {
+      if (!userId || !otherId) return [];
+      return messages
+        .filter(
+          (m) =>
+            (m.sender_id === userId && m.recipient_id === otherId) ||
+            (m.sender_id === otherId && m.recipient_id === userId)
+        )
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    };
+    const totalUnreadMessages = messages.filter((m) => m.recipient_id === userId && !m.read_at).length;
+
+    // 차단 필터: 차단한 사람의 콘텐츠는 보지 않음
+    const visible = (uid) => !isBlocked(uid);
 
     const getSavedArtworks = () => {
       const ids = saves
@@ -282,8 +353,24 @@ export function DataProvider({ children }) {
       isSavedByMe,
       getSavedArtworks,
       getMyActivity,
+      // 컬렉션
+      collections,
+      collectionItems,
+      getCollectionsByUser,
+      getCollection,
+      getCollectionArtworks,
+      isInCollection,
+      // DM
+      messages,
+      getConversations,
+      getThread,
+      totalUnreadMessages,
+      // 차단
+      blocks,
+      isBlocked,
+      visible,
     };
-  }, [profiles, places, artworks, comments, hypes, curateSlots, follows, commentReactions, saves, session?.user?.id, loading, error, refresh]);
+  }, [profiles, places, artworks, comments, hypes, curateSlots, follows, commentReactions, saves, collections, collectionItems, messages, blocks, session?.user?.id, loading, error, refresh]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

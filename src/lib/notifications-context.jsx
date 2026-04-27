@@ -126,6 +126,9 @@ export function NotificationsProvider({ children }) {
             case 'follow':
               title = `${sourceName}이(가) 팔로우했어요`;
               break;
+            case 'message':
+              title = `${sourceName}이(가) 메시지를 보냈어요`;
+              break;
             default:
               title = '새 알림';
           }
@@ -137,6 +140,21 @@ export function NotificationsProvider({ children }) {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'artworks' },
+        () => {
+          dataRef.current.refresh?.();
+        }
+      )
+      // 새 DM 도착 시 데이터 갱신 (notifications.kind='message'에서 토스트는 이미 처리됨)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `recipient_id=eq.${userId}` },
+        () => {
+          dataRef.current.refresh?.();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `sender_id=eq.${userId}` },
         () => {
           dataRef.current.refresh?.();
         }
