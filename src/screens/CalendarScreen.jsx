@@ -112,15 +112,17 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myWorks]);
 
-  // 오늘 위치를 가운데로 스크롤
+  // 오늘 위치를 가운데로 — 첫 진입은 즉시, 그 후는 부드럽게
   const weekScrollerRef = useRef(null);
+  const didInitialScroll = useRef(false);
   useEffect(() => {
     const el = weekScrollerRef.current;
     if (!el) return;
     const todayEl = el.querySelector('[data-today="true"]');
     if (!todayEl) return;
     const offset = todayEl.offsetTop - el.clientHeight / 2 + todayEl.clientHeight / 2;
-    el.scrollTo({ top: offset, behavior: 'instant' });
+    el.scrollTo({ top: offset, behavior: didInitialScroll.current ? 'smooth' : 'instant' });
+    didInitialScroll.current = true;
   }, [weekDays]);
 
   const goPrev = () => {
@@ -144,23 +146,25 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
         <section>
           <div
             ref={weekScrollerRef}
-            className="relative h-[260px] overflow-x-hidden overflow-y-auto"
-            style={{ scrollbarWidth: 'none' }}
+            className="relative h-[280px] overflow-x-hidden overflow-y-auto"
+            style={{ scrollbarWidth: 'none', scrollSnapType: 'y proximity', scrollBehavior: 'smooth' }}
           >
-            <div className="flex flex-col gap-1 py-[100px]">
+            {/* 필름 스트립 — 행끼리 붙어 흐르듯 */}
+            <div className="flex flex-col gap-[2px] py-[110px]">
               {weekDays.map((wd, i) => {
                 const isToday = wd.date.toDateString() === todayStr;
-                // 오늘과의 거리 (인덱스): 가까울수록 진하게
                 const todayIdx = weekDays.findIndex((w) => w.date.toDateString() === todayStr);
                 const distance = Math.abs(i - (todayIdx >= 0 ? todayIdx : 7));
-                const blockOpacity = isToday ? 1 : Math.max(0.18, 1 - distance * 0.16);
+                const blockOpacity = isToday ? 1 : Math.max(0.22, 1 - distance * 0.14);
                 return (
                   <div
                     key={wd.date.toISOString()}
                     data-today={isToday}
-                    style={{ opacity: blockOpacity }}
-                    className={`flex w-full min-w-0 shrink-0 items-center gap-1.5 rounded-[8px] px-1.5 py-1 transition-opacity ${
-                      isToday ? 'bg-[var(--ink)] text-white shadow-[0_6px_18px_rgba(0,0,0,0.18)]' : 'bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]'
+                    style={{ opacity: blockOpacity, scrollSnapAlign: 'center' }}
+                    className={`flex w-full min-w-0 shrink-0 items-center gap-1.5 px-1 py-[3px] transition-opacity ${
+                      isToday
+                        ? 'rounded-[8px] bg-[var(--ink)] text-white shadow-[0_6px_18px_rgba(0,0,0,0.18)]'
+                        : 'bg-[var(--surface)]'
                     }`}
                   >
                     <div className="w-[24px] shrink-0 text-center">
@@ -171,7 +175,8 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
                         {wd.date.getDate()}
                       </p>
                     </div>
-                    <div className="grid min-w-0 flex-1 grid-cols-4 gap-0.5">
+                    {/* 사진 4컷 — 칸 사이 간격 0 (붙여서 연속 필름 느낌) */}
+                    <div className="grid min-w-0 flex-1 grid-cols-4 gap-0">
                       {[0,1,2,3].map((slot) => {
                         const art = wd.photos[slot];
                         return (
@@ -180,11 +185,11 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
                             type="button"
                             onClick={() => art && openArtwork(art.id)}
                             disabled={!art}
-                            className={`relative aspect-square overflow-hidden rounded-[4px] ${
+                            className={`relative aspect-square overflow-hidden ${
                               art
                                 ? ''
                                 : isToday
-                                ? 'border border-dashed border-white/20 bg-white/5'
+                                ? 'border border-dashed border-white/15'
                                 : 'border border-dashed border-[var(--border)] bg-[var(--bg)]'
                             }`}
                           >

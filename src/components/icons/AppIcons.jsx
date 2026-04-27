@@ -170,3 +170,42 @@ export function IconLock({ size = 18 }) {
     </svg>
   );
 }
+
+// Hype — 시선집 톤에 맞춘 자체 디자인 화염 (저챙도)
+export function IconHype({ size = 18, filled = false }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base} fill={filled ? 'currentColor' : 'none'}>
+      <path d="M12 3.5c1.6 2.4 3.7 4.1 3.7 6.7 0 1.4-.7 2.4-1.8 2.9.4-1 .3-2.1-.5-3.2-.6 2.1-2.4 3-2.4 5.4 0 1.4 1 2.6 2.5 2.6-2.7.5-5.5-1.5-5.5-4.7 0-3 2-4.3 2-7 0-1 .3-1.9 2-2.7Z"/>
+      <path d="M9.5 18.6c1 1.4 2.5 1.9 4.6 1.9 3.6 0 6-2.4 6-5.7 0-2-1-3.6-2.5-4.7" opacity="0.55"/>
+    </svg>
+  );
+}
+
+// Comment — 위·아래 작은 말풍선
+export function IconComment({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base}>
+      <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H8l-4 4V6a1 1 0 0 1 0-1Z"/>
+    </svg>
+  );
+}
+
+// Bell — 알림
+export function IconBell({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base}>
+      <path d="M6 17h12l-2-3v-4a4 4 0 0 0-8 0v4l-2 3Z"/>
+      <path d="M10 20a2 2 0 0 0 4 0"/>
+    </svg>
+  );
+}
+
+// Search — 돋보기
+export function IconSearch({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base}>
+      <circle cx="11" cy="11" r="6"/>
+      <path d="M20 20l-4.3-4.3"/>
+    </svg>
+  );
+}

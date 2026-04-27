@@ -133,14 +133,21 @@ export default function RecordScreen({ setScreen, openArtwork }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const remaining = Math.max(0, 4 - items.length);
+  // 오늘 이미 올린 사진 + 현재 추가 중인 사진 합산이 4를 넘기지 않도록
+  const myWorksAll = userId ? getUserArtworks(userId) : [];
+  const todayKeyEarly = new Date().toLocaleDateString('ko-KR');
+  const todayCountEarly = myWorksAll.filter(
+    (a) => new Date(a.created_at).toLocaleDateString('ko-KR') === todayKeyEarly
+  ).length;
+  const dailyCap = Math.max(0, 4 - todayCountEarly);
+  const remaining = Math.max(0, dailyCap - items.length);
 
   const handleFiles = async (event) => {
-    const files = Array.from(event.target.files || []).slice(0, remaining || 4);
+    const files = Array.from(event.target.files || []).slice(0, remaining);
     event.target.value = '';
     if (files.length === 0) return;
     const processed = await Promise.all(files.map(processPickedFile));
-    setItems((prev) => [...prev, ...processed].slice(0, 4));
+    setItems((prev) => [...prev, ...processed].slice(0, dailyCap));
   };
 
   const removeItem = (localId) => {
@@ -211,13 +218,11 @@ export default function RecordScreen({ setScreen, openArtwork }) {
   };
 
   // 오늘 이미 올린 사진 수 (하루 4장 cap)
-  const myWorks = userId ? getUserArtworks(userId) : [];
-  const todayKey = new Date().toLocaleDateString('ko-KR');
-  const todayWorks = myWorks
-    .filter((a) => new Date(a.created_at).toLocaleDateString('ko-KR') === todayKey)
+  const todayWorks = myWorksAll
+    .filter((a) => new Date(a.created_at).toLocaleDateString('ko-KR') === todayKeyEarly)
     .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-  const todayCount = todayWorks.length;
-  const dailyRemaining = Math.max(0, 4 - todayCount);
+  const todayCount = todayCountEarly;
+  const dailyRemaining = dailyCap;
 
   const [deletingId, setDeletingId] = useState(null);
   const handleDeleteToday = async (artwork) => {
@@ -417,7 +422,7 @@ export default function RecordScreen({ setScreen, openArtwork }) {
                   locating={locatingId === item.localId}
                 />
               ))}
-              {remaining > 0 && (
+              {remaining > 0 && items.length + todayCount < 4 && (
                 <label className="flex aspect-square cursor-pointer items-center justify-center rounded-[18px] border border-dashed border-[var(--border-dashed)] bg-[var(--surface)] text-[var(--text-muted)]">
                   <input type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} />
                   <div className="text-center">

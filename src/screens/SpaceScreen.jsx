@@ -85,7 +85,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 export default function SpaceScreen({ openPlace, openArtwork }) {
-  const { artworks, places, getPlaceArtworks } = useData();
+  const { artworks, places, getPlaceArtworks, getRecommendedArtworks } = useData();
   const [myLocation, setMyLocation] = useState(null);
   const [locating, setLocating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -320,7 +320,7 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
 
         {myLocation && nearbyPlaces.length > 0 && (
           <section>
-            <h2 className="mb-3 text-[22px] font-extrabold tracking-[-0.07em]">가장 가까운 공간</h2>
+            <h2 className="mb-3 text-[20px] font-extrabold tracking-[-0.07em]">가장 가까운 공간</h2>
             <div className="space-y-2">
               {nearbyPlaces.map((p) => {
                 const photos = getPlaceArtworks(p.id);
@@ -344,6 +344,56 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
             </div>
           </section>
         )}
+
+        {/* 장소별 사진 모음 — 홈에서 옮겨온 "근방 네컷" 영역 */}
+        {(() => {
+          const placeGroups = places
+            .map((p) => ({ place: p, photos: getPlaceArtworks(p.id).slice(0, 4) }))
+            .filter((g) => g.photos.length > 0)
+            .sort((a, b) => b.photos.length - a.photos.length)
+            .slice(0, 12);
+          if (placeGroups.length === 0) return null;
+          return (
+            <section className="space-y-3">
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-[20px] font-extrabold tracking-[-0.07em]">장소별 모음</h2>
+                <span className="text-[10px] text-[var(--text-faint)]">사진 많은 순</span>
+              </div>
+              <div className="space-y-3">
+                {placeGroups.map(({ place, photos }) => (
+                  <button
+                    key={place.id}
+                    type="button"
+                    onClick={() => openPlace(place.id)}
+                    className="block w-full overflow-hidden rounded-[18px] bg-[var(--surface)] p-3 text-left shadow-[0_0_0_1px_var(--border)]"
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <div className="min-w-0">
+                        <p className="truncate text-[15px] font-bold tracking-[-0.04em]">
+                          {placeLabel(place) || '근방'}
+                        </p>
+                        <p className="text-[10px] text-[var(--text-muted)]">
+                          사진 {getPlaceArtworks(place.id).length}장
+                        </p>
+                      </div>
+                      <span className="text-[var(--text-faint)]">›</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1">
+                      {photos.map((art) => (
+                        <ImageBox
+                          key={art.id}
+                          src={art.imageUrl}
+                          alt={art.title}
+                          className="aspect-square w-full rounded-[8px]"
+                        />
+                      ))}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+          );
+        })()}
       </div>
     </>
   );

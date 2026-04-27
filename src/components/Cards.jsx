@@ -1,6 +1,7 @@
 import { useData } from '../lib/data-context';
 import { ImageBox } from './ui';
 import { profileLabel, timeAgo } from '../lib/utils';
+import { IconHype } from './icons/AppIcons';
 
 function ExhibitionSlot({ artwork, onOpen }) {
   if (!artwork) return null;
@@ -91,7 +92,11 @@ export function PostListRow({ artwork, onOpen }) {
         </p>
         <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
           <span className="font-semibold">{profileLabel(profile)}</span>
-          {hype > 0 && <span className="ml-1 text-[var(--ink)]">🔥 {hype}</span>}
+          {hype > 0 && (
+            <span className="ml-1 inline-flex items-center gap-0.5 align-middle text-[var(--ink)]">
+              <IconHype size={11} filled /> {hype}
+            </span>
+          )}
           <span className="mx-1 text-[var(--text-faint)]">·</span>
           {timeAgo(artwork.created_at)}
           {artwork.daily_vision && <span className="ml-1 text-[var(--text-faint)]">#{artwork.daily_vision}</span>}
@@ -116,7 +121,9 @@ export function PhotoTile({ artwork, onOpen }) {
       <div className="relative">
         <ImageBox src={artwork.imageUrl} alt={artwork.title} className="h-44" />
         {hypes > 0 && (
-          <span className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white">🔥 {hypes}</span>
+          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white">
+            <IconHype size={11} filled /> {hypes}
+          </span>
         )}
       </div>
       <div className="p-3">
@@ -136,7 +143,7 @@ export function PersonRow({ profile, onOpen }) {
       <ImageBox src={main?.imageUrl} alt={profile.nickname} className="h-20 w-20 shrink-0 rounded-[16px]" />
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">{profile.nickname}</p>
-        <h3 className="mt-1 text-lg font-bold tracking-[-0.05em]">{profile.exhibition_title || '제목 미정'}</h3>
+        <h3 className="mt-1 text-lg font-bold tracking-[-0.05em]">{profile.exhibition_title || profile.nickname}</h3>
         <p className="mt-1 line-clamp-2 text-sm leading-5 text-[var(--text-muted)]">{profile.bio || ''}</p>
       </div>
     </button>
@@ -150,8 +157,10 @@ export function PlaceRow({ place, onOpen }) {
     <button type="button" onClick={() => onOpen(place.id)} className="flex w-full gap-3 rounded-[22px] bg-[var(--surface)] p-3 text-left shadow-[0_0_0_1px_var(--border)]">
       <ImageBox src={photo?.imageUrl} alt={place.name} className="h-20 w-20 shrink-0 rounded-[16px]" />
       <div>
-        <p className="text-lg font-bold tracking-[-0.05em]">{place.name || '이름 없는 공간'}</p>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">{place.neighborhood || '미상'}</p>
+        <p className="text-lg font-bold tracking-[-0.05em]">{place.name || place.neighborhood || '근방'}</p>
+        {place.neighborhood && place.neighborhood !== place.name && (
+          <p className="mt-1 text-sm text-[var(--text-muted)]">{place.neighborhood}</p>
+        )}
       </div>
     </button>
   );

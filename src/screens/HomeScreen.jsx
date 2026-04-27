@@ -19,6 +19,7 @@ import HypeButton from '../components/HypeButton';
 import ShareButton from '../components/ShareButton';
 import { FourPhotoWall, PhotoTile, PersonRow, PlaceRow, PostListRow } from '../components/Cards';
 import { CatPhotographer } from '../components/Mascot';
+import { IconHype } from '../components/icons/AppIcons';
 import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
 import LocationPickerModal from '../components/LocationPickerModal';
@@ -180,45 +181,50 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
 
   return (
     <>
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-[12px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">시선집 · {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</p>
-          <h1 className="mt-0.5 text-[27px] font-extrabold tracking-[-0.08em]">오늘의 시선들</h1>
+      <div className="mb-3">
+        <p className="text-[11px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">시선집 · {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</p>
+        <h1 className="mt-0.5 text-[26px] font-extrabold tracking-[-0.08em]">오늘의 시선들</h1>
+      </div>
+
+      {/* 좌측 정렬 미니멀 액션 + 추천/실시간 탭 한 줄로 */}
+      <div className="mb-3 flex items-center justify-between gap-2 border-b border-[var(--border)]">
+        <div className="flex items-center">
+          {['추천', '실시간'].map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setFeedMode(m)}
+              className={`border-b-2 px-2 py-2 text-[13px] font-bold transition ${
+                feedMode === m
+                  ? 'border-[var(--ink)] text-[var(--text)]'
+                  : 'border-transparent text-[var(--text-muted)]'
+              }`}
+            >
+              {m}
+            </button>
+          ))}
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-1 pb-1.5 text-[var(--text-muted)]">
+          <button
+            type="button"
+            onClick={() => setScreen('search')}
+            className="relative flex h-7 w-7 items-center justify-center rounded-full hover:bg-[var(--surface)]"
+            aria-label="탐색"
+          >
+            <Icon name="search" size={15} />
+          </button>
           <button
             type="button"
             onClick={() => setScreen('notifications')}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]"
+            className="relative flex h-7 w-7 items-center justify-center rounded-full hover:bg-[var(--surface)]"
             aria-label="알림"
           >
-            <Icon name="bell" size={17} />
+            <Icon name="bell" size={15} />
             {unreadCount > 0 && (
-              <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-[var(--surface)] bg-red-500" />
+              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
             )}
           </button>
-          <button type="button" onClick={() => setScreen('search')} className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]" aria-label="탐색">
-            <Icon name="search" size={17} />
-          </button>
         </div>
-      </div>
-
-      {/* 추천 / 실시간 탭 */}
-      <div className="mb-3 flex border-b border-[var(--border)]">
-        {['추천', '실시간'].map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setFeedMode(m)}
-            className={`flex-1 border-b-2 px-3 py-2 text-[14px] font-bold transition ${
-              feedMode === m
-                ? 'border-[var(--ink)] text-[var(--text)]'
-                : 'border-transparent text-[var(--text-muted)]'
-            }`}
-          >
-            {m}
-          </button>
-        ))}
       </div>
 
       {hasFollowing && (
@@ -252,7 +258,8 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
           title="팔로잉 한 사람이 아직 사진을 안 올렸어요"
           hint="'전체' 탭으로 다른 사람들의 사진을 둘러보세요."
         />
-      ) : (
+      ) : feedMode === '추천' ? (
+        // === 추천: 오늘의 한 컷 + 카드형 피드 + 작가 추천 ===
         <div className="space-y-6">
           {featured && (
             <section>
@@ -272,28 +279,29 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
                   <h2 className="mt-0.5 line-clamp-2 text-[18px] font-extrabold leading-tight tracking-[-0.06em]">
                     {featured.title}
                   </h2>
-                  <p className="mt-1 truncate text-[11px] text-[var(--text-muted)]">
-                    {profileLabel(getProfile(featured.user_id))} · 🔥 {getHypeCount(featured.id)}
+                  <p className="mt-1 inline-flex items-center gap-1 truncate text-[11px] text-[var(--text-muted)]">
+                    {profileLabel(getProfile(featured.user_id))}
+                    <span className="text-[var(--text-faint)]">·</span>
+                    <IconHype size={11} filled />
+                    {getHypeCount(featured.id)}
                   </p>
                 </div>
               </button>
             </section>
           )}
 
+          {/* 추천 카드형 피드 — PhotoTile 2-col 그리드 */}
           {feedList.length > 0 && (
-            <section className="rounded-[20px] bg-[var(--surface)] px-4 py-2 shadow-[0_0_0_1px_var(--border)]">
-              <div className="flex items-end justify-between border-b border-[var(--border)] py-2">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[18px]">📋</span>
-                  <h2 className="text-[18px] font-extrabold tracking-[-0.06em]">시선집</h2>
-                  <span className="text-[10px] text-[var(--text-faint)]">
-                    {feedList.length}/{fullFeed.length} · 최신·인기 가중
-                  </span>
-                </div>
+            <section className="space-y-2">
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-[18px] font-extrabold tracking-[-0.06em]">오늘의 추천</h2>
+                <span className="text-[10px] text-[var(--text-faint)]">
+                  최신 · 인기 · 팔로잉 가중
+                </span>
               </div>
-              <div>
+              <div className="grid grid-cols-2 gap-2">
                 {feedList.map((art) => (
-                  <PostListRow key={art.id} artwork={art} onOpen={openArtwork} />
+                  <PhotoTile key={art.id} artwork={art} onOpen={openArtwork} />
                 ))}
               </div>
               {displayCount < fullFeed.length && (
@@ -334,7 +342,9 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
                         <p className="truncate text-sm font-bold tracking-[-0.04em]">
                           {profile.nickname}
                         </p>
-                        <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">🔥 {totalHype}</p>
+                        <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
+                          <IconHype size={11} filled /> {totalHype}
+                        </p>
                       </div>
                     </button>
                   );
@@ -342,8 +352,34 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
               </div>
             </section>
           )}
-
         </div>
+      ) : (
+        // === 실시간: 시선집 list만 ===
+        <section className="rounded-[20px] bg-[var(--surface)] px-4 py-2 shadow-[0_0_0_1px_var(--border)]">
+          <div className="flex items-end justify-between border-b border-[var(--border)] py-2">
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-[18px] font-extrabold tracking-[-0.06em]">시선집</h2>
+              <span className="text-[10px] text-[var(--text-faint)]">
+                {feedList.length}/{fullFeed.length} · 최신순
+              </span>
+            </div>
+          </div>
+          <div>
+            {feedList.map((art) => (
+              <PostListRow key={art.id} artwork={art} onOpen={openArtwork} />
+            ))}
+          </div>
+          {displayCount < fullFeed.length && (
+            <div ref={sentinelRef} className="py-4 text-center text-[11px] text-[var(--text-muted)]">
+              불러오는 중…
+            </div>
+          )}
+          {displayCount >= fullFeed.length && fullFeed.length > PAGE && (
+            <div className="py-4 text-center text-[11px] text-[var(--text-faint)]">
+              · 끝 ·
+            </div>
+          )}
+        </section>
       )}
     </>
   );

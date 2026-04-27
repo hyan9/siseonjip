@@ -61,8 +61,8 @@ function MainApp() {
   if (screen === 'record') content = <RecordScreen setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'detail') content = <ArtworkDetail artworkId={selectedArtworkId} setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} openPerson={openPerson} openKeyword={openKeyword} openCamera={openCamera} openCollectionPicker={openCollectionPicker} />;
   if (screen === 'artworkEdit') content = <ArtworkEditScreen artworkId={selectedArtworkId} setScreen={setScreen} />;
-  if (screen === 'person') content = <PersonExhibition userId={selectedUserId} setScreen={setScreen} openArtwork={openArtwork} openConversation={openConversation} />;
-  if (screen === 'profile') content = <PersonExhibitionMe setScreen={setScreen} openArtwork={openArtwork} openConversation={openConversation} />;
+  if (screen === 'person') content = <PersonExhibition userId={selectedUserId} setScreen={setScreen} openArtwork={openArtwork} openConversation={openConversation} openPerson={openPerson} />;
+  if (screen === 'profile') content = <PersonExhibitionMe setScreen={setScreen} openArtwork={openArtwork} openConversation={openConversation} openPerson={openPerson} />;
   if (screen === 'profileEdit') content = <ProfileEditScreen setScreen={setScreen} />;
   if (screen === 'curate') content = <CurateScreen setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'place') content = <PlaceExhibition placeId={selectedPlaceId} setScreen={setScreen} openArtwork={openArtwork} />;
@@ -76,7 +76,7 @@ function MainApp() {
   if (screen === 'activity') content = <ActivityScreen setScreen={setScreen} openArtwork={openArtwork} openPerson={openPerson} />;
   if (screen === 'collections') content = <CollectionsScreen setScreen={setScreen} openCollection={openCollection} />;
   if (screen === 'collectionDetail') content = <CollectionDetailScreen collectionId={selectedCollectionId} setScreen={setScreen} openArtwork={openArtwork} />;
-  if (screen === 'messages') content = <MessagesScreen setScreen={setScreen} openConversation={openConversation} />;
+  if (screen === 'messages') content = <MessagesScreen setScreen={setScreen} openConversation={openConversation} openPerson={openPerson} />;
   if (screen === 'conversation') content = <ConversationScreen otherId={selectedConvOtherId} setScreen={setScreen} openPerson={openPerson} />;
 
   return (
@@ -93,10 +93,10 @@ function MainApp() {
   );
 }
 
-function PersonExhibitionMe({ setScreen, openArtwork, openConversation }) {
+function PersonExhibitionMe({ setScreen, openArtwork, openConversation, openPerson }) {
   const { userId } = useData();
   if (!userId) return <Splash />;
-  return <PersonExhibition userId={userId} setScreen={setScreen} openArtwork={openArtwork} openConversation={openConversation} />;
+  return <PersonExhibition userId={userId} setScreen={setScreen} openArtwork={openArtwork} openConversation={openConversation} openPerson={openPerson} />;
 }
 
 function DataGate({ children }) {

@@ -22,7 +22,7 @@ import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SettingsSheet from '../components/SettingsSheet';
-import { IconSaved, IconCollections, IconActivity, IconEdit, IconSettings, IconShare, IconCalendar, IconLock } from '../components/icons/AppIcons';
+import { IconSaved, IconCollections, IconActivity, IconEdit, IconSettings, IconShare, IconCalendar, IconLock, IconMessage, IconReport, IconBlock, IconHype, IconStar } from '../components/icons/AppIcons';
 import LocationPickerModal from '../components/LocationPickerModal';
 import PhotoZoomModal from '../components/PhotoZoomModal';
 import {
@@ -87,7 +87,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-export default function PersonExhibition({ userId: viewedId, setScreen, openArtwork, openConversation }) {
+export default function PersonExhibition({ userId: viewedId, setScreen, openArtwork, openConversation, openPerson }) {
   const {
     userId,
     getProfile,
@@ -97,6 +97,8 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
     isFollowing,
     isBlocked,
     getHypeCount,
+    getFollowers,
+    getFollowing,
     refresh,
   } = useData();
   const { theme } = useTheme();
@@ -116,6 +118,7 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [blockOpen, setBlockOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [followListType, setFollowListType] = useState(null); // 'followers' | 'following'
 
   if (!profile) return <EmptyState title="사용자를 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
@@ -278,7 +281,9 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
               >
                 <ImageBox src={featured.imageUrl} alt={featured.title} className="h-full w-full" priority />
                 {twentyFiveArt && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-300 text-[10px]">🌟</span>
+                  <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--ink)] text-white">
+                    <IconStar size={11} filled />
+                  </span>
                 )}
               </button>
             )}
@@ -304,20 +309,30 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
             </div>
           </div>
 
-          {/* Stats — 사진/팔로워/팔로잉만 (큰 숫자) */}
+          {/* Stats — 사진/팔로워/팔로잉 (팔로워·팔로잉은 클릭하면 목록) */}
           <div className="mt-4 grid grid-cols-3 gap-2 border-t border-[var(--border)] pt-3 text-center">
             <div>
               <p className="text-[18px] font-extrabold tracking-[-0.05em]">{stats.artworkCount}</p>
               <p className="text-[10px] text-[var(--text-muted)]">사진</p>
             </div>
-            <div>
+            <button
+              type="button"
+              onClick={() => stats.followerCount > 0 && setFollowListType('followers')}
+              disabled={stats.followerCount === 0}
+              className="rounded-[8px] py-1 transition hover:bg-[var(--surface-2)] disabled:cursor-default disabled:hover:bg-transparent"
+            >
               <p className="text-[18px] font-extrabold tracking-[-0.05em]">{stats.followerCount}</p>
               <p className="text-[10px] text-[var(--text-muted)]">팔로워</p>
-            </div>
-            <div>
+            </button>
+            <button
+              type="button"
+              onClick={() => stats.followingCount > 0 && setFollowListType('following')}
+              disabled={stats.followingCount === 0}
+              className="rounded-[8px] py-1 transition hover:bg-[var(--surface-2)] disabled:cursor-default disabled:hover:bg-transparent"
+            >
               <p className="text-[18px] font-extrabold tracking-[-0.05em]">{stats.followingCount}</p>
               <p className="text-[10px] text-[var(--text-muted)]">팔로잉</p>
-            </div>
+            </button>
           </div>
 
           {!isMe && userId && (
@@ -339,32 +354,32 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
                 <button
                   type="button"
                   onClick={() => openConversation(viewedId)}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] text-base"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text-muted)]"
                   title="메시지"
                 >
-                  💬
+                  <IconMessage size={16} />
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => setReportOpen(true)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-base"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]"
                 title="신고"
               >
-                🚩
+                <IconReport size={16} />
               </button>
               <button
                 type="button"
                 onClick={() => setBlockOpen(true)}
                 disabled={blockBusy}
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-base disabled:opacity-50 ${
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full disabled:opacity-50 ${
                   blocked
-                    ? 'border border-red-300 bg-red-50'
-                    : 'border border-[var(--border)] bg-[var(--surface)]'
+                    ? 'border border-red-300 bg-red-50 text-red-600'
+                    : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'
                 }`}
                 title={blocked ? '차단 해제' : '차단'}
               >
-                🚫
+                <IconBlock size={16} />
               </button>
             </div>
           )}
@@ -390,7 +405,9 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
             >
               <div className="mb-2 flex items-center justify-between px-1">
                 <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">가장 인기 있는 사진</p>
-                <span className="rounded-full bg-[var(--ink)] px-2 py-0.5 text-[10px] font-semibold text-white">🔥 {getHypeCount(stats.topArtwork.id)}</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--ink)] px-2 py-0.5 text-[10px] font-semibold text-white">
+                  <IconHype size={11} filled /> {getHypeCount(stats.topArtwork.id)}
+                </span>
               </div>
               <div className="overflow-hidden rounded-[18px]">
                 <ImageBox src={stats.topArtwork.imageUrl} alt={stats.topArtwork.title} className="h-44" />
@@ -487,7 +504,58 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
         onConfirm={handleBlockConfirm}
         onCancel={() => setBlockOpen(false)}
       />
+
+      {followListType && (
+        <FollowListModal
+          title={followListType === 'followers' ? `팔로워 ${stats.followerCount}` : `팔로잉 ${stats.followingCount}`}
+          rows={
+            followListType === 'followers'
+              ? getFollowers(viewedId).map((f) => getProfile(f.follower_id)).filter(Boolean)
+              : getFollowing(viewedId).map((f) => getProfile(f.followee_id)).filter(Boolean)
+          }
+          onClose={() => setFollowListType(null)}
+          onOpenPerson={(id) => { setFollowListType(null); openPerson?.(id); }}
+        />
+      )}
     </>
+  );
+}
+
+function FollowListModal({ title, rows, onClose, onOpenPerson }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[430px] overflow-hidden rounded-[20px] bg-[var(--surface)] shadow-[0_-8px_24px_rgba(0,0,0,0.18)]"
+      >
+        <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
+          <h3 className="text-[15px] font-extrabold tracking-[-0.05em]">{title}</h3>
+          <button type="button" onClick={onClose} className="text-[var(--text-muted)]">×</button>
+        </div>
+        <div className="max-h-[60vh] overflow-y-auto">
+          {rows.length === 0 ? (
+            <p className="p-6 text-center text-[12px] text-[var(--text-muted)]">아직 비어 있어요.</p>
+          ) : (
+            rows.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onOpenPerson?.(p.id)}
+                className="flex w-full items-center gap-3 border-b border-[var(--border)] px-4 py-3 text-left last:border-b-0 hover:bg-[var(--surface-2)]"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ink)] text-[12px] font-bold text-white">
+                  {(p.nickname || '?').slice(0, 1)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-bold tracking-[-0.04em]">{p.nickname}</p>
+                  {p.bio && <p className="truncate text-[11px] text-[var(--text-muted)]">{p.bio}</p>}
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -525,8 +593,8 @@ function FilmTimeline({ works, openArtwork }) {
               >
                 <ImageBox src={art.imageUrl} alt={art.title} className="aspect-square w-full" />
                 {art.is_twenty_five && (
-                  <span className="absolute left-1 top-1 rounded-full bg-yellow-300 px-1 text-[8px] font-bold text-[var(--text)]">
-                    🌟
+                  <span className="absolute left-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--ink)] text-white">
+                    <IconStar size={9} filled />
                   </span>
                 )}
               </button>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useData } from '../lib/data-context';
 import { toggleHype } from '../lib/db';
+import { IconHype } from './icons/AppIcons';
 
 export default function HypeButton({ artwork, compact = false, large = false }) {
   const { userId, getHypeCount, isHypedByMe, refresh } = useData();
@@ -29,15 +30,15 @@ export default function HypeButton({ artwork, compact = false, large = false }) 
         onClick={handleClick}
         disabled={busy || !userId}
         aria-label="Hype"
-        className={`flex w-full flex-col items-center justify-center gap-1 rounded-[18px] py-4 transition-transform active:scale-[0.98] disabled:opacity-50 ${
+        className={`flex w-full items-center justify-center gap-2 rounded-[18px] py-3.5 transition-transform active:scale-[0.98] disabled:opacity-50 ${
           hyped
             ? 'bg-[var(--ink)] text-white shadow-[0_8px_20px_rgba(0,0,0,0.18)]'
             : 'border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)]'
         }`}
       >
-        <span className="text-[28px] leading-none">{hyped ? '🔥' : '↑'}</span>
-        <span className="text-[11px] font-semibold tracking-[0.16em]">
-          {hyped ? `HYPED · ${count}` : `추천 ${count}`}
+        <IconHype size={20} filled={hyped} />
+        <span className="text-[12px] font-semibold tracking-[0.14em]">
+          {hyped ? `HYPED · ${count}` : `Hype ${count}`}
         </span>
       </button>
     );
@@ -52,7 +53,7 @@ export default function HypeButton({ artwork, compact = false, large = false }) 
       aria-label="Hype"
       className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold ${compact ? 'h-7 px-2 text-[11px]' : 'h-9 px-3 text-sm'} ${hyped ? 'border border-[var(--ink)] bg-[var(--ink)] text-white' : 'border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)]'}`}
     >
-      <span>🔥</span>
+      <IconHype size={compact ? 13 : 15} filled={hyped} />
       <span>Hype</span>
       <span className={hyped ? 'text-white/70' : 'text-[var(--text-muted)]'}>{count}</span>
     </button>

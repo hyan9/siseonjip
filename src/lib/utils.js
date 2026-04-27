@@ -12,7 +12,8 @@ export function formatTime(iso) {
 }
 
 export function dateOf(art) {
-  return new Date(art.taken_at || art.created_at);
+  // 시선집은 "올린 날" 기준 (EXIF taken_at은 옛 날짜를 갖고 있어 캘린더가 어긋남)
+  return new Date(art.created_at);
 }
 
 export function getMonthDays(artworks, year, month) {
