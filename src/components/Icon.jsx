@@ -33,6 +33,12 @@ export default function Icon({ name, size = 20, className = '', strokeWidth = 1.
     sparkle: <svg {...common}><path d="M12 3v3M12 18v3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M3 12h3M18 12h3M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" /></svg>,
     plusFollow: <svg {...common}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" /></svg>,
     checkFollow: <svg {...common}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="m17 11 2 2 4-4" /></svg>,
+    sun: <svg {...common}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>,
+    moon: <svg {...common}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" /></svg>,
+    layers: <svg {...common}><path d="m12 2 10 6-10 6L2 8l10-6Z" /><path d="m2 16 10 6 10-6" /><path d="m2 12 10 6 10-6" /></svg>,
+    edit: <svg {...common}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z" /></svg>,
+    check: <svg {...common}><path d="M20 6 9 17l-5-5" /></svg>,
+    x: <svg {...common}><path d="M18 6 6 18M6 6l12 12" /></svg>,
   };
 
   return icons[name] || icons.eye;

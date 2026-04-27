@@ -111,6 +111,72 @@ export function DataProvider({ children }) {
         (f) => f.follower_id === userId && f.followee_id === targetId
       );
 
+    // 추천 알고리즘: 최신성 + 인기 + 팔로잉 보너스 + 키워드 친화도
+    const myFollowingSet = new Set(getFollowing(userId).map((f) => f.followee_id));
+    const myHypedArtworks = hypes.filter((h) => h.user_id === userId).map((h) => h.artwork_id);
+    const myKeywordCounts = new Map();
+    for (const aid of myHypedArtworks) {
+      const art = enrichedArtworks.find((a) => a.id === aid);
+      if (art?.daily_vision) {
+        myKeywordCounts.set(art.daily_vision, (myKeywordCounts.get(art.daily_vision) ?? 0) + 1);
+      }
+    }
+    const myTopKeywords = new Set(
+      Array.from(myKeywordCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([k]) => k)
+    );
+    const now = Date.now();
+
+    const scoreArtwork = (art) => {
+      const ageDays = (now - new Date(art.created_at).getTime()) / 86400000;
+      const recency = Math.max(0, 1 - ageDays / 30);
+      const hypeCount = getHypeCount(art.id);
+      const hypeScore = Math.log(1 + hypeCount) / Math.log(11); // 0~1, hype 10에서 ~1.0
+      const followBonus = myFollowingSet.has(art.user_id) ? 0.4 : 0;
+      const keywordBonus = art.daily_vision && myTopKeywords.has(art.daily_vision) ? 0.25 : 0;
+      const selfPenalty = art.user_id === userId ? -0.5 : 0;
+      return recency * 0.5 + hypeScore * 0.6 + followBonus + keywordBonus + selfPenalty;
+    };
+
+    const getRecommendedArtworks = (limit = 12) => {
+      const candidates = enrichedArtworks
+        .filter((a) => a.location_mode !== '숨김')
+        .map((art) => ({ art, score: scoreArtwork(art) }))
+        .sort((a, b) => b.score - a.score);
+
+      // 다양성: 같은 작가 연속 노출 방지
+      const result = [];
+      const perUser = new Map();
+      for (const { art } of candidates) {
+        const used = perUser.get(art.user_id) ?? 0;
+        if (used >= 2) continue;
+        result.push(art);
+        perUser.set(art.user_id, used + 1);
+        if (result.length >= limit) break;
+      }
+      return result;
+    };
+
+    const getRecommendedCreators = (limit = 6) => {
+      // 작가 점수 = 받은 hype 합 + 최근 작품 보너스 + 자기 자신 제외
+      return profiles
+        .filter((p) => p.id !== userId)
+        .map((p) => {
+          const works = enrichedArtworks.filter((a) => a.user_id === p.id);
+          const totalHype = works.reduce((sum, art) => sum + getHypeCount(art.id), 0);
+          const recentBoost = works.some(
+            (a) => (now - new Date(a.created_at).getTime()) < 7 * 86400000
+          ) ? 1 : 0;
+          const followingBonus = myFollowingSet.has(p.id) ? 0 : 1; // 아직 팔로잉 안 한 사람 우선
+          return { profile: p, score: totalHype + recentBoost * 2 + followingBonus, totalHype };
+        })
+        .filter((entry) => entry.totalHype > 0 || enrichedArtworks.some((a) => a.user_id === entry.profile.id))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+    };
+
     const getStats = (uid) => {
       const userArts = getUserArtworks(uid);
       let totalHype = 0;
@@ -167,6 +233,8 @@ export function DataProvider({ children }) {
       getFollowing,
       isFollowing,
       getStats,
+      getRecommendedArtworks,
+      getRecommendedCreators,
     };
   }, [profiles, places, artworks, comments, hypes, curateSlots, follows, commentReactions, session?.user?.id, loading, error, refresh]);
 

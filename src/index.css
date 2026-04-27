@@ -1,12 +1,90 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Theme variables
+   ============================================================ */
+
+:root {
+  --bg: #f4efe6;
+  --surface: #fbf8f2;
+  --surface-2: #eee6d8;
+  --surface-3: #e8dfd1;
+  --image-bg: #ded6c8;
+
+  --ink: #151515;
+  --ink-text: #ffffff;
+
+  --text: #151515;
+  --text-muted: #746e66;
+  --text-faint: #9a948b;
+  --text-body: #4d4943;
+  --text-quote: #3f3a34;
+  --text-meta: #8c857c;
+  --placeholder: #aaa399;
+
+  --border: #e4dccd;
+  --border-strong: #d8cfbf;
+  --border-dashed: #cfc6b8;
+
+  --hero-from: #3b2f25;
+  --hero-via: #1f1610;
+  --hero-to: #000000;
+}
+
+[data-theme="dark"] {
+  --bg: #15131a;
+  --surface: #1f1c24;
+  --surface-2: #2a2730;
+  --surface-3: #322e3a;
+  --image-bg: #2e2b35;
+
+  /* ink는 어둠 모드에서도 어두운 색 유지 — text-white 유틸이 그대로 작동하도록 (브랜드 일관성) */
+  --ink: #0a080f;
+  --ink-text: #ffffff;
+
+  --text: #f3f1ec;
+  --text-muted: #aaa5a0;
+  --text-faint: #7a7670;
+  --text-body: #c5c0b9;
+  --text-quote: #d6d2cb;
+  --text-meta: #8c857c;
+  --placeholder: #6a6760;
+
+  --border: #2e2b35;
+  --border-strong: #3e3946;
+  --border-dashed: #3e3946;
+
+  --hero-from: #2a1f15;
+  --hero-via: #15110b;
+  --hero-to: #000000;
+}
+
 html, body, #root {
   margin: 0;
   padding: 0;
   min-height: 100svh;
-  background: #f4efe6;
-  color: #151515;
+  background: var(--bg);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Leaflet 기본 attribution 가독성을 다크 모드에서도 유지 */
+[data-theme="dark"] .leaflet-container {
+  background: #1a1820;
+}
+
+[data-theme="dark"] .leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.6);
+  color: #c0bdb6;
+}
+
+[data-theme="dark"] .leaflet-control-attribution a {
+  color: #f3f1ec;
+}
+
+[data-theme="dark"] .leaflet-tile {
+  filter: brightness(0.85) contrast(1.05);
 }

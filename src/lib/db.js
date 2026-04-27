@@ -392,6 +392,24 @@ export async function updateArtwork(artworkId, userId, fields) {
   return data;
 }
 
+export async function bulkUpdateArtworkLocationMode(artworkIds, userId, locationMode) {
+  if (artworkIds.length === 0) return [];
+  const update = { location_mode: locationMode };
+  // 정확한 위치가 아니면 lat/lng 정리
+  if (locationMode !== '정확한 위치') {
+    update.lat = null;
+    update.lng = null;
+  }
+  const { data, error } = await supabase
+    .from('artworks')
+    .update(update)
+    .in('id', artworkIds)
+    .eq('user_id', userId)
+    .select();
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function deleteArtwork(artworkId, userId, storagePath) {
   // RLS가 본인 것만 삭제 가능하도록 막아주지만 명시적으로 user_id도 매칭
   const { error } = await supabase

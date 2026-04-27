@@ -10,6 +10,7 @@ import {
 } from './lib/auth-context';
 import { DataProvider, useData } from './lib/data-context';
 import { NotificationsProvider, useNotifications } from './lib/notifications-context';
+import { ThemeProvider, useTheme } from './lib/theme-context';
 import { hasSupabaseConfig } from './lib/supabase';
 import { readPhotoMeta } from './lib/exif';
 import { reverseGeocode, getCurrentPosition, distanceMeters } from './lib/geocoding';
@@ -28,6 +29,7 @@ import {
   toggleFollow,
   toggleCommentReaction,
   deleteComment,
+  bulkUpdateArtworkLocationMode,
 } from './lib/db';
 
 import Icon from './components/Icon';
@@ -77,8 +79,8 @@ function profileLabel(profile) {
 
 function Shell({ children, screen, setScreen, showNav = true }) {
   return (
-    <div className="min-h-screen bg-[#f4efe6] text-[#151515]">
-      <div className="mx-auto min-h-screen max-w-[430px] bg-[#f4efe6]">
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
+      <div className="mx-auto min-h-screen max-w-[430px] bg-[var(--bg)]">
         <main className="min-h-[calc(100vh-70px)] px-4 pb-7 pt-4">{children}</main>
         {showNav && <BottomNav screen={screen} setScreen={setScreen} />}
       </div>
@@ -96,19 +98,19 @@ function BottomNav({ screen, setScreen }) {
     { id: 'profile', label: '내 전시', icon: 'user', dot: unreadCount > 0 },
   ];
   return (
-    <nav className="sticky bottom-0 z-40 border-t border-[#e4dccd] bg-[#fbf8f2]/95 px-3 py-2 backdrop-blur">
+    <nav className="sticky bottom-0 z-40 border-t border-[var(--border)] bg-[var(--surface)]/95 px-3 py-2 backdrop-blur">
       <div className="grid grid-cols-5 items-end gap-1">
         {tabs.map((tab) => {
           const active = screen === tab.id;
           return (
             <button key={tab.id} type="button" onClick={() => setScreen(tab.id)} className="flex flex-col items-center gap-1 text-[11px]">
-              <span className={`relative flex items-center justify-center rounded-full ${tab.primary ? 'h-11 w-11 bg-[#151515] text-white' : active ? 'h-8 w-8 bg-[#eee6d8] text-[#151515]' : 'h-8 w-8 text-[#7a746b]'}`}>
+              <span className={`relative flex items-center justify-center rounded-full ${tab.primary ? 'h-11 w-11 bg-[var(--ink)] text-white' : active ? 'h-8 w-8 bg-[var(--surface-2)] text-[var(--text)]' : 'h-8 w-8 text-[var(--text-muted)]'}`}>
                 <Icon name={tab.icon} size={tab.primary ? 20 : 17} />
                 {tab.dot && (
-                  <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-[#fbf8f2] bg-red-500" />
+                  <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-[var(--surface)] bg-red-500" />
                 )}
               </span>
-              <span className={active ? 'font-semibold text-[#151515]' : 'text-[#7a746b]'}>{tab.label}</span>
+              <span className={active ? 'font-semibold text-[var(--text)]' : 'text-[var(--text-muted)]'}>{tab.label}</span>
             </button>
           );
         })}
@@ -127,7 +129,7 @@ function ToastStack() {
           key={toast.id}
           type="button"
           onClick={() => dismissToast(toast.id)}
-          className="pointer-events-auto w-full max-w-[400px] rounded-[18px] bg-[#151515] px-4 py-3 text-left text-white shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition"
+          className="pointer-events-auto w-full max-w-[400px] rounded-[18px] bg-[var(--ink)] px-4 py-3 text-left text-white shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition"
         >
           <p className="text-[13px] font-bold tracking-[-0.04em]">{toast.title}</p>
           {toast.body && <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-white/80">{toast.body}</p>}
@@ -141,11 +143,11 @@ function Header({ title, subtitle, kicker = '시선집', onBack, right }) {
   return (
     <header className="mb-5 flex items-start justify-between gap-4">
       <div className="flex items-start gap-3">
-        {onBack && <button type="button" onClick={onBack} className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full border border-[#e4dccd] bg-[#fbf8f2]"><Icon name="back" size={18} /></button>}
+        {onBack && <button type="button" onClick={onBack} className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]"><Icon name="back" size={18} /></button>}
         <div>
-          <p className="mb-1 text-[11px] font-semibold tracking-[0.16em] text-[#7a746b]">{kicker}</p>
+          <p className="mb-1 text-[11px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">{kicker}</p>
           <h1 className="text-[30px] font-extrabold leading-none tracking-[-0.08em]">{title}</h1>
-          {subtitle && <p className="mt-3 max-w-[31ch] text-[14px] leading-6 text-[#746e66]">{subtitle}</p>}
+          {subtitle && <p className="mt-3 max-w-[31ch] text-[14px] leading-6 text-[var(--text-muted)]">{subtitle}</p>}
         </div>
       </div>
       {right}
@@ -153,19 +155,27 @@ function Header({ title, subtitle, kicker = '시선집', onBack, right }) {
   );
 }
 
-function ImageBox({ src, alt, className = '', fit = 'cover' }) {
+function ImageBox({ src, alt, className = '', fit = 'cover', priority = false }) {
   return (
-    <div className={`overflow-hidden bg-[#ded6c8] ${className}`}>
-      {src ? <img src={src} alt={alt || ''} className={`h-full w-full ${fit === 'contain' ? 'object-contain' : 'object-cover'}`} /> : null}
+    <div className={`overflow-hidden bg-[var(--image-bg)] ${className}`}>
+      {src ? (
+        <img
+          src={src}
+          alt={alt || ''}
+          loading={priority ? 'eager' : 'lazy'}
+          decoding="async"
+          className={`h-full w-full ${fit === 'contain' ? 'object-contain' : 'object-cover'}`}
+        />
+      ) : null}
     </div>
   );
 }
 
 function SearchBar({ query, setQuery, onFocus }) {
   return (
-    <div className="flex items-center gap-2 rounded-full border border-[#e4dccd] bg-[#fbf8f2] px-4 py-3">
-      <Icon name="search" size={17} className="text-[#7a746b]" />
-      <input value={query} onChange={(event) => setQuery(event.target.value)} onFocus={onFocus} placeholder="사진, 사람, 위치 검색" className="w-full bg-transparent text-sm outline-none placeholder:text-[#9a948b]" />
+    <div className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+      <Icon name="search" size={17} className="text-[var(--text-muted)]" />
+      <input value={query} onChange={(event) => setQuery(event.target.value)} onFocus={onFocus} placeholder="사진, 사람, 위치 검색" className="w-full bg-transparent text-sm outline-none placeholder:text-[var(--text-faint)]" />
     </div>
   );
 }
@@ -197,11 +207,11 @@ function HypeButton({ artwork, compact = false }) {
       disabled={busy || !userId}
       title="Hype"
       aria-label="Hype"
-      className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold ${compact ? 'h-7 px-2 text-[11px]' : 'h-9 px-3 text-sm'} ${hyped ? 'border border-[#151515] bg-[#151515] text-white' : 'border border-[#d8cfbf] bg-[#fbf8f2] text-[#151515]'}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-full font-semibold ${compact ? 'h-7 px-2 text-[11px]' : 'h-9 px-3 text-sm'} ${hyped ? 'border border-[var(--ink)] bg-[var(--ink)] text-white' : 'border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)]'}`}
     >
       <span>🔥</span>
       <span>Hype</span>
-      <span className={hyped ? 'text-white/70' : 'text-[#746e66]'}>{count}</span>
+      <span className={hyped ? 'text-white/70' : 'text-[var(--text-muted)]'}>{count}</span>
     </button>
   );
 }
@@ -227,7 +237,7 @@ function ShareButton({ label = '', title = '시선집', text = '이 전시를 �
       onClick={handleShare}
       aria-label="공유"
       title="공유"
-      className={`${label ? 'gap-1.5 px-3' : 'h-9 w-9'} inline-flex items-center justify-center rounded-full border border-[#d8cfbf] bg-[#fbf8f2]/90 text-xs font-semibold text-[#151515] shadow-[0_4px_16px_rgba(20,20,20,0.06)] backdrop-blur`}
+      className={`${label ? 'gap-1.5 px-3' : 'h-9 w-9'} inline-flex items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)]/90 text-xs font-semibold text-[var(--text)] shadow-[0_4px_16px_rgba(20,20,20,0.06)] backdrop-blur`}
     >
       <Icon name="share" size={15} />
       {label && <span>{label}</span>}
@@ -244,7 +254,7 @@ function GpsStatusBadge({ status, source }) {
     error: '위치 정보 확인 실패',
   }[status] || '위치 정보 없음';
   const dark = status === 'found' || status === 'reading';
-  return <span className={`rounded-full px-3 py-1 text-[11px] ${dark ? 'bg-[#151515]/85 text-white' : 'bg-white/90 text-[#151515]'}`}>{baseLabel}</span>;
+  return <span className={`rounded-full px-3 py-1 text-[11px] ${dark ? 'bg-[var(--ink)]/85 text-white' : 'bg-white/90 text-[var(--text)]'}`}>{baseLabel}</span>;
 }
 
 function ExhibitionSlot({ artwork, onOpen, large = false }) {
@@ -252,7 +262,7 @@ function ExhibitionSlot({ artwork, onOpen, large = false }) {
     <button
       type="button"
       onClick={() => artwork && onOpen(artwork.id)}
-      className={`group relative overflow-hidden bg-[#e8dfd1] text-left ${large ? 'rounded-[24px]' : 'rounded-[18px]'} ${!artwork ? 'border border-dashed border-[#cfc6b8]' : ''}`}
+      className={`group relative overflow-hidden bg-[var(--surface-3)] text-left ${large ? 'rounded-[24px]' : 'rounded-[18px]'} ${!artwork ? 'border border-dashed border-[var(--border-dashed)]' : ''}`}
     >
       {artwork ? (
         <>
@@ -262,7 +272,7 @@ function ExhibitionSlot({ artwork, onOpen, large = false }) {
           </div>
         </>
       ) : (
-        <div className="flex h-full w-full items-center justify-center text-[11px] text-[#9a948b]">빈 벽</div>
+        <div className="flex h-full w-full items-center justify-center text-[11px] text-[var(--text-faint)]">빈 벽</div>
       )}
     </button>
   );
@@ -286,11 +296,11 @@ function FourPhotoWall({ photos, onOpen, mini = false, compact = false }) {
 
 function EmptyState({ title, hint, onAction, actionLabel }) {
   return (
-    <div className="rounded-[24px] border border-dashed border-[#d8cfbf] bg-[#fbf8f2] p-8 text-center">
-      <p className="text-sm font-semibold text-[#151515]">{title}</p>
-      {hint && <p className="mt-2 whitespace-pre-line text-xs leading-5 text-[#746e66]">{hint}</p>}
+    <div className="rounded-[24px] border border-dashed border-[var(--border-strong)] bg-[var(--surface)] p-8 text-center">
+      <p className="text-sm font-semibold text-[var(--text)]">{title}</p>
+      {hint && <p className="mt-2 whitespace-pre-line text-xs leading-5 text-[var(--text-muted)]">{hint}</p>}
       {onAction && (
-        <button type="button" onClick={onAction} className="mt-4 rounded-full bg-[#151515] px-4 py-2 text-xs font-semibold text-white">
+        <button type="button" onClick={onAction} className="mt-4 rounded-full bg-[var(--ink)] px-4 py-2 text-xs font-semibold text-white">
           {actionLabel || '시작하기'}
         </button>
       )}
@@ -348,9 +358,9 @@ function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-[#151515] text-white">
+    <div className="min-h-screen bg-[var(--ink)] text-white">
       <div className="mx-auto flex min-h-screen max-w-[430px] flex-col justify-between p-5">
-        <section className="relative min-h-[560px] flex-1 overflow-hidden rounded-[32px] bg-gradient-to-br from-[#3b2f25] via-[#1f1610] to-black">
+        <section className="relative min-h-[560px] flex-1 overflow-hidden rounded-[32px] bg-gradient-to-br from-[var(--hero-from)] via-[var(--hero-via)] to-[var(--hero-to)]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,200,140,0.18),transparent_60%)]" />
           <div className="relative flex h-full min-h-[560px] flex-col justify-between p-6">
             <div className="flex items-center justify-between text-[12px] font-semibold tracking-[0.16em]">
@@ -383,7 +393,7 @@ function LoginScreen() {
                     type="button"
                     onClick={handleGoogle}
                     disabled={!!busy}
-                    className="flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-4 text-sm font-semibold text-[#151515] disabled:opacity-50"
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-4 text-sm font-semibold text-[var(--text)] disabled:opacity-50"
                   >
                     <GoogleLogo />
                     {busy === 'google' ? 'Google로 이동…' : 'Google로 계속하기'}
@@ -459,13 +469,14 @@ function HomeScreen({ setScreen, openArtwork, openPlace, openPerson, openKeyword
   const {
     userId,
     artworks,
-    profiles,
     places,
     getPlaceArtworks,
     getProfile,
     getUserArtworks,
     getHypeCount,
     getFollowing,
+    getRecommendedArtworks,
+    getRecommendedCreators,
   } = useData();
   const { unreadCount } = useNotifications();
   const [feedFilter, setFeedFilter] = useState('전체');
@@ -481,33 +492,17 @@ function HomeScreen({ setScreen, openArtwork, openPlace, openPerson, openKeyword
     [artworks, feedFilter, followingIds]
   );
 
-  // 오늘의 한 컷 — 가장 hype 받은 사진 (없으면 최신)
-  const featured = useMemo(() => {
-    const candidates = visibleArtworks.filter((a) => a.location_mode !== '숨김');
-    if (candidates.length === 0) return null;
-    let best = candidates[0];
-    let bestScore = getHypeCount(best.id);
-    for (const art of candidates) {
-      const score = getHypeCount(art.id);
-      if (score > bestScore) {
-        best = art;
-        bestScore = score;
-      }
-    }
-    return best;
-  }, [visibleArtworks, getHypeCount]);
+  // 추천 알고리즘 (최신성 + 인기 + 팔로잉 + 키워드 친화도)
+  const recommended = useMemo(
+    () => getRecommendedArtworks(12),
+    [getRecommendedArtworks]
+  );
+  const featuredPool = feedFilter === '팔로잉'
+    ? recommended.filter((a) => followingIds.has(a.user_id))
+    : recommended;
+  const featured = featuredPool[0] || null;
 
-  // 인기 작가 — 받은 hype 합계 기준 top 6
-  const topCreators = useMemo(() => {
-    return profiles
-      .map((p) => {
-        const total = getUserArtworks(p.id).reduce((sum, art) => sum + getHypeCount(art.id), 0);
-        return { profile: p, total };
-      })
-      .filter((entry) => entry.total > 0 || getUserArtworks(entry.profile.id).length > 0)
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 6);
-  }, [profiles, getUserArtworks, getHypeCount]);
+  const topCreators = useMemo(() => getRecommendedCreators(6), [getRecommendedCreators]);
 
   // 인기 키워드 top 5
   const trendingKeywords = useMemo(() => {
@@ -544,22 +539,22 @@ function HomeScreen({ setScreen, openArtwork, openPlace, openPerson, openKeyword
     <>
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <p className="text-[12px] font-semibold tracking-[0.18em] text-[#746e66]">시선집 · {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</p>
+          <p className="text-[12px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">시선집 · {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</p>
           <h1 className="mt-0.5 text-[27px] font-extrabold tracking-[-0.08em]">오늘의 시선들</h1>
         </div>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setScreen('notifications')}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#e4dccd] bg-[#fbf8f2]"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]"
             aria-label="알림"
           >
             <Icon name="bell" size={17} />
             {unreadCount > 0 && (
-              <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-[#fbf8f2] bg-red-500" />
+              <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-[var(--surface)] bg-red-500" />
             )}
           </button>
-          <button type="button" onClick={() => setScreen('search')} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e4dccd] bg-[#fbf8f2]" aria-label="탐색">
+          <button type="button" onClick={() => setScreen('search')} className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]" aria-label="탐색">
             <Icon name="search" size={17} />
           </button>
         </div>
@@ -574,8 +569,8 @@ function HomeScreen({ setScreen, openArtwork, openPlace, openPerson, openKeyword
               onClick={() => setFeedFilter(item)}
               className={`rounded-full px-4 py-1.5 text-xs font-semibold ${
                 feedFilter === item
-                  ? 'bg-[#151515] text-white'
-                  : 'border border-[#e4dccd] bg-[#fbf8f2] text-[#746e66]'
+                  ? 'bg-[var(--ink)] text-white'
+                  : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'
               }`}
             >
               {item}
@@ -603,7 +598,7 @@ function HomeScreen({ setScreen, openArtwork, openPlace, openPerson, openKeyword
               <button
                 type="button"
                 onClick={() => openArtwork(featured.id)}
-                className="block w-full overflow-hidden rounded-[28px] bg-[#151515] text-left shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+                className="block w-full overflow-hidden rounded-[28px] bg-[var(--ink)] text-left shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
               >
                 <div className="relative">
                   <ImageBox src={featured.imageUrl} alt={featured.title} className="h-[360px]" />
@@ -626,7 +621,7 @@ function HomeScreen({ setScreen, openArtwork, openPlace, openPerson, openKeyword
             <section>
               <div className="mb-3 flex items-end justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">사람들의 시선</p>
+                  <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">사람들의 시선</p>
                   <h2 className="mt-0.5 text-[20px] font-extrabold tracking-[-0.07em]">키워드 따라가기</h2>
                 </div>
               </div>
@@ -636,10 +631,10 @@ function HomeScreen({ setScreen, openArtwork, openPlace, openPerson, openKeyword
                     key={word}
                     type="button"
                     onClick={() => openKeyword(word)}
-                    className="shrink-0 rounded-[16px] bg-[#fbf8f2] px-4 py-3 text-left shadow-[0_0_0_1px_#e4dccd]"
+                    className="shrink-0 rounded-[16px] bg-[var(--surface)] px-4 py-3 text-left shadow-[0_0_0_1px_var(--border)]"
                   >
                     <p className="text-[15px] font-bold tracking-[-0.04em]">#{word}</p>
-                    <p className="mt-0.5 text-[11px] text-[#746e66]">{count}장</p>
+                    <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">{count}장</p>
                   </button>
                 ))}
               </div>
@@ -649,25 +644,25 @@ function HomeScreen({ setScreen, openArtwork, openPlace, openPerson, openKeyword
           {placesWithArt.length > 0 && (
             <section className="space-y-4">
               <div>
-                <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">동네별 전시</p>
+                <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">동네별 전시</p>
                 <h2 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.075em]">근방 네컷</h2>
               </div>
               {placesWithArt.map(({ place, photos }) => (
-                <article key={place.id} className="rounded-[28px] bg-[#fbf8f2] p-3 shadow-[0_0_0_1px_#e4dccd]">
+                <article key={place.id} className="rounded-[28px] bg-[var(--surface)] p-3 shadow-[0_0_0_1px_var(--border)]">
                   <button
                     type="button"
                     onClick={() => openPlace(place.id)}
                     className="mb-3 flex w-full items-end justify-between gap-3 px-1 text-left"
                   >
                     <div>
-                      <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">
+                      <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
                         {placeLabel(place)}
                       </p>
                       <h3 className="mt-0.5 text-[20px] font-extrabold tracking-[-0.075em]">
                         {place.name || '이름 없는 공간'}
                       </h3>
                     </div>
-                    <span className="rounded-full border border-[#d8cfbf] px-2.5 py-1 text-[11px] text-[#746e66]">
+                    <span className="rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-[11px] text-[var(--text-muted)]">
                       {photos.length}컷
                     </span>
                   </button>
@@ -681,12 +676,12 @@ function HomeScreen({ setScreen, openArtwork, openPlace, openPerson, openKeyword
             <section>
               <div className="mb-3 flex items-end justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">사람들</p>
+                  <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">사람들</p>
                   <h2 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.075em]">눈에 띄는 작가</h2>
                 </div>
               </div>
               <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-                {topCreators.map(({ profile, total }) => {
+                {topCreators.map(({ profile, totalHype }) => {
                   const main =
                     getUserArtworks(profile.id).find((a) => a.is_twenty_five) ||
                     getUserArtworks(profile.id)[0];
@@ -695,14 +690,14 @@ function HomeScreen({ setScreen, openArtwork, openPlace, openPerson, openKeyword
                       key={profile.id}
                       type="button"
                       onClick={() => openPerson(profile.id)}
-                      className="min-w-[150px] overflow-hidden rounded-[20px] bg-[#fbf8f2] text-left shadow-[0_0_0_1px_#e4dccd]"
+                      className="min-w-[150px] overflow-hidden rounded-[20px] bg-[var(--surface)] text-left shadow-[0_0_0_1px_var(--border)]"
                     >
                       <ImageBox src={main?.imageUrl} alt={profile.nickname} className="h-[170px] w-full" />
                       <div className="p-3">
                         <p className="truncate text-sm font-bold tracking-[-0.04em]">
                           {profile.nickname}
                         </p>
-                        <p className="mt-0.5 text-[11px] text-[#746e66]">🔥 {total}</p>
+                        <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">🔥 {totalHype}</p>
                       </div>
                     </button>
                   );
@@ -715,7 +710,7 @@ function HomeScreen({ setScreen, openArtwork, openPlace, openPerson, openKeyword
             <section>
               <div className="mb-3 flex items-end justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">최근</p>
+                  <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">최근</p>
                   <h2 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.075em]">새로 올라온 사진</h2>
                 </div>
               </div>
@@ -725,14 +720,14 @@ function HomeScreen({ setScreen, openArtwork, openPlace, openPerson, openKeyword
                     key={art.id}
                     type="button"
                     onClick={() => openArtwork(art.id)}
-                    className="min-w-[140px] overflow-hidden rounded-[18px] bg-[#fbf8f2] text-left shadow-[0_0_0_1px_#e4dccd]"
+                    className="min-w-[140px] overflow-hidden rounded-[18px] bg-[var(--surface)] text-left shadow-[0_0_0_1px_var(--border)]"
                   >
                     <ImageBox src={art.imageUrl} alt={art.title} className="h-[180px]" />
                     <div className="p-2">
                       <p className="truncate text-[12px] font-bold tracking-[-0.04em]">
                         {art.title || '제목 없음'}
                       </p>
-                      <p className="mt-0.5 truncate text-[10px] text-[#9a948b]">
+                      <p className="mt-0.5 truncate text-[10px] text-[var(--text-faint)]">
                         {profileLabel(getProfile(art.user_id))}
                       </p>
                     </div>
@@ -825,7 +820,7 @@ function SearchScreen({ openArtwork, openPerson, openPlace }) {
               key={item}
               type="button"
               onClick={() => setTab(item)}
-              className={`rounded-full px-4 py-2 text-sm ${tab === item ? 'bg-[#151515] text-white' : 'border border-[#e4dccd] bg-[#fbf8f2] text-[#746e66]'}`}
+              className={`rounded-full px-4 py-2 text-sm ${tab === item ? 'bg-[var(--ink)] text-white' : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'}`}
             >
               {item}
             </button>
@@ -834,13 +829,13 @@ function SearchScreen({ openArtwork, openPerson, openPlace }) {
 
         {tab !== '위치' && (
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-[#9a948b]">정렬</span>
+            <span className="text-[var(--text-faint)]">정렬</span>
             {['최신', '인기'].map((item) => (
               <button
                 key={item}
                 type="button"
                 onClick={() => setSort(item)}
-                className={`rounded-full px-3 py-1 ${sort === item ? 'bg-[#eee6d8] font-semibold text-[#151515]' : 'text-[#746e66]'}`}
+                className={`rounded-full px-3 py-1 ${sort === item ? 'bg-[var(--surface-2)] font-semibold text-[var(--text)]' : 'text-[var(--text-muted)]'}`}
               >
                 {item === '인기' ? '🔥 인기' : item}
               </button>
@@ -853,7 +848,7 @@ function SearchScreen({ openArtwork, openPerson, openPlace }) {
             <button
               type="button"
               onClick={() => setKeywordFilter(null)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs ${!keywordFilter ? 'bg-[#151515] text-white' : 'border border-[#e4dccd] bg-[#fbf8f2] text-[#746e66]'}`}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs ${!keywordFilter ? 'bg-[var(--ink)] text-white' : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'}`}
             >
               전체
             </button>
@@ -862,7 +857,7 @@ function SearchScreen({ openArtwork, openPerson, openPlace }) {
                 key={word}
                 type="button"
                 onClick={() => setKeywordFilter(word === keywordFilter ? null : word)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs ${keywordFilter === word ? 'bg-[#151515] text-white' : 'border border-[#e4dccd] bg-[#fbf8f2] text-[#746e66]'}`}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs ${keywordFilter === word ? 'bg-[var(--ink)] text-white' : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'}`}
               >
                 #{word}
               </button>
@@ -894,7 +889,7 @@ function PhotoTile({ artwork, onOpen }) {
   const { getHypeCount } = useData();
   const hypes = getHypeCount(artwork.id);
   return (
-    <button type="button" onClick={() => onOpen(artwork.id)} className="overflow-hidden rounded-[20px] bg-[#fbf8f2] text-left shadow-[0_0_0_1px_#e4dccd]">
+    <button type="button" onClick={() => onOpen(artwork.id)} className="overflow-hidden rounded-[20px] bg-[var(--surface)] text-left shadow-[0_0_0_1px_var(--border)]">
       <div className="relative">
         <ImageBox src={artwork.imageUrl} alt={artwork.title} className="h-44" />
         {hypes > 0 && (
@@ -903,7 +898,7 @@ function PhotoTile({ artwork, onOpen }) {
       </div>
       <div className="p-3">
         <p className="line-clamp-2 text-sm font-semibold tracking-[-0.04em]">{artwork.title || '제목 없음'}</p>
-        {artwork.daily_vision && <p className="mt-1 text-[11px] text-[#9a948b]">#{artwork.daily_vision}</p>}
+        {artwork.daily_vision && <p className="mt-1 text-[11px] text-[var(--text-faint)]">#{artwork.daily_vision}</p>}
       </div>
     </button>
   );
@@ -914,12 +909,12 @@ function PersonRow({ profile, onOpen }) {
   const works = getUserArtworks(profile.id);
   const main = works.find((art) => art.is_twenty_five) || works[0];
   return (
-    <button type="button" onClick={() => onOpen(profile.id)} className="flex w-full gap-3 rounded-[22px] bg-[#fbf8f2] p-3 text-left shadow-[0_0_0_1px_#e4dccd]">
+    <button type="button" onClick={() => onOpen(profile.id)} className="flex w-full gap-3 rounded-[22px] bg-[var(--surface)] p-3 text-left shadow-[0_0_0_1px_var(--border)]">
       <ImageBox src={main?.imageUrl} alt={profile.nickname} className="h-20 w-20 shrink-0 rounded-[16px]" />
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-semibold tracking-[0.16em] text-[#746e66]">{profile.nickname}</p>
+        <p className="text-[11px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">{profile.nickname}</p>
         <h3 className="mt-1 text-lg font-bold tracking-[-0.05em]">{profile.exhibition_title || '제목 미정'}</h3>
-        <p className="mt-1 line-clamp-2 text-sm leading-5 text-[#746e66]">{profile.bio || ''}</p>
+        <p className="mt-1 line-clamp-2 text-sm leading-5 text-[var(--text-muted)]">{profile.bio || ''}</p>
       </div>
     </button>
   );
@@ -929,11 +924,11 @@ function PlaceRow({ place, onOpen }) {
   const { getPlaceArtworks } = useData();
   const photo = getPlaceArtworks(place.id)[0];
   return (
-    <button type="button" onClick={() => onOpen(place.id)} className="flex w-full gap-3 rounded-[22px] bg-[#fbf8f2] p-3 text-left shadow-[0_0_0_1px_#e4dccd]">
+    <button type="button" onClick={() => onOpen(place.id)} className="flex w-full gap-3 rounded-[22px] bg-[var(--surface)] p-3 text-left shadow-[0_0_0_1px_var(--border)]">
       <ImageBox src={photo?.imageUrl} alt={place.name} className="h-20 w-20 shrink-0 rounded-[16px]" />
       <div>
         <p className="text-lg font-bold tracking-[-0.05em]">{place.name || '이름 없는 공간'}</p>
-        <p className="mt-1 text-sm text-[#746e66]">{place.neighborhood || '미상'}</p>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">{place.neighborhood || '미상'}</p>
       </div>
     </button>
   );
@@ -945,109 +940,161 @@ function PlaceRow({ place, onOpen }) {
 
 const LOCATION_MODES = ['정확한 위치', '동네', '개인전만', '숨김'];
 
+async function processPickedFile(file) {
+  const previewUrl = URL.createObjectURL(file);
+  const meta = await readPhotoMeta(file);
+  let neighborhood = null;
+  if (meta.lat != null && meta.lng != null) {
+    const geo = await reverseGeocode(meta.lat, meta.lng).catch(() => null);
+    neighborhood = geo?.neighborhood ?? null;
+  }
+  const localId =
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `f-${Date.now()}-${Math.random()}`;
+  return {
+    localId,
+    file,
+    previewUrl,
+    gpsStatus: meta.status,
+    gpsSource: meta.lat != null ? 'exif' : null,
+    gps: { lat: meta.lat, lng: meta.lng },
+    takenAt: meta.takenAt,
+    neighborhood,
+    title: '',
+  };
+}
+
 function RecordScreen({ setScreen }) {
   const { userId, places, refresh } = useData();
-  const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [items, setItems] = useState([]);
   const [mode, setMode] = useState('동네');
-  const [gpsStatus, setGpsStatus] = useState('idle');
-  const [gpsSource, setGpsSource] = useState(null); // 'exif' | 'manual'
-  const [gps, setGps] = useState({ lat: null, lng: null });
-  const [takenAt, setTakenAt] = useState(null);
-  const [neighborhood, setNeighborhood] = useState(null);
-  const [title, setTitle] = useState('');
-  const [note, setNote] = useState('');
   const [dailyVision, setDailyVision] = useState('');
+  const [sharedNote, setSharedNote] = useState('');
+  const [setAsCurate, setSetAsCurate] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [locating, setLocating] = useState(false);
   const [error, setError] = useState(null);
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [locatingId, setLocatingId] = useState(null);
 
   useEffect(() => {
     return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      items.forEach((it) => URL.revokeObjectURL(it.previewUrl));
     };
-  }, [previewUrl]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const fillFromCoords = async (lat, lng, source) => {
-    setGps({ lat, lng });
-    setGpsStatus('found');
-    setGpsSource(source);
-    const geo = await reverseGeocode(lat, lng);
-    if (geo?.neighborhood) setNeighborhood(geo.neighborhood);
+  const remaining = Math.max(0, 4 - items.length);
+
+  const handleFiles = async (event) => {
+    const files = Array.from(event.target.files || []).slice(0, remaining || 4);
+    event.target.value = '';
+    if (files.length === 0) return;
+    const processed = await Promise.all(files.map(processPickedFile));
+    setItems((prev) => [...prev, ...processed].slice(0, 4));
   };
 
-  const handleFile = async (event) => {
-    const picked = event.target.files?.[0];
-    if (!picked) return;
-    setFile(picked);
-    setPreviewUrl(URL.createObjectURL(picked));
-    setGpsStatus('reading');
-    setGpsSource(null);
-    setNeighborhood(null);
-    setGps({ lat: null, lng: null });
-
-    const meta = await readPhotoMeta(picked);
-    setTakenAt(meta.takenAt);
-
-    if (meta.lat != null && meta.lng != null) {
-      await fillFromCoords(meta.lat, meta.lng, 'exif');
-    } else {
-      setGpsStatus(meta.status);
-    }
+  const removeItem = (localId) => {
+    setItems((prev) => {
+      const item = prev.find((i) => i.localId === localId);
+      if (item) URL.revokeObjectURL(item.previewUrl);
+      return prev.filter((i) => i.localId !== localId);
+    });
   };
 
-  const handleUseMyLocation = async () => {
-    setLocating(true);
+  const updateItem = (localId, patch) => {
+    setItems((prev) => prev.map((i) => (i.localId === localId ? { ...i, ...patch } : i)));
+  };
+
+  const useMyLocationFor = async (localId) => {
+    setLocatingId(localId);
     try {
       const pos = await getCurrentPosition();
-      await fillFromCoords(pos.lat, pos.lng, 'manual');
+      const geo = await reverseGeocode(pos.lat, pos.lng).catch(() => null);
+      updateItem(localId, {
+        gps: { lat: pos.lat, lng: pos.lng },
+        gpsStatus: 'found',
+        gpsSource: 'manual',
+        neighborhood: geo?.neighborhood ?? null,
+      });
     } catch (err) {
-      alert('위치 권한이 필요해요: ' + (err.message || '알 수 없는 오류'));
+      alert('위치 권한이 필요해요: ' + (err.message || ''));
     } finally {
-      setLocating(false);
+      setLocatingId(null);
     }
   };
 
-  const clearLocation = () => {
-    setGps({ lat: null, lng: null });
-    setNeighborhood(null);
-    setGpsStatus('empty');
-    setGpsSource(null);
+  const useMyLocationForAll = async () => {
+    const without = items.filter((it) => it.gps.lat == null);
+    if (without.length === 0) return;
+    if (!window.confirm(`위치 없는 사진 ${without.length}장에 현재 내 위치를 적용할까요?`)) return;
+    try {
+      const pos = await getCurrentPosition();
+      const geo = await reverseGeocode(pos.lat, pos.lng).catch(() => null);
+      setItems((prev) =>
+        prev.map((it) =>
+          it.gps.lat == null
+            ? {
+                ...it,
+                gps: { lat: pos.lat, lng: pos.lng },
+                gpsStatus: 'found',
+                gpsSource: 'manual',
+                neighborhood: geo?.neighborhood ?? null,
+              }
+            : it
+        )
+      );
+    } catch (err) {
+      alert('위치 권한이 필요해요: ' + (err.message || ''));
+    }
   };
 
-  const handleSave = async () => {
-    if (!file || !userId) return;
+  const handleSaveAll = async () => {
+    if (items.length === 0 || !userId) return;
     setBusy(true);
     setError(null);
+    setProgress({ done: 0, total: items.length });
     try {
-      const storagePath = await uploadPhoto(userId, file);
-
-      const shareLocation = mode === '정확한 위치' || mode === '동네';
-      let placeId = null;
-      if (shareLocation && gps.lat != null && gps.lng != null) {
-        const place = await upsertPlace({
-          lat: gps.lat,
-          lng: gps.lng,
-          neighborhood,
-          name: neighborhood || null,
-          places,
+      const createdIds = [];
+      let placesCache = [...places];
+      for (const item of items) {
+        const storagePath = await uploadPhoto(userId, item.file);
+        const shareLocation = mode === '정확한 위치' || mode === '동네';
+        let placeId = null;
+        if (shareLocation && item.gps.lat != null) {
+          const place = await upsertPlace({
+            lat: item.gps.lat,
+            lng: item.gps.lng,
+            neighborhood: item.neighborhood,
+            name: item.neighborhood,
+            places: placesCache,
+          });
+          if (place) {
+            placeId = place.id;
+            // 같은 좌표 재발견 방지를 위해 캐시에 추가
+            if (!placesCache.find((p) => p.id === place.id)) placesCache.push(place);
+          }
+        }
+        const storeExact = mode === '정확한 위치';
+        const created = await insertArtwork({
+          userId,
+          storagePath,
+          title: item.title || null,
+          note: sharedNote || null,
+          dailyVision,
+          locationMode: mode,
+          takenAt: item.takenAt,
+          lat: storeExact ? item.gps.lat : null,
+          lng: storeExact ? item.gps.lng : null,
+          placeId,
         });
-        placeId = place?.id || null;
+        createdIds.push(created.id);
+        setProgress((p) => ({ ...p, done: p.done + 1 }));
       }
 
-      const storeExactCoords = mode === '정확한 위치';
-      await insertArtwork({
-        userId,
-        storagePath,
-        title,
-        note,
-        dailyVision,
-        locationMode: mode,
-        takenAt,
-        lat: storeExactCoords ? gps.lat : null,
-        lng: storeExactCoords ? gps.lng : null,
-        placeId,
-      });
+      if (setAsCurate && createdIds.length > 0) {
+        await setCurateOrder(userId, createdIds.slice(0, 4));
+      }
 
       await refresh();
       setScreen('archive');
@@ -1059,121 +1106,174 @@ function RecordScreen({ setScreen }) {
     }
   };
 
+  const someWithoutGps = items.some((it) => it.gps.lat == null);
+
   return (
     <>
-      <Header title="기록" subtitle="사진 한 장이 오늘의 전시가 됩니다." kicker="새 장면" />
+      <Header
+        title="기록"
+        subtitle="한 번에 최대 4장까지 올릴 수 있어요."
+        kicker="새 장면"
+      />
       <div className="space-y-4">
-        <label className="block cursor-pointer">
-          <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
-          {!previewUrl ? (
-            <div className="flex h-[430px] flex-col items-center justify-center rounded-[28px] border border-[#e4dccd] bg-[#fbf8f2] text-[#746e66]">
+        {items.length === 0 ? (
+          <label className="block cursor-pointer">
+            <input type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} />
+            <div className="flex h-[430px] flex-col items-center justify-center rounded-[28px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]">
               <Icon name="camera" size={34} />
-              <span className="mt-3 text-sm">사진 고르기</span>
-              <span className="mt-2 text-xs text-[#9a948b]">사진 안의 위치 정보도 함께 확인합니다.</span>
+              <span className="mt-3 text-sm">사진 고르기 (최대 4장)</span>
+              <span className="mt-2 text-xs text-[var(--text-faint)]">사진 안의 위치 정보도 함께 확인합니다.</span>
             </div>
-          ) : (
-            <div className="overflow-hidden rounded-[28px] bg-[#fbf8f2] shadow-[0_0_0_1px_#e4dccd]">
-              <div className="relative">
-                <img src={previewUrl} alt="선택한 사진" className="h-[460px] w-full object-cover" />
-                <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-                  <GpsStatusBadge status={gpsStatus} source={gpsSource} />
-                  {neighborhood && (
-                    <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] text-[#151515]">{neighborhood}</span>
-                  )}
-                </div>
-              </div>
+          </label>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              {items.map((item) => (
+                <RecordItemCard
+                  key={item.localId}
+                  item={item}
+                  onRemove={() => removeItem(item.localId)}
+                  onTitleChange={(title) => updateItem(item.localId, { title })}
+                  onUseMyLocation={() => useMyLocationFor(item.localId)}
+                  locating={locatingId === item.localId}
+                />
+              ))}
+              {remaining > 0 && (
+                <label className="flex aspect-square cursor-pointer items-center justify-center rounded-[18px] border border-dashed border-[var(--border-dashed)] bg-[var(--surface)] text-[var(--text-muted)]">
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} />
+                  <div className="text-center">
+                    <Icon name="plus" size={20} />
+                    <p className="mt-1 text-[11px]">더 추가</p>
+                  </div>
+                </label>
+              )}
             </div>
-          )}
-        </label>
 
-        {previewUrl && (
-          <div className="rounded-[20px] bg-[#fbf8f2] p-3 text-xs leading-5 text-[#4d4943] shadow-[0_0_0_1px_#e4dccd]">
-            {gpsStatus === 'found' && gpsSource === 'exif' && (
-              <p>📍 사진에 새겨진 좌표를 읽었어요{neighborhood ? ` (${neighborhood})` : ''}.</p>
+            {someWithoutGps && (
+              <button
+                type="button"
+                onClick={useMyLocationForAll}
+                className="w-full rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 text-xs font-semibold text-[var(--text)]"
+              >
+                📍 위치 없는 사진에 내 위치 일괄 적용
+              </button>
             )}
-            {gpsStatus === 'found' && gpsSource === 'manual' && (
-              <div className="flex items-center justify-between gap-2">
-                <p>📍 지금 내 위치로 설정됨{neighborhood ? ` (${neighborhood})` : ''}.</p>
-                <button type="button" onClick={(event) => { event.preventDefault(); clearLocation(); }} className="rounded-full border border-[#d8cfbf] px-2.5 py-1 text-[11px] text-[#746e66]">
-                  취소
-                </button>
-              </div>
-            )}
-            {(gpsStatus === 'empty' || gpsStatus === 'error') && (
-              <div className="space-y-2">
-                <p>이 사진엔 위치 정보가 없어요. (iOS는 업로드할 때 위치를 빼버리는 경우가 많아요.)</p>
-                <button
-                  type="button"
-                  onClick={(event) => { event.preventDefault(); handleUseMyLocation(); }}
-                  disabled={locating}
-                  className="rounded-full bg-[#151515] px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
-                >
-                  {locating ? '위치 가져오는 중…' : '📍 현재 내 위치 사용'}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
-        {previewUrl && (
-          <section className="space-y-4 rounded-[24px] bg-[#fbf8f2] p-4 shadow-[0_0_0_1px_#e4dccd]">
-            <div>
-              <input
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                className="w-full bg-transparent text-[24px] font-bold tracking-[-0.06em] outline-none placeholder:text-[#aaa399]"
-                placeholder="제목"
-              />
+            <section className="space-y-4 rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
               <textarea
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-                className="mt-3 min-h-20 w-full resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-[#aaa399]"
-                placeholder="왜 이 사진을 남기고 싶었나요"
+                value={sharedNote}
+                onChange={(event) => setSharedNote(event.target.value)}
+                className="min-h-16 w-full resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-[var(--placeholder)]"
+                placeholder="공통 노트 (선택) — 모든 사진에 같이 남겨집니다"
               />
               <input
                 value={dailyVision}
                 onChange={(event) => setDailyVision(event.target.value)}
-                className="mt-3 w-full rounded-full border border-[#e4dccd] bg-transparent px-4 py-2 text-xs outline-none placeholder:text-[#aaa399]"
-                placeholder="오늘의 시선 (예: 빛, 벽, 흔들림)"
+                className="w-full rounded-full border border-[var(--border)] bg-transparent px-4 py-2 text-xs outline-none placeholder:text-[var(--placeholder)]"
+                placeholder="오늘의 시선 (예: 빛, 벽, 흔들림) — 공통"
               />
-            </div>
 
-            <div>
-              <p className="mb-3 text-[12px] font-semibold tracking-[0.14em] text-[#746e66]">공개 방식</p>
-              <div className="flex flex-wrap gap-2">
-                {LOCATION_MODES.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => setMode(item)}
-                    className={`rounded-full px-3 py-2 text-xs ${mode === item ? 'bg-[#151515] text-white' : 'border border-[#e4dccd] text-[#746e66]'}`}
-                  >
-                    {item}
-                  </button>
-                ))}
+              <div>
+                <p className="mb-3 text-[12px] font-semibold tracking-[0.14em] text-[var(--text-muted)]">공개 방식 (모두 공통)</p>
+                <div className="flex flex-wrap gap-2">
+                  {LOCATION_MODES.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setMode(item)}
+                      className={`rounded-full px-3 py-2 text-xs ${mode === item ? 'bg-[var(--ink)] text-white' : 'border border-[var(--border)] text-[var(--text-muted)]'}`}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">
+                  {mode === '정확한 위치' && '지도에 정확한 좌표로 표시됩니다.'}
+                  {mode === '동네' && '동네 이름만 노출되고 좌표는 저장되지 않아요.'}
+                  {mode === '개인전만' && '내 개인전에만 걸려요. 공간 전시에는 안 들어가요.'}
+                  {mode === '숨김' && '나만 볼 수 있어요. 다른 사람에겐 보이지 않아요.'}
+                </p>
               </div>
-              <p className="mt-2 text-xs leading-5 text-[#746e66]">
-                {mode === '정확한 위치' && '지도에 정확한 좌표로 표시됩니다.'}
-                {mode === '동네' && '동네 이름만 노출되고 좌표는 저장되지 않아요.'}
-                {mode === '개인전만' && '내 개인전에만 걸려요. 공간 전시에는 안 들어가요.'}
-                {mode === '숨김' && '나만 볼 수 있어요. 다른 사람에겐 보이지 않아요.'}
-              </p>
-            </div>
 
-            {error && <p className="rounded-[12px] bg-red-50 p-3 text-xs text-red-700">{error}</p>}
+              {items.length >= 1 && (
+                <label className="flex cursor-pointer items-center justify-between rounded-[16px] border border-[var(--border)] px-4 py-3">
+                  <span>
+                    <span className="block text-sm font-semibold">오늘의 4컷으로 큐레이팅</span>
+                    <span className="mt-0.5 block text-[11px] text-[var(--text-muted)]">
+                      이번에 올린 사진들이 내 개인전 메인 4컷으로 자동 설정됨
+                    </span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={setAsCurate}
+                    onChange={(event) => setSetAsCurate(event.target.checked)}
+                    className="h-5 w-5 accent-[var(--ink)]"
+                  />
+                </label>
+              )}
 
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={busy}
-              className="w-full rounded-full bg-[#151515] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              {busy ? '올리는 중…' : '필름에 넣기'}
-            </button>
-          </section>
+              {error && <p className="rounded-[12px] bg-red-50 p-3 text-xs text-red-700">{error}</p>}
+
+              <button
+                type="button"
+                onClick={handleSaveAll}
+                disabled={busy}
+                className="w-full rounded-full bg-[var(--ink)] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {busy
+                  ? `올리는 중… (${progress.done}/${progress.total})`
+                  : `${items.length}장 필름에 넣기`}
+              </button>
+            </section>
+          </>
         )}
       </div>
     </>
+  );
+}
+
+function RecordItemCard({ item, onRemove, onTitleChange, onUseMyLocation, locating }) {
+  const showLocationFallback = item.gpsStatus === 'empty' || item.gpsStatus === 'error';
+  return (
+    <div className="overflow-hidden rounded-[18px] bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]">
+      <div className="relative">
+        <ImageBox src={item.previewUrl} alt={item.title || ''} className="aspect-square w-full" priority />
+        <button
+          type="button"
+          onClick={onRemove}
+          className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white"
+          aria-label="제거"
+        >
+          <Icon name="x" size={13} />
+        </button>
+        <div className="absolute left-1.5 bottom-1.5 flex flex-wrap gap-1">
+          <GpsStatusBadge status={item.gpsStatus} source={item.gpsSource} />
+          {item.neighborhood && (
+            <span className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] text-[var(--text)]">
+              {item.neighborhood}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="p-2">
+        <input
+          value={item.title}
+          onChange={(event) => onTitleChange(event.target.value)}
+          placeholder="제목 (선택)"
+          className="w-full bg-transparent text-xs font-semibold outline-none placeholder:text-[var(--placeholder)]"
+        />
+        {showLocationFallback && (
+          <button
+            type="button"
+            onClick={onUseMyLocation}
+            disabled={locating}
+            className="mt-1 w-full rounded-full bg-[var(--ink)] px-2 py-1 text-[10px] font-semibold text-white disabled:opacity-50"
+          >
+            {locating ? '확인 중…' : '📍 내 위치'}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1208,15 +1308,15 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openKeywo
 
   return (
     <>
-      <button type="button" onClick={() => setScreen('home')} className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-[#e4dccd] bg-[#fbf8f2]">
+      <button type="button" onClick={() => setScreen('home')} className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]">
         <Icon name="back" size={18} />
       </button>
       <div className="space-y-4">
-        <section className="overflow-hidden rounded-[28px] bg-[#151515] shadow-[0_0_0_1px_#151515]">
-          <div className="relative flex min-h-[620px] items-center justify-center bg-[#151515]">
-            <ImageBox src={art.imageUrl} alt={art.title} fit="contain" className="h-[620px] w-full bg-[#151515]" />
+        <section className="overflow-hidden rounded-[28px] bg-[var(--ink)] shadow-[0_0_0_1px_var(--ink)]">
+          <div className="relative flex min-h-[620px] items-center justify-center bg-[var(--ink)]">
+            <ImageBox src={art.imageUrl} alt={art.title} fit="contain" className="h-[620px] w-full bg-[var(--ink)]" />
             {art.is_twenty_five && (
-              <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#151515]">
+              <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--text)]">
                 가장 아름다운 사진
               </span>
             )}
@@ -1226,14 +1326,14 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openKeywo
 
         <CommentSection artworkId={art.id} />
 
-        <section className="rounded-[24px] bg-[#fbf8f2] p-4 shadow-[0_0_0_1px_#e4dccd]">
+        <section className="rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-[29px] font-extrabold leading-tight tracking-[-0.08em]">{art.title || '제목 없음'}</h1>
               <button
                 type="button"
                 onClick={() => place && openPlace(place.id)}
-                className="mt-3 text-left text-sm text-[#746e66]"
+                className="mt-3 text-left text-sm text-[var(--text-muted)]"
               >
                 {profileLabel(profile)} ·{' '}
                 {art.location_mode === '개인전만' || art.location_mode === '숨김'
@@ -1245,12 +1345,12 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openKeywo
               </button>
             </div>
           </div>
-          {art.note && <p className="mt-4 text-[15px] leading-7 text-[#3f3a34]">{art.note}</p>}
+          {art.note && <p className="mt-4 text-[15px] leading-7 text-[var(--text-quote)]">{art.note}</p>}
           {art.daily_vision && (
             <button
               type="button"
               onClick={() => openKeyword?.(art.daily_vision)}
-              className="mt-3 inline-block rounded-full bg-[#eee6d8] px-3 py-1 text-xs font-semibold text-[#151515]"
+              className="mt-3 inline-block rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--text)]"
             >
               #{art.daily_vision}
             </button>
@@ -1262,7 +1362,7 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openKeywo
                 <button
                   type="button"
                   onClick={() => setScreen('artworkEdit')}
-                  className="ml-auto rounded-full border border-[#d8cfbf] px-3 py-1.5 text-xs font-semibold text-[#151515]"
+                  className="ml-auto rounded-full border border-[var(--border-strong)] px-3 py-1.5 text-xs font-semibold text-[var(--text)]"
                 >
                   편집
                 </button>
@@ -1333,16 +1433,16 @@ function CommentSection({ artworkId }) {
     : null;
 
   return (
-    <section className="rounded-[24px] bg-[#fbf8f2] p-4 shadow-[0_0_0_1px_#e4dccd]">
+    <section className="rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
       <div className="mb-4">
-        <p className="text-[11px] font-semibold tracking-[0.16em] text-[#746e66]">감상 노트</p>
+        <p className="text-[11px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">감상 노트</p>
         <h2 className="mt-1 text-[22px] font-extrabold tracking-[-0.06em]">이 사진 앞에서</h2>
       </div>
 
       {replyingTo && replyTarget && (
-        <div className="mb-2 flex items-center justify-between rounded-[14px] bg-[#eee6d8] px-3 py-2 text-xs text-[#4d4943]">
+        <div className="mb-2 flex items-center justify-between rounded-[14px] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-body)]">
           <span>↳ {profileLabel(getProfile(replyTarget.user_id))}에게 답글</span>
-          <button type="button" onClick={() => setReplyingTo(null)} className="text-[#746e66]">취소</button>
+          <button type="button" onClick={() => setReplyingTo(null)} className="text-[var(--text-muted)]">취소</button>
         </div>
       )}
 
@@ -1351,12 +1451,12 @@ function CommentSection({ artworkId }) {
           value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder={replyingTo ? '답글 남기기' : '짧게 남기기'}
-          className="flex-1 rounded-full border border-[#e4dccd] bg-white px-4 py-2 text-sm outline-none"
+          className="flex-1 rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm outline-none"
         />
         <button
           type="submit"
           disabled={busy || !text.trim()}
-          className="rounded-full bg-[#151515] px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
+          className="rounded-full bg-[var(--ink)] px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
         >
           {replyingTo ? '답글' : '남기기'}
         </button>
@@ -1364,7 +1464,7 @@ function CommentSection({ artworkId }) {
 
       <div className="space-y-4">
         {rootComments.length === 0 && (
-          <p className="text-xs text-[#9a948b]">아직 노트가 없어요. 첫 감상을 남겨보세요.</p>
+          <p className="text-xs text-[var(--text-faint)]">아직 노트가 없어요. 첫 감상을 남겨보세요.</p>
         )}
         {rootComments.map((comment) => (
           <CommentItem
@@ -1419,17 +1519,17 @@ function CommentItem({ comment, onReply, isReply = false }) {
   };
 
   return (
-    <article className={`${isReply ? 'ml-5 border-l border-[#e4dccd] pl-3' : 'border-l border-[#151515] pl-4'}`}>
-      <p className="text-[15px] leading-7 text-[#3f3a34]">"{comment.text}"</p>
-      <p className="mt-1 text-[11px] tracking-[0.12em] text-[#8c857c]">
+    <article className={`${isReply ? 'ml-5 border-l border-[var(--border)] pl-3' : 'border-l border-[var(--ink)] pl-4'}`}>
+      <p className="text-[15px] leading-7 text-[var(--text-quote)]">"{comment.text}"</p>
+      <p className="mt-1 text-[11px] tracking-[0.12em] text-[var(--text-meta)]">
         {profileLabel(author)} · {timeAgo(comment.created_at)}
       </p>
-      <div className="mt-1.5 flex items-center gap-3 text-[11px] text-[#746e66]">
+      <div className="mt-1.5 flex items-center gap-3 text-[11px] text-[var(--text-muted)]">
         <button
           type="button"
           onClick={handleLike}
           disabled={busy || !userId}
-          className={`inline-flex items-center gap-1 ${liked ? 'text-red-500' : 'text-[#746e66]'}`}
+          className={`inline-flex items-center gap-1 ${liked ? 'text-red-500' : 'text-[var(--text-muted)]'}`}
         >
           <Icon name={liked ? 'heartFilled' : 'heart'} size={13} />
           {likeCount > 0 && <span>{likeCount}</span>}
@@ -1451,7 +1551,7 @@ function CommentItem({ comment, onReply, isReply = false }) {
             <button
               type="button"
               onClick={() => setShowReplies(true)}
-              className="text-[11px] text-[#746e66] underline"
+              className="text-[11px] text-[var(--text-muted)] underline"
             >
               답글 {replies.length}개 보기
             </button>
@@ -1465,6 +1565,157 @@ function CommentItem({ comment, onReply, isReply = false }) {
         </div>
       )}
     </article>
+  );
+}
+
+/* ========================================================================
+   Bulk privacy (내 사진 일괄 공개 변경)
+   ====================================================================== */
+
+function BulkPrivacyScreen({ setScreen }) {
+  const { userId, getUserArtworks, refresh } = useData();
+  const works = getUserArtworks(userId);
+  const [selected, setSelected] = useState(() => new Set());
+  const [targetMode, setTargetMode] = useState('동네');
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const toggle = (id) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelected(new Set(works.map((w) => w.id)));
+  };
+  const clearAll = () => setSelected(new Set());
+
+  const groupCounts = works.reduce(
+    (acc, w) => {
+      acc[w.location_mode] = (acc[w.location_mode] ?? 0) + 1;
+      return acc;
+    },
+    { 정확한_위치: 0, 동네: 0, 개인전만: 0, 숨김: 0 }
+  );
+
+  const handleApply = async () => {
+    if (selected.size === 0) return;
+    if (!window.confirm(`${selected.size}장의 공개 방식을 "${targetMode}"으로 바꿀까요?`)) return;
+    setBusy(true);
+    try {
+      await bulkUpdateArtworkLocationMode(Array.from(selected), userId, targetMode);
+      await refresh();
+      setSelected(new Set());
+      setDone(true);
+      setTimeout(() => setDone(false), 2000);
+    } catch (err) {
+      alert('변경 실패: ' + err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <Header
+        title="공개 일괄 변경"
+        subtitle="여러 장의 공개 방식을 한 번에 바꿉니다."
+        kicker="설정"
+        onBack={() => setScreen('profile')}
+      />
+
+      {works.length === 0 ? (
+        <EmptyState title="아직 사진이 없어요" />
+      ) : (
+        <div className="space-y-4 pb-32">
+          <section className="rounded-[20px] bg-[var(--surface)] p-3 shadow-[0_0_0_1px_var(--border)]">
+            <div className="grid grid-cols-4 gap-2 text-center text-xs">
+              {LOCATION_MODES.map((m) => (
+                <div key={m}>
+                  <p className="text-[16px] font-extrabold tracking-[-0.04em]">
+                    {m === '정확한 위치' ? works.filter((w) => w.location_mode === '정확한 위치').length : groupCounts[m] ?? 0}
+                  </p>
+                  <p className="mt-0.5 text-[10px] font-semibold tracking-[0.08em] text-[var(--text-muted)]">{m}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-[var(--text-muted)]">
+              총 {works.length}장 · 선택 {selected.size}장
+            </p>
+            <div className="flex gap-2">
+              <button type="button" onClick={selectAll} className="rounded-full border border-[var(--border)] px-3 py-1 text-xs">
+                전체 선택
+              </button>
+              <button type="button" onClick={clearAll} className="rounded-full border border-[var(--border)] px-3 py-1 text-xs">
+                해제
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            {works.map((art) => {
+              const checked = selected.has(art.id);
+              return (
+                <button
+                  key={art.id}
+                  type="button"
+                  onClick={() => toggle(art.id)}
+                  className={`relative aspect-square overflow-hidden rounded-[14px] ${checked ? 'ring-4 ring-[var(--ink)]' : ''}`}
+                >
+                  <ImageBox src={art.imageUrl} alt={art.title} className="h-full w-full" />
+                  <span
+                    className={`absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 ${
+                      checked ? 'border-[var(--ink)] bg-[var(--ink)] text-white' : 'border-white bg-black/30 text-transparent'
+                    }`}
+                  >
+                    <Icon name="check" size={12} />
+                  </span>
+                  <span className="absolute bottom-1 left-1 rounded-full bg-black/70 px-1.5 py-0.5 text-[9px] font-semibold text-white">
+                    {art.location_mode}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {selected.size > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--border)] bg-[var(--surface)]/95 px-4 py-3 backdrop-blur">
+          <div className="mx-auto max-w-[400px] space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {LOCATION_MODES.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setTargetMode(m)}
+                  className={`rounded-full px-3 py-1.5 text-xs ${
+                    targetMode === m ? 'bg-[var(--ink)] text-white' : 'border border-[var(--border)] text-[var(--text-muted)]'
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={handleApply}
+              disabled={busy}
+              className="w-full rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {busy ? '변경 중…' : done ? '완료!' : `${selected.size}장 → "${targetMode}"으로 바꾸기`}
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1537,20 +1788,20 @@ function NotificationsScreen({ setScreen, openArtwork, openPerson }) {
                 type="button"
                 onClick={() => handleClick(n)}
                 className={`flex w-full items-center gap-3 rounded-[18px] p-3 text-left ${
-                  n.read_at ? 'bg-[#fbf8f2] shadow-[0_0_0_1px_#e4dccd]' : 'bg-white shadow-[0_0_0_1px_#151515]'
+                  n.read_at ? 'bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]' : 'bg-white shadow-[0_0_0_1px_var(--ink)]'
                 }`}
               >
                 {art ? (
                   <ImageBox src={art.imageUrl} alt={art.title} className="h-12 w-12 shrink-0 rounded-[10px]" />
                 ) : (
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] bg-[#eee6d8] text-lg">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] bg-[var(--surface-2)] text-lg">
                     {n.kind === 'follow' ? '👋' : '✨'}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold tracking-[-0.04em]">{headline}</p>
-                  {art?.title && <p className="truncate text-[11px] text-[#746e66]">{art.title}</p>}
-                  <p className="mt-0.5 text-[10px] text-[#9a948b]">{timeAgo(n.created_at)}</p>
+                  {art?.title && <p className="truncate text-[11px] text-[var(--text-muted)]">{art.title}</p>}
+                  <p className="mt-0.5 text-[10px] text-[var(--text-faint)]">{timeAgo(n.created_at)}</p>
                 </div>
                 {!n.read_at && <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />}
               </button>
@@ -1587,14 +1838,14 @@ function KeywordScreen({ keyword, setScreen, openArtwork }) {
         onBack={() => setScreen('home')}
       />
       <div className="mb-4 flex items-center gap-2 text-xs">
-        <span className="text-[#9a948b]">{filtered.length}장 · 정렬</span>
+        <span className="text-[var(--text-faint)]">{filtered.length}장 · 정렬</span>
         {['인기', '최신'].map((item) => (
           <button
             key={item}
             type="button"
             onClick={() => setSort(item)}
             className={`rounded-full px-3 py-1 ${
-              sort === item ? 'bg-[#eee6d8] font-semibold text-[#151515]' : 'text-[#746e66]'
+              sort === item ? 'bg-[var(--surface-2)] font-semibold text-[var(--text)]' : 'text-[var(--text-muted)]'
             }`}
           >
             {item === '인기' ? '🔥 인기' : item}
@@ -1666,42 +1917,42 @@ function ArtworkEditScreen({ artworkId, setScreen }) {
           <ImageBox src={art.imageUrl} alt={art.title} className="h-64" />
         </div>
 
-        <section className="space-y-4 rounded-[24px] bg-[#fbf8f2] p-4 shadow-[0_0_0_1px_#e4dccd]">
+        <section className="space-y-4 rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            className="w-full bg-transparent text-[24px] font-bold tracking-[-0.06em] outline-none placeholder:text-[#aaa399]"
+            className="w-full bg-transparent text-[24px] font-bold tracking-[-0.06em] outline-none placeholder:text-[var(--placeholder)]"
             placeholder="제목"
           />
           <textarea
             value={note}
             onChange={(event) => setNote(event.target.value)}
-            className="min-h-20 w-full resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-[#aaa399]"
+            className="min-h-20 w-full resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-[var(--placeholder)]"
             placeholder="이 사진의 노트"
           />
           <input
             value={dailyVision}
             onChange={(event) => setDailyVision(event.target.value)}
-            className="w-full rounded-full border border-[#e4dccd] bg-transparent px-4 py-2 text-xs outline-none placeholder:text-[#aaa399]"
+            className="w-full rounded-full border border-[var(--border)] bg-transparent px-4 py-2 text-xs outline-none placeholder:text-[var(--placeholder)]"
             placeholder="오늘의 시선"
           />
 
           <div>
-            <p className="mb-2 text-[12px] font-semibold tracking-[0.14em] text-[#746e66]">공개 방식</p>
+            <p className="mb-2 text-[12px] font-semibold tracking-[0.14em] text-[var(--text-muted)]">공개 방식</p>
             <div className="flex flex-wrap gap-2">
               {LOCATION_MODES.map((item) => (
                 <button
                   key={item}
                   type="button"
                   onClick={() => setMode(item)}
-                  className={`rounded-full px-3 py-2 text-xs ${mode === item ? 'bg-[#151515] text-white' : 'border border-[#e4dccd] text-[#746e66]'}`}
+                  className={`rounded-full px-3 py-2 text-xs ${mode === item ? 'bg-[var(--ink)] text-white' : 'border border-[var(--border)] text-[var(--text-muted)]'}`}
                 >
                   {item}
                 </button>
               ))}
             </div>
             {mode !== art.location_mode && mode !== '정확한 위치' && (art.lat != null) && (
-              <p className="mt-2 text-xs text-[#746e66]">정확한 좌표는 저장 시 제거됩니다.</p>
+              <p className="mt-2 text-xs text-[var(--text-muted)]">정확한 좌표는 저장 시 제거됩니다.</p>
             )}
           </div>
 
@@ -1711,7 +1962,7 @@ function ArtworkEditScreen({ artworkId, setScreen }) {
             type="button"
             onClick={handleSave}
             disabled={busy}
-            className="w-full rounded-full bg-[#151515] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
+            className="w-full rounded-full bg-[var(--ink)] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
           >
             {busy ? '저장 중…' : '저장'}
           </button>
@@ -1725,11 +1976,25 @@ function ArtworkEditScreen({ artworkId, setScreen }) {
    Person Exhibition (개인전)
    ====================================================================== */
 
+function ThemeToggleButton() {
+  const { theme, toggle } = useTheme();
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]"
+      title={theme === 'dark' ? '라이트 모드' : '다크 모드'}
+    >
+      <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={15} />
+    </button>
+  );
+}
+
 function StatCell({ label, value }) {
   return (
     <div>
-      <p className="text-[18px] font-extrabold tracking-[-0.04em] text-[#151515]">{value}</p>
-      <p className="mt-0.5 text-[10px] font-semibold tracking-[0.08em] text-[#746e66]">{label}</p>
+      <p className="text-[18px] font-extrabold tracking-[-0.04em] text-[var(--text)]">{value}</p>
+      <p className="mt-0.5 text-[10px] font-semibold tracking-[0.08em] text-[var(--text-muted)]">{label}</p>
     </div>
   );
 }
@@ -1795,31 +2060,34 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
         onBack={isMe ? undefined : () => setScreen('home')}
         right={
           isMe ? (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e4dccd] bg-[#fbf8f2]"
-              title="로그아웃"
-            >
-              <Icon name="logout" size={16} />
-            </button>
+            <div className="flex gap-2">
+              <ThemeToggleButton />
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]"
+                title="로그아웃"
+              >
+                <Icon name="logout" size={16} />
+              </button>
+            </div>
           ) : null
         }
       />
       <div className="space-y-4">
-        <section className="rounded-[28px] bg-[#fbf8f2] p-4 shadow-[0_0_0_1px_#e4dccd]">
+        <section className="rounded-[28px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
           <h2 className="text-[24px] font-extrabold leading-tight tracking-[-0.075em]">{profile.exhibition_title || '제목 없는 전시'}</h2>
-          {profile.note && <p className="mt-2 text-sm leading-6 text-[#4d4943]">{profile.note}</p>}
+          {profile.note && <p className="mt-2 text-sm leading-6 text-[var(--text-body)]">{profile.note}</p>}
           {profile.words?.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
               {profile.words.map((word) => (
-                <span key={word} className="rounded-full border border-[#e4dccd] px-3 py-1 text-xs text-[#746e66]">{word}</span>
+                <span key={word} className="rounded-full border border-[var(--border)] px-3 py-1 text-xs text-[var(--text-muted)]">{word}</span>
               ))}
             </div>
           )}
 
           {/* Stats grid */}
-          <div className="mt-4 grid grid-cols-4 gap-2 rounded-[18px] bg-[#f4efe6] p-3 text-center">
+          <div className="mt-4 grid grid-cols-4 gap-2 rounded-[18px] bg-[var(--bg)] p-3 text-center">
             <StatCell label="사진" value={stats.artworkCount} />
             <StatCell label="🔥 받음" value={stats.totalHype} />
             <StatCell label="팔로워" value={stats.followerCount} />
@@ -1833,8 +2101,8 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
               disabled={followBusy}
               className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold disabled:opacity-50 ${
                 following
-                  ? 'border border-[#151515] bg-white text-[#151515]'
-                  : 'bg-[#151515] text-white'
+                  ? 'border border-[var(--ink)] bg-white text-[var(--text)]'
+                  : 'bg-[var(--ink)] text-white'
               }`}
             >
               <Icon name={following ? 'checkFollow' : 'plusFollow'} size={16} />
@@ -1847,16 +2115,25 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
               <button
                 type="button"
                 onClick={() => setScreen('profileEdit')}
-                className="rounded-full border border-[#151515] px-3 py-1.5 text-xs font-semibold"
+                className="rounded-full border border-[var(--ink)] px-3 py-1.5 text-xs font-semibold"
               >
                 프로필 편집
               </button>
+              {works.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setScreen('bulkPrivacy')}
+                  className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold"
+                >
+                  공개 일괄 변경
+                </button>
+              )}
               {works.length === 0 && (
                 <button
                   type="button"
                   onClick={handleSeed}
                   disabled={seeding}
-                  className="rounded-full bg-[#151515] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                  className="rounded-full bg-[var(--ink)] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
                 >
                   {seeding ? '샘플 추가 중…' : '🌱 샘플 사진 5장 추가'}
                 </button>
@@ -1866,15 +2143,15 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
         </section>
 
         {stats.topArtwork && stats.totalHype > 0 && (
-          <section className="rounded-[24px] bg-[#fbf8f2] p-3 shadow-[0_0_0_1px_#e4dccd]">
+          <section className="rounded-[24px] bg-[var(--surface)] p-3 shadow-[0_0_0_1px_var(--border)]">
             <button
               type="button"
               onClick={() => openArtwork(stats.topArtwork.id)}
               className="block w-full text-left"
             >
               <div className="mb-2 flex items-center justify-between px-1">
-                <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">가장 인기 있는 사진</p>
-                <span className="rounded-full bg-[#151515] px-2 py-0.5 text-[10px] font-semibold text-white">🔥 {getHypeCount(stats.topArtwork.id)}</span>
+                <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">가장 인기 있는 사진</p>
+                <span className="rounded-full bg-[var(--ink)] px-2 py-0.5 text-[10px] font-semibold text-white">🔥 {getHypeCount(stats.topArtwork.id)}</span>
               </div>
               <div className="overflow-hidden rounded-[18px]">
                 <ImageBox src={stats.topArtwork.imageUrl} alt={stats.topArtwork.title} className="h-44" />
@@ -1888,9 +2165,9 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[25px] font-extrabold tracking-[-0.07em]">오늘의 4컷</h2>
             <div className="flex items-center gap-2">
-              <span className="rounded-full border border-[#d8cfbf] px-2.5 py-1 text-[11px] text-[#746e66]">{Math.min(wall.length, 4)}/4</span>
+              <span className="rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-[11px] text-[var(--text-muted)]">{Math.min(wall.length, 4)}/4</span>
               {isMe && (
-                <button type="button" onClick={() => setScreen('curate')} className="rounded-full border border-[#151515] px-3 py-1.5 text-xs font-semibold">
+                <button type="button" onClick={() => setScreen('curate')} className="rounded-full border border-[var(--ink)] px-3 py-1.5 text-xs font-semibold">
                   수정
                 </button>
               )}
@@ -1953,27 +2230,27 @@ function ProfileEditScreen({ setScreen }) {
       <Header title="프로필 편집" kicker="내 전시" onBack={() => setScreen('profile')} />
       <div className="space-y-4">
         <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold tracking-[0.14em] text-[#746e66]">닉네임</span>
-          <input value={nickname} onChange={(e) => setNickname(e.target.value)} className="w-full rounded-[16px] border border-[#e4dccd] bg-white px-4 py-3 text-sm outline-none" />
+          <span className="mb-1 block text-[11px] font-semibold tracking-[0.14em] text-[var(--text-muted)]">닉네임</span>
+          <input value={nickname} onChange={(e) => setNickname(e.target.value)} className="w-full rounded-[16px] border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none" />
         </label>
         <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold tracking-[0.14em] text-[#746e66]">전시 제목</span>
-          <input value={exhibitionTitle} onChange={(e) => setExhibitionTitle(e.target.value)} className="w-full rounded-[16px] border border-[#e4dccd] bg-white px-4 py-3 text-sm outline-none" />
+          <span className="mb-1 block text-[11px] font-semibold tracking-[0.14em] text-[var(--text-muted)]">전시 제목</span>
+          <input value={exhibitionTitle} onChange={(e) => setExhibitionTitle(e.target.value)} className="w-full rounded-[16px] border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none" />
         </label>
         <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold tracking-[0.14em] text-[#746e66]">짧은 소개</span>
-          <input value={bio} onChange={(e) => setBio(e.target.value)} className="w-full rounded-[16px] border border-[#e4dccd] bg-white px-4 py-3 text-sm outline-none" />
+          <span className="mb-1 block text-[11px] font-semibold tracking-[0.14em] text-[var(--text-muted)]">짧은 소개</span>
+          <input value={bio} onChange={(e) => setBio(e.target.value)} className="w-full rounded-[16px] border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none" />
         </label>
         <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold tracking-[0.14em] text-[#746e66]">작가 노트</span>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} className="min-h-24 w-full rounded-[16px] border border-[#e4dccd] bg-white px-4 py-3 text-sm outline-none" />
+          <span className="mb-1 block text-[11px] font-semibold tracking-[0.14em] text-[var(--text-muted)]">작가 노트</span>
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} className="min-h-24 w-full rounded-[16px] border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none" />
         </label>
         <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold tracking-[0.14em] text-[#746e66]">키워드 (쉼표로 구분)</span>
-          <input value={words} onChange={(e) => setWords(e.target.value)} className="w-full rounded-[16px] border border-[#e4dccd] bg-white px-4 py-3 text-sm outline-none" />
+          <span className="mb-1 block text-[11px] font-semibold tracking-[0.14em] text-[var(--text-muted)]">키워드 (쉼표로 구분)</span>
+          <input value={words} onChange={(e) => setWords(e.target.value)} className="w-full rounded-[16px] border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none" />
         </label>
         {error && <p className="rounded-[12px] bg-red-50 p-3 text-xs text-red-700">{error}</p>}
-        <button type="button" onClick={handleSave} disabled={busy} className="w-full rounded-full bg-[#151515] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50">
+        <button type="button" onClick={handleSave} disabled={busy} className="w-full rounded-full bg-[var(--ink)] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50">
           {busy ? '저장 중…' : '저장'}
         </button>
       </div>
@@ -2046,7 +2323,7 @@ function SpaceScreen({ openPlace, openArtwork }) {
             type="button"
             onClick={handleLocate}
             disabled={locating}
-            className="rounded-full border border-[#151515] px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+            className="rounded-full border border-[var(--ink)] px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
           >
             {locating ? '확인 중' : '내 위치'}
           </button>
@@ -2080,12 +2357,12 @@ function SpaceScreen({ openPlace, openArtwork }) {
                     key={p.id}
                     type="button"
                     onClick={() => openPlace(p.id)}
-                    className="flex w-full items-center gap-3 rounded-[18px] bg-[#fbf8f2] p-3 text-left shadow-[0_0_0_1px_#e4dccd]"
+                    className="flex w-full items-center gap-3 rounded-[18px] bg-[var(--surface)] p-3 text-left shadow-[0_0_0_1px_var(--border)]"
                   >
                     <ImageBox src={photos[0]?.imageUrl} alt={p.name} className="h-14 w-14 shrink-0 rounded-[12px]" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold tracking-[-0.04em]">{placeLabel(p)}</p>
-                      <p className="text-[11px] text-[#746e66]">
+                      <p className="text-[11px] text-[var(--text-muted)]">
                         {Math.round(p.distance)}m · 사진 {photos.length}장
                       </p>
                     </div>
@@ -2179,20 +2456,20 @@ function CurateScreen({ setScreen, openArtwork }) {
     <>
       <Header title="전시 순서" subtitle="오늘 걸어둘 4컷을 정해보세요." kicker="수정" onBack={() => setScreen('profile')} />
       <div className="space-y-4">
-        <section className="rounded-[26px] border border-[#151515] bg-[#fbf8f2] p-3">
+        <section className="rounded-[26px] border border-[var(--ink)] bg-[var(--surface)] p-3">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[22px] font-extrabold tracking-[-0.07em]">미리보기</h2>
-            <span className="rounded-full border border-[#d8cfbf] px-2.5 py-1 text-[11px] text-[#746e66]">{ordered.length}/4</span>
+            <span className="rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-[11px] text-[var(--text-muted)]">{ordered.length}/4</span>
           </div>
           <FourPhotoWall photos={ordered} onOpen={openArtwork} />
         </section>
 
         <section className="space-y-2">
-          <h3 className="text-sm font-semibold text-[#746e66]">선택된 사진</h3>
-          {ordered.length === 0 && <p className="text-xs text-[#9a948b]">아래에서 사진을 골라 추가하세요.</p>}
+          <h3 className="text-sm font-semibold text-[var(--text-muted)]">선택된 사진</h3>
+          {ordered.length === 0 && <p className="text-xs text-[var(--text-faint)]">아래에서 사진을 골라 추가하세요.</p>}
           {ordered.map((art, index) => (
-            <article key={art.id} className="flex items-center gap-3 rounded-[22px] bg-[#fbf8f2] p-2.5 shadow-[0_0_0_1px_#e4dccd]">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#151515] text-[11px] font-semibold text-white">{index + 1}</span>
+            <article key={art.id} className="flex items-center gap-3 rounded-[22px] bg-[var(--surface)] p-2.5 shadow-[0_0_0_1px_var(--border)]">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--ink)] text-[11px] font-semibold text-white">{index + 1}</span>
               <button type="button" onClick={() => openArtwork(art.id)} className="h-16 w-16 shrink-0 overflow-hidden rounded-[14px]">
                 <ImageBox src={art.imageUrl} alt={art.title} className="h-full w-full" />
               </button>
@@ -2200,9 +2477,9 @@ function CurateScreen({ setScreen, openArtwork }) {
                 <p className="truncate text-sm font-bold tracking-[-0.04em]">{art.title || '제목 없음'}</p>
               </div>
               <div className="flex gap-1">
-                <button type="button" onClick={() => move(index, -1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-[#d8cfbf]"><Icon name="chevronLeft" size={15} /></button>
-                <button type="button" onClick={() => move(index, 1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-[#d8cfbf]"><Icon name="chevronRight" size={15} /></button>
-                <button type="button" onClick={() => remove(art.id)} className="flex h-8 w-8 items-center justify-center rounded-full border border-[#d8cfbf] text-xs">×</button>
+                <button type="button" onClick={() => move(index, -1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-strong)]"><Icon name="chevronLeft" size={15} /></button>
+                <button type="button" onClick={() => move(index, 1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-strong)]"><Icon name="chevronRight" size={15} /></button>
+                <button type="button" onClick={() => remove(art.id)} className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-strong)] text-xs">×</button>
               </div>
             </article>
           ))}
@@ -2210,7 +2487,7 @@ function CurateScreen({ setScreen, openArtwork }) {
 
         {remaining.length > 0 && ordered.length < 4 && (
           <section className="space-y-2">
-            <h3 className="text-sm font-semibold text-[#746e66]">추가할 사진</h3>
+            <h3 className="text-sm font-semibold text-[var(--text-muted)]">추가할 사진</h3>
             <div className="grid grid-cols-3 gap-2">
               {remaining.map((art) => (
                 <button key={art.id} type="button" onClick={() => add(art.id)} className="overflow-hidden rounded-[14px]">
@@ -2225,7 +2502,7 @@ function CurateScreen({ setScreen, openArtwork }) {
           type="button"
           onClick={handleSave}
           disabled={busy}
-          className="w-full rounded-full bg-[#151515] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
+          className="w-full rounded-full bg-[var(--ink)] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
         >
           {busy ? '저장 중…' : '이 순서로 걸기'}
         </button>
@@ -2259,13 +2536,13 @@ function CalendarScreen({ setScreen, openArtwork }) {
     <>
       <Header title="필름" subtitle="날짜별로 보관된 내 사진." kicker="아카이브" />
       <div className="space-y-5">
-        <section className="rounded-[24px] bg-[#fbf8f2] p-4 shadow-[0_0_0_1px_#e4dccd]">
+        <section className="rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
           <div className="mb-5 flex items-center justify-between">
-            <button type="button" onClick={goPrev} className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e4dccd]"><Icon name="chevronLeft" size={18} /></button>
+            <button type="button" onClick={goPrev} className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)]"><Icon name="chevronLeft" size={18} /></button>
             <h2 className="text-[22px] font-extrabold tracking-[-0.07em]">{year}년 {month}월</h2>
-            <button type="button" onClick={goNext} className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e4dccd]"><Icon name="chevronRight" size={18} /></button>
+            <button type="button" onClick={goNext} className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)]"><Icon name="chevronRight" size={18} /></button>
           </div>
-          <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[10px] text-[#746e66]">
+          <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[10px] text-[var(--text-muted)]">
             {['일', '월', '화', '수', '목', '금', '토'].map((d) => <span key={d}>{d}</span>)}
           </div>
           <div className="grid grid-cols-7 gap-1.5">
@@ -2279,10 +2556,10 @@ function CalendarScreen({ setScreen, openArtwork }) {
                   key={day.day}
                   type="button"
                   onClick={() => (art ? openArtwork(art.id) : setScreen('record'))}
-                  className="relative aspect-[0.78] overflow-hidden rounded-[12px] bg-[#eee6d8]"
+                  className="relative aspect-[0.78] overflow-hidden rounded-[12px] bg-[var(--surface-2)]"
                 >
-                  {art && <img src={art.imageUrl} alt={art.title} className="h-full w-full object-cover" />}
-                  <span className={`absolute left-1 top-1 rounded-full px-1.5 py-0.5 text-[9px] ${art ? 'bg-white/85 text-[#151515]' : 'text-[#9a948b]'}`}>
+                  {art && <img src={art.imageUrl} alt={art.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
+                  <span className={`absolute left-1 top-1 rounded-full px-1.5 py-0.5 text-[9px] ${art ? 'bg-white/85 text-[var(--text)]' : 'text-[var(--text-faint)]'}`}>
                     {day.day}
                   </span>
                 </button>
@@ -2295,7 +2572,7 @@ function CalendarScreen({ setScreen, openArtwork }) {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-[22px] font-extrabold tracking-[-0.07em]">날짜별 보기</h2>
-              <button type="button" onClick={() => setScreen('twentyFive')} className="text-xs text-[#746e66]">
+              <button type="button" onClick={() => setScreen('twentyFive')} className="text-xs text-[var(--text-muted)]">
                 25번째 사진 고르기
               </button>
             </div>
@@ -2317,10 +2594,10 @@ function FilmDayGrid({ year, month, day, artworkIds, works, openArtwork }) {
   const photos = artworkIds.map((id) => works.find((a) => a.id === id)).filter(Boolean);
   if (photos.length === 0) return null;
   return (
-    <section className="rounded-[24px] bg-[#fbf8f2] p-3 shadow-[0_0_0_1px_#e4dccd]">
+    <section className="rounded-[24px] bg-[var(--surface)] p-3 shadow-[0_0_0_1px_var(--border)]">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-semibold tracking-[0.16em] text-[#746e66]">
+          <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
             {year}.{String(month).padStart(2, '0')}.{String(day).padStart(2, '0')}
           </p>
           <h3 className="text-[20px] font-extrabold tracking-[-0.065em]">{photos.length}컷</h3>
@@ -2377,7 +2654,7 @@ function TwentyFiveScreen({ setScreen }) {
                 key={art.id}
                 type="button"
                 onClick={() => setSelectedId(art.id)}
-                className={`overflow-hidden rounded-[14px] ${selectedId === art.id ? 'ring-2 ring-[#151515]' : ''}`}
+                className={`overflow-hidden rounded-[14px] ${selectedId === art.id ? 'ring-2 ring-[var(--ink)]' : ''}`}
               >
                 <ImageBox src={art.imageUrl} alt={art.title} className="aspect-square" />
               </button>
@@ -2387,7 +2664,7 @@ function TwentyFiveScreen({ setScreen }) {
             type="button"
             onClick={handleSave}
             disabled={busy || !selectedId}
-            className="w-full rounded-full bg-[#151515] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
+            className="w-full rounded-full bg-[var(--ink)] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
           >
             {busy ? '저장 중…' : '가장 아름다운 사진으로 정하기'}
           </button>
@@ -2403,7 +2680,7 @@ function TwentyFiveScreen({ setScreen }) {
 
 function Splash({ message = '불러오는 중…' }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f4efe6] p-6 text-center text-sm text-[#746e66]">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--bg)] p-6 text-center text-sm text-[var(--text-muted)]">
       {message}
     </div>
   );
@@ -2449,12 +2726,12 @@ function OnboardingModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center">
-      <div className="mx-auto w-full max-w-[400px] rounded-[24px] bg-[#fbf8f2] p-6 shadow-xl">
-        <p className="text-[11px] font-semibold tracking-[0.16em] text-[#746e66]">시선집에 오신 걸 환영해요</p>
+      <div className="mx-auto w-full max-w-[400px] rounded-[24px] bg-[var(--surface)] p-6 shadow-xl">
+        <p className="text-[11px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">시선집에 오신 걸 환영해요</p>
         <h2 className="mt-1 text-[26px] font-extrabold leading-tight tracking-[-0.07em]">
           어떻게 불러드릴까요?
         </h2>
-        <p className="mt-3 text-sm leading-6 text-[#4d4943]">
+        <p className="mt-3 text-sm leading-6 text-[var(--text-body)]">
           닉네임과 짧은 소개를 적어주세요. 다른 사람의 개인전에 보이는 이름이에요.
         </p>
 
@@ -2466,20 +2743,20 @@ function OnboardingModal() {
             required
             maxLength={20}
             autoFocus
-            className="w-full rounded-[16px] border border-[#e4dccd] bg-white px-4 py-3 text-sm outline-none focus:border-[#151515]"
+            className="w-full rounded-[16px] border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--ink)]"
           />
           <textarea
             value={bio}
             onChange={(event) => setBio(event.target.value)}
             placeholder="짧은 소개 (선택) — 예: 모서리와 빛을 모읍니다"
             maxLength={80}
-            className="min-h-20 w-full resize-none rounded-[16px] border border-[#e4dccd] bg-white px-4 py-3 text-sm outline-none focus:border-[#151515]"
+            className="min-h-20 w-full resize-none rounded-[16px] border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--ink)]"
           />
           {error && <p className="rounded-[12px] bg-red-50 p-2 text-xs text-red-700">{error}</p>}
           <button
             type="submit"
             disabled={busy || !nickname.trim()}
-            className="w-full rounded-full bg-[#151515] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
+            className="w-full rounded-full bg-[var(--ink)] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
           >
             {busy ? '시작 중…' : '시작하기'}
           </button>
@@ -2517,6 +2794,7 @@ function MainApp() {
   if (screen === 'twentyFive') content = <TwentyFiveScreen setScreen={setScreen} />;
   if (screen === 'notifications') content = <NotificationsScreen setScreen={setScreen} openArtwork={openArtwork} openPerson={openPerson} />;
   if (screen === 'keyword') content = <KeywordScreen keyword={selectedKeyword} setScreen={setScreen} openArtwork={openArtwork} />;
+  if (screen === 'bulkPrivacy') content = <BulkPrivacyScreen setScreen={setScreen} />;
 
   return (
     <>
@@ -2545,22 +2823,22 @@ function DataGate({ children }) {
 
 function SetupNeededScreen() {
   return (
-    <div className="min-h-screen bg-[#f4efe6] p-6">
-      <div className="mx-auto max-w-[430px] space-y-4 rounded-[24px] bg-[#fbf8f2] p-6 shadow-[0_0_0_1px_#e4dccd]">
-        <p className="text-[11px] font-semibold tracking-[0.16em] text-[#746e66]">시선집</p>
+    <div className="min-h-screen bg-[var(--bg)] p-6">
+      <div className="mx-auto max-w-[430px] space-y-4 rounded-[24px] bg-[var(--surface)] p-6 shadow-[0_0_0_1px_var(--border)]">
+        <p className="text-[11px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">시선집</p>
         <h1 className="text-[26px] font-extrabold leading-tight tracking-[-0.07em]">
           먼저 Supabase를<br />연결해야 해요
         </h1>
-        <p className="text-sm leading-6 text-[#4d4943]">
+        <p className="text-sm leading-6 text-[var(--text-body)]">
           백엔드(데이터베이스/사진 저장/로그인)가 비어있어 앱이 작동하지 않습니다.
-          <br />프로젝트 루트의 <code className="rounded bg-[#eee6d8] px-1">SETUP.md</code> 가이드를 따라
-          <code className="ml-1 rounded bg-[#eee6d8] px-1">.env.local</code> 두 줄을 채운 뒤 개발 서버를 다시 시작하세요.
+          <br />프로젝트 루트의 <code className="rounded bg-[var(--surface-2)] px-1">SETUP.md</code> 가이드를 따라
+          <code className="ml-1 rounded bg-[var(--surface-2)] px-1">.env.local</code> 두 줄을 채운 뒤 개발 서버를 다시 시작하세요.
         </p>
-        <div className="rounded-[16px] bg-[#151515] p-4 text-xs leading-6 text-white/90">
+        <div className="rounded-[16px] bg-[var(--ink)] p-4 text-xs leading-6 text-white/90">
           <p>VITE_SUPABASE_URL=...</p>
           <p>VITE_SUPABASE_ANON_KEY=...</p>
         </div>
-        <p className="text-xs leading-5 text-[#746e66]">
+        <p className="text-xs leading-5 text-[var(--text-muted)]">
           값은 Supabase 대시보드 → Project Settings → API 에서 복사할 수 있어요.
         </p>
       </div>
@@ -2589,8 +2867,10 @@ function Router() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Router />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
