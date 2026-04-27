@@ -220,82 +220,103 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
         onBack={isMe ? undefined : () => setScreen('home')}
         right={
           isMe ? (
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-base"
-              title="설정"
-            >
-              ⚙️
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setScreen('saved')}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-[15px] hover:bg-[var(--surface-2)]"
+                title="저장한 사진"
+              >
+                🔖
+              </button>
+              <button
+                type="button"
+                onClick={() => setScreen('collections')}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-[15px] hover:bg-[var(--surface-2)]"
+                title="컬렉션"
+              >
+                📚
+              </button>
+              <button
+                type="button"
+                onClick={() => setScreen('activity')}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-[15px] hover:bg-[var(--surface-2)]"
+                title="활동"
+              >
+                ⚡
+              </button>
+              <button
+                type="button"
+                onClick={() => setScreen('profileEdit')}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-[14px] hover:bg-[var(--surface-2)]"
+                title="프로필 편집"
+              >
+                ✎
+              </button>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-[15px] hover:bg-[var(--surface-2)]"
+                title="설정"
+              >
+                ⚙️
+              </button>
+            </div>
           ) : null
         }
       />
       <div className="space-y-4">
         <section className="rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
           <div className="flex gap-3">
-            {/* 25번째 사진 썸네일 (왼쪽) — 작게 합쳐짐 */}
-            {featured ? (
+            {/* 25번째 사진 — 프로필 사진 자리 (없으면 그냥 비움) */}
+            {featured && (
               <button
                 type="button"
                 onClick={() => openArtwork(featured.id)}
-                className="relative h-[100px] w-[100px] shrink-0 overflow-hidden rounded-[14px]"
+                className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-full"
               >
                 <ImageBox src={featured.imageUrl} alt={featured.title} className="h-full w-full" priority />
-                <span className="absolute left-1 top-1 rounded-full bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-sm">
-                  🌟
-                </span>
+                {twentyFiveArt && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-300 text-[10px]">🌟</span>
+                )}
               </button>
-            ) : (
-              isMe && works.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setScreen('twentyFive')}
-                  className="flex h-[100px] w-[100px] shrink-0 flex-col items-center justify-center rounded-[14px] border border-dashed border-[var(--border)] bg-[var(--bg)] text-center text-[10px] text-[var(--text-muted)]"
-                >
-                  <span className="text-2xl">🌟</span>
-                  <span className="mt-1 px-1 leading-tight">25번째 사진 고르기</span>
-                </button>
-              )
             )}
 
-            {/* 전시 제목 + 설명 (오른쪽) */}
             <div className="min-w-0 flex-1">
-              <h2 className="line-clamp-2 text-[20px] font-extrabold leading-[1.15] tracking-[-0.07em]">
-                {profile.exhibition_title || (
-                  <span className="text-[var(--text-faint)]">제목 미정</span>
-                )}
-              </h2>
-              {featured && (
-                <p className="mt-1 line-clamp-2 text-[10px] italic leading-snug text-[var(--text-muted)]">
-                  {featuredSub}
-                </p>
+              {profile.exhibition_title && (
+                <h2 className="line-clamp-2 text-[20px] font-extrabold leading-[1.15] tracking-[-0.07em]">
+                  {profile.exhibition_title}
+                </h2>
               )}
               {profile.note && (
-                <p className="mt-2 line-clamp-3 text-[12px] leading-[1.6] text-[var(--text-body)]">
+                <p className={`${profile.exhibition_title ? 'mt-2' : ''} line-clamp-3 text-[12px] leading-[1.6] text-[var(--text-body)]`}>
                   {profile.note}
                 </p>
+              )}
+              {profile.words?.length > 0 && (
+                <div className={`${(profile.exhibition_title || profile.note) ? 'mt-2' : ''} flex flex-wrap gap-1`}>
+                  {profile.words.map((word) => (
+                    <span key={word} className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-muted)]">{word}</span>
+                  ))}
+                </div>
               )}
             </div>
           </div>
 
-          {profile.words?.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {profile.words.map((word) => (
-                <span key={word} className="rounded-full bg-[var(--surface-2)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--text-muted)]">{word}</span>
-              ))}
+          {/* Stats — 사진/팔로워/팔로잉만 (큰 숫자) */}
+          <div className="mt-4 grid grid-cols-3 gap-2 border-t border-[var(--border)] pt-3 text-center">
+            <div>
+              <p className="text-[18px] font-extrabold tracking-[-0.05em]">{stats.artworkCount}</p>
+              <p className="text-[10px] text-[var(--text-muted)]">사진</p>
             </div>
-          )}
-
-          {/* Stats — 인라인 메타 */}
-          <div className="mt-4 flex flex-wrap items-center gap-1 border-t border-[var(--border)] pt-3 text-[12px] text-[var(--text-muted)]">
-            <span><b className="text-[var(--text)]">{stats.artworkCount}</b> 사진</span>
-            <span className="px-1 text-[var(--text-faint)]">·</span>
-            <span>🔥 <b className="text-[var(--text)]">{stats.totalHype}</b></span>
-            <span className="px-1 text-[var(--text-faint)]">·</span>
-            <span><b className="text-[var(--text)]">{stats.followerCount}</b> 팔로워</span>
-            <span className="px-1 text-[var(--text-faint)]">·</span>
-            <span><b className="text-[var(--text)]">{stats.followingCount}</b> 팔로잉</span>
+            <div>
+              <p className="text-[18px] font-extrabold tracking-[-0.05em]">{stats.followerCount}</p>
+              <p className="text-[10px] text-[var(--text-muted)]">팔로워</p>
+            </div>
+            <div>
+              <p className="text-[18px] font-extrabold tracking-[-0.05em]">{stats.followingCount}</p>
+              <p className="text-[10px] text-[var(--text-muted)]">팔로잉</p>
+            </div>
           </div>
 
           {!isMe && userId && (
@@ -347,83 +368,15 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
             </div>
           )}
 
-          {isMe && (
-            <div className="mt-3 space-y-2">
-              {/* 콘텐츠 단축 — 한 줄 */}
-              <div className="flex items-center gap-1.5 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => setScreen('saved')}
-                  className="flex flex-1 items-center justify-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg)] py-1.5 font-semibold"
-                >
-                  🔖 저장
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setScreen('collections')}
-                  className="flex flex-1 items-center justify-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg)] py-1.5 font-semibold"
-                >
-                  📚 컬렉션
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setScreen('activity')}
-                  className="flex flex-1 items-center justify-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg)] py-1.5 font-semibold"
-                >
-                  ⚡ 활동
-                </button>
-              </div>
-
-              {/* 관리 + 카드 — 한 줄, 칩 형태 */}
-              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => setScreen('profileEdit')}
-                  className="rounded-full border border-[var(--ink)] px-3 py-1 font-semibold"
-                >
-                  편집
-                </button>
-                {works.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setScreen('bulkPrivacy')}
-                    className="rounded-full border border-[var(--border)] px-3 py-1 font-semibold text-[var(--text-muted)]"
-                  >
-                    공개 변경
-                  </button>
-                )}
-                {wall.length >= 1 && (
-                  <button
-                    type="button"
-                    onClick={handleExport4Cut}
-                    disabled={exporting}
-                    className="rounded-full border border-[var(--border)] px-3 py-1 font-semibold disabled:opacity-50"
-                  >
-                    {exporting ? '…' : '📤 4컷'}
-                  </button>
-                )}
-                {works.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleWeeklyRecap}
-                    disabled={recapBusy}
-                    className="rounded-full border border-[var(--border)] px-3 py-1 font-semibold disabled:opacity-50"
-                  >
-                    {recapBusy ? '…' : '🗓 회고'}
-                  </button>
-                )}
-                {works.length === 0 && (
-                  <button
-                    type="button"
-                    onClick={handleSeed}
-                    disabled={seeding}
-                    className="rounded-full bg-[var(--ink)] px-3 py-1 font-semibold text-white disabled:opacity-50"
-                  >
-                    {seeding ? '…' : '🌱 샘플 5장'}
-                  </button>
-                )}
-              </div>
-            </div>
+          {isMe && works.length === 0 && (
+            <button
+              type="button"
+              onClick={handleSeed}
+              disabled={seeding}
+              className="mt-3 w-full rounded-full bg-[var(--ink)] px-3 py-2 text-[12px] font-semibold text-white disabled:opacity-50"
+            >
+              {seeding ? '…' : '🌱 샘플 사진 5장 추가'}
+            </button>
           )}
         </section>
 
@@ -498,6 +451,25 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
           onClose={() => setSettingsOpen(false)}
           onMessages={() => { setSettingsOpen(false); setScreen('messages'); }}
           onLogout={() => { setSettingsOpen(false); setLogoutOpen(true); }}
+          extraItems={[
+            wall.length >= 1 && {
+              label: '4컷 카드 만들기',
+              icon: '📤',
+              onClick: () => { setSettingsOpen(false); handleExport4Cut(); },
+              busy: exporting,
+            },
+            works.length > 0 && {
+              label: '이번 주 회고',
+              icon: '🗓',
+              onClick: () => { setSettingsOpen(false); handleWeeklyRecap(); },
+              busy: recapBusy,
+            },
+            works.length > 0 && {
+              label: '공개 일괄 변경',
+              icon: '🔒',
+              onClick: () => { setSettingsOpen(false); setScreen('bulkPrivacy'); },
+            },
+          ].filter(Boolean)}
         />
       )}
 

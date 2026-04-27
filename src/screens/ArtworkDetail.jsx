@@ -303,6 +303,27 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
               </button>
             )}
             <div className="absolute right-3 top-3"><ShareButton title={art.title || '시선집'} /></div>
+            {/* 사진 좌우에 작은 이전/다음 화살표 (제목 없음, 방향만) */}
+            {feedNav.prev && (
+              <button
+                type="button"
+                onClick={() => openArtwork(feedNav.prev.id)}
+                className="absolute left-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60"
+                title="이전 글"
+              >
+                ‹
+              </button>
+            )}
+            {feedNav.next && (
+              <button
+                type="button"
+                onClick={() => openArtwork(feedNav.next.id)}
+                className="absolute right-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60"
+                title="다음 글"
+              >
+                ›
+              </button>
+            )}
           </div>
 
           {/* 본문 노트 + 키워드 */}
@@ -321,54 +342,63 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
             </div>
           )}
 
-          {/* DC 액션바 — 추천/댓글/조회/저장 */}
-          <div className="grid grid-cols-4 gap-1.5 border-t border-[var(--border)] bg-[var(--bg)] p-1.5">
-            <DcActionItem
-              icon={hyped ? '🔥' : '⭐'}
-              label={`추천 ${hypeCount}`}
-              onClick={userId && !isMine && !busyHype ? handleHypeToggle : null}
-              highlight={hyped}
-            />
-            <DcActionItem icon="💬" label={`댓글 ${commentCount}`} onClick={() => {
-              const el = document.getElementById('comment-section-anchor');
-              el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }} />
-            <DcActionItem icon="👀" label={`조회 ${art.view_count ?? 0}`} />
-            <DcActionItem
-              icon={saved ? '🔖' : '🏷'}
-              label={saved ? '저장됨' : '저장'}
-              onClick={userId && !isMine ? handleSave : null}
-              highlight={saved}
-            />
+          {/* 액션 — 가벼운 한 줄 (추천/저장 + 조회 숫자) */}
+          <div className="flex items-center justify-between gap-3 border-t border-[var(--border)] px-4 py-2.5">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={userId && !isMine && !busyHype ? handleHypeToggle : undefined}
+                disabled={!userId || isMine || busyHype}
+                className={`flex items-center gap-1 text-[14px] font-bold transition ${
+                  hyped ? 'text-[var(--ink)]' : 'text-[var(--text-muted)]'
+                } disabled:opacity-50`}
+              >
+                <span className="text-[18px]">{hyped ? '🔥' : '⭐'}</span>
+                {hypeCount}
+              </button>
+              <button
+                type="button"
+                onClick={userId && !isMine ? handleSave : undefined}
+                disabled={!userId || isMine}
+                className={`text-[18px] transition ${saved ? '' : 'opacity-60'} disabled:opacity-30`}
+                title={saved ? '저장됨' : '저장'}
+              >
+                {saved ? '🔖' : '🏷'}
+              </button>
+            </div>
+            <span className="text-[11px] text-[var(--text-muted)]">조회 {art.view_count ?? 0}</span>
           </div>
         </article>
 
-        {/* 부가 액션 — 작은 칩 한 줄 */}
-        <div className="flex flex-wrap items-center gap-1.5 px-1 text-[11px]">
-          {userId && !isMine && openCollectionPicker && (
-            <button
-              type="button"
-              onClick={() => openCollectionPicker(art.id)}
-              className="rounded-full border border-[var(--border)] px-3 py-1 font-semibold text-[var(--text-muted)]"
-            >
-              + 컬렉션
-            </button>
-          )}
+        {/* 부가 액션 — 이모지만, 작은 한 줄 */}
+        <div className="flex items-center gap-3 px-2 text-[18px] text-[var(--text-muted)]">
           <button
             type="button"
             onClick={handleShareSingle}
             disabled={sharingCard}
-            className="rounded-full border border-[var(--border)] px-3 py-1 font-semibold text-[var(--text-muted)] disabled:opacity-50"
+            title="공유 카드"
+            className="hover:opacity-80 disabled:opacity-40"
           >
-            {sharingCard ? '…' : '📤 공유 카드'}
+            {sharingCard ? '⏳' : '📤'}
           </button>
+          {userId && !isMine && openCollectionPicker && (
+            <button
+              type="button"
+              onClick={() => openCollectionPicker(art.id)}
+              title="컬렉션에 추가"
+              className="hover:opacity-80"
+            >
+              📚
+            </button>
+          )}
           {userId && !isMine && (
             <button
               type="button"
               onClick={() => setReportOpen(true)}
-              className="rounded-full border border-red-200 px-3 py-1 font-semibold text-red-600"
+              title="신고"
+              className="hover:opacity-80"
             >
-              🚩 신고
+              🚩
             </button>
           )}
           {isMine && (
@@ -378,27 +408,27 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
                 type="button"
                 onClick={handleSetHero}
                 disabled={busyHero}
-                className={`rounded-full px-3 py-1 font-semibold disabled:opacity-50 ${
-                  isHero ? 'border border-yellow-400 bg-yellow-100 text-[var(--text)]' : 'border border-[var(--border)] text-[var(--text-muted)]'
-                }`}
-                title={isHero ? '대표 이미지 해제' : '내 프로필의 대표 이미지로 설정'}
+                title={isHero ? '대표 해제' : '대표로'}
+                className={`disabled:opacity-50 ${isHero ? '' : 'opacity-60'}`}
               >
-                ⭐ {isHero ? '대표' : '대표로'}
+                ⭐
               </button>
               <button
                 type="button"
                 onClick={() => setScreen('artworkEdit')}
-                className="rounded-full border border-[var(--border)] px-3 py-1 font-semibold text-[var(--text-muted)]"
+                title="편집"
+                className="hover:opacity-80"
               >
-                ✎ 편집
+                ✎
               </button>
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="rounded-full border border-red-200 px-3 py-1 font-semibold text-red-600 disabled:opacity-50"
+                title="삭제"
+                className="text-red-500 disabled:opacity-50"
               >
-                {deleting ? '…' : '🗑'}
+                {deleting ? '⏳' : '🗑'}
               </button>
             </>
           )}
@@ -406,33 +436,6 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
 
         <div id="comment-section-anchor" />
         <CommentSection artworkId={art.id} openPerson={openPerson} />
-
-        {(feedNav.prev || feedNav.next) && (
-          <section className="flex items-stretch divide-x divide-[var(--border)] overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--surface)] text-[12px]">
-            <button
-              type="button"
-              onClick={() => feedNav.prev && openArtwork(feedNav.prev.id)}
-              disabled={!feedNav.prev}
-              className="flex flex-1 items-center gap-1 truncate px-3 py-2.5 disabled:opacity-40"
-            >
-              <span className="text-[var(--text-muted)]">‹</span>
-              <span className="truncate font-semibold">
-                {feedNav.prev ? (feedNav.prev.title || '제목 없음') : '없음'}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => feedNav.next && openArtwork(feedNav.next.id)}
-              disabled={!feedNav.next}
-              className="flex flex-1 items-center justify-end gap-1 truncate px-3 py-2.5 disabled:opacity-40"
-            >
-              <span className="truncate font-semibold">
-                {feedNav.next ? (feedNav.next.title || '제목 없음') : '없음'}
-              </span>
-              <span className="text-[var(--text-muted)]">›</span>
-            </button>
-          </section>
-        )}
 
         {related.length > 0 && (
           <section>

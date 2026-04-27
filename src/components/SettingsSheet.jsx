@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useTheme } from '../lib/theme-context';
 
-export default function SettingsSheet({ onClose, onMessages, onLogout }) {
+export default function SettingsSheet({ onClose, onMessages, onLogout, extraItems = [] }) {
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
@@ -51,6 +51,23 @@ export default function SettingsSheet({ onClose, onMessages, onLogout }) {
             </span>
             <span className="text-[var(--text-faint)]">›</span>
           </button>
+
+          {extraItems.length > 0 && <hr className="my-1 border-[var(--border)]" />}
+          {extraItems.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={item.onClick}
+              disabled={item.busy}
+              className="flex w-full items-center justify-between rounded-[14px] px-3 py-3 text-left hover:bg-[var(--surface-2)] disabled:opacity-50"
+            >
+              <span className="flex items-center gap-3 text-sm font-semibold">
+                <span className="text-lg">{item.icon}</span>
+                {item.busy ? '만드는 중…' : item.label}
+              </span>
+              <span className="text-[var(--text-faint)]">›</span>
+            </button>
+          ))}
 
           <hr className="my-1 border-[var(--border)]" />
 
