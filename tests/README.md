@@ -1,21 +1,27 @@
 # 시선집 E2E 테스트
 
+이미 Playwright + chromium이 설치돼 있고 `playwright.config.js`도 들어가 있어요.
+
 ## 빠르게 시작
 
 ```bash
-# 1) Playwright 설치 (한 번만)
-npm install -D @playwright/test
-npx playwright install chromium
+# 헤드리스
+npm run test:e2e
 
-# 2) dev 서버를 다른 터미널에서 띄워두고
-npm run dev
-
-# 3) 테스트 실행
-npx playwright test --ui   # GUI 모드
-npx playwright test        # 헤드리스
+# UI 모드 (트레이스/스텝 보면서 디버깅)
+npm run test:e2e:ui
 ```
 
-또는 `playwright.config.js`에 `webServer` 옵션을 추가하면 자동으로 dev 서버 띄움 (config 예시는 아래).
+`webServer`가 `npm run dev`를 자동으로 띄우므로 별도로 dev 서버 켤 필요 없음.
+
+## 실행 전 확인
+
+테스트는 Supabase에 의존합니다 (체험하기 = 익명 로그인).
+
+- `.env.local`에 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` 설정
+- Supabase Auth → Providers → **Anonymous Sign-Ins ON**
+
+이 두 가지가 안 되면 LoginScreen에서 "Setup needed"가 떠 모든 테스트가 실패해요.
 
 ## 작성된 시나리오
 

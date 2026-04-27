@@ -93,6 +93,7 @@ export function DataProvider({ children }) {
     const mergedArtworks = [...artworks, ...bot.artworks];
     const mergedFollows = [...follows, ...bot.follows];
     const mergedHypes = [...hypes, ...bot.hypes];
+    const mergedComments = [...comments, ...bot.comments];
 
     const enrichedArtworks = mergedArtworks.map((art) => ({
       ...art,
@@ -105,7 +106,7 @@ export function DataProvider({ children }) {
     const getUserArtworks = (uid) => enrichedArtworks.filter((a) => a.user_id === uid);
     const getPlaceArtworks = (pid) =>
       enrichedArtworks.filter((a) => a.place_id === pid && a.location_mode !== '숨김');
-    const getCommentsFor = (artworkId) => comments.filter((c) => c.artwork_id === artworkId);
+    const getCommentsFor = (artworkId) => mergedComments.filter((c) => c.artwork_id === artworkId);
     const getHypeCount = (artworkId) => mergedHypes.filter((h) => h.artwork_id === artworkId).length;
     const isHypedByMe = (artworkId) =>
       userId != null && mergedHypes.some((h) => h.artwork_id === artworkId && h.user_id === userId);
@@ -122,9 +123,9 @@ export function DataProvider({ children }) {
 
     // 답글 처리: parent_id 있는 건 자식, 없는 건 최상위
     const getRootCommentsFor = (artworkId) =>
-      comments.filter((c) => c.artwork_id === artworkId && !c.parent_id);
+      mergedComments.filter((c) => c.artwork_id === artworkId && !c.parent_id);
     const getRepliesFor = (commentId) =>
-      comments
+      mergedComments
         .filter((c) => c.parent_id === commentId)
         .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
@@ -334,7 +335,7 @@ export function DataProvider({ children }) {
       profiles: mergedProfiles,
       places,
       artworks: enrichedArtworks,
-      comments,
+      comments: mergedComments,
       hypes: mergedHypes,
       curateSlots,
       follows: mergedFollows,

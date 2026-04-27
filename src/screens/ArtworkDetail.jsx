@@ -354,97 +354,95 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
             </div>
           )}
 
-          {/* 액션 — 가벼운 한 줄 */}
-          <div className="flex items-center justify-between gap-3 border-t border-[var(--border)] px-4 py-2.5">
-            <div className="flex items-center gap-4">
+          {/* 액션 — 한 줄에 모두: 좌측은 hype/저장/조회수, 우측은 공유/편집 등 (소유 여부에 따라) */}
+          <div className="flex items-center justify-between gap-2 border-t border-[var(--border)] px-3 py-2">
+            <div className="flex items-center gap-3 text-[var(--text-muted)]">
               <button
                 type="button"
                 onClick={userId && !isMine && !busyHype ? handleHypeToggle : undefined}
                 disabled={!userId || isMine || busyHype}
-                className={`flex items-center gap-1.5 text-[14px] font-bold transition ${
-                  hyped ? 'text-yellow-500' : 'text-[var(--text-muted)]'
-                } disabled:opacity-50`}
+                className={`flex items-center gap-1 text-[13px] font-bold transition ${
+                  hyped ? 'text-yellow-500' : ''
+                } disabled:opacity-40`}
+                title="Hype"
               >
-                <IconStar size={20} filled={hyped} />
+                <IconStar size={18} filled={hyped} />
                 {hypeCount}
               </button>
               <button
                 type="button"
                 onClick={userId && !isMine ? handleSave : undefined}
                 disabled={!userId || isMine}
-                className={`flex items-center transition ${saved ? 'text-[var(--ink)]' : 'text-[var(--text-muted)]'} disabled:opacity-30`}
+                className={`flex items-center transition ${saved ? 'text-[var(--ink)]' : ''} disabled:opacity-30`}
                 title={saved ? '저장됨' : '저장'}
               >
-                <IconBookmark size={20} filled={saved} />
+                <IconBookmark size={18} filled={saved} />
               </button>
+              <span className="text-[10px]">조회 {art.view_count ?? 0}</span>
             </div>
-            <span className="text-[11px] text-[var(--text-muted)]">조회 {art.view_count ?? 0}</span>
+            <div className="flex items-center gap-1 text-[var(--text-muted)]">
+              <button
+                type="button"
+                onClick={handleShareSingle}
+                disabled={sharingCard}
+                title="공유 카드"
+                className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:opacity-40"
+              >
+                <IconShare size={15} />
+              </button>
+              {userId && !isMine && openCollectionPicker && (
+                <button
+                  type="button"
+                  onClick={() => openCollectionPicker(art.id)}
+                  title="컬렉션에 추가"
+                  className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+                >
+                  <IconCollections size={15} />
+                </button>
+              )}
+              {userId && !isMine && (
+                <button
+                  type="button"
+                  onClick={() => setReportOpen(true)}
+                  title="신고"
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-red-500 hover:bg-[var(--surface-2)]"
+                >
+                  <IconReport size={15} />
+                </button>
+              )}
+              {isMine && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleSetHero}
+                    disabled={busyHero}
+                    title={isHero ? '대표 해제' : '대표로'}
+                    className={`flex h-7 w-7 items-center justify-center rounded-full hover:bg-[var(--surface-2)] disabled:opacity-50 ${isHero ? 'text-yellow-500' : ''}`}
+                  >
+                    <IconStar size={15} filled={isHero} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setScreen('artworkEdit')}
+                    title="편집"
+                    className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+                  >
+                    <IconEdit size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    title="삭제"
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-red-500 hover:bg-[var(--surface-2)] disabled:opacity-50"
+                  >
+                    <IconTrash size={15} />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </article>
-
-        {/* 부가 액션 — SVG 아이콘 한 줄 */}
-        <div className="flex items-center gap-3 px-2 text-[var(--text-muted)]">
-          <button
-            type="button"
-            onClick={handleShareSingle}
-            disabled={sharingCard}
-            title="공유 카드"
-            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:opacity-40"
-          >
-            <IconShare size={17} />
-          </button>
-          {userId && !isMine && openCollectionPicker && (
-            <button
-              type="button"
-              onClick={() => openCollectionPicker(art.id)}
-              title="컬렉션에 추가"
-              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-            >
-              <IconCollections size={17} />
-            </button>
-          )}
-          {userId && !isMine && (
-            <button
-              type="button"
-              onClick={() => setReportOpen(true)}
-              title="신고"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-red-500 hover:bg-[var(--surface-2)]"
-            >
-              <IconReport size={17} />
-            </button>
-          )}
-          {isMine && (
-            <>
-              <span className="ml-auto" />
-              <button
-                type="button"
-                onClick={handleSetHero}
-                disabled={busyHero}
-                title={isHero ? '대표 해제' : '대표로'}
-                className={`flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] disabled:opacity-50 ${isHero ? 'text-yellow-500' : ''}`}
-              >
-                <IconStar size={17} filled={isHero} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setScreen('artworkEdit')}
-                title="편집"
-                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-              >
-                <IconEdit size={17} />
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deleting}
-                title="삭제"
-                className="flex h-8 w-8 items-center justify-center rounded-full text-red-500 hover:bg-[var(--surface-2)] disabled:opacity-50"
-              >
-                <IconTrash size={17} />
-              </button>
-            </>
-          )}
-        </div>
 
         <div id="comment-section-anchor" />
         <CommentSection artworkId={art.id} openPerson={openPerson} />

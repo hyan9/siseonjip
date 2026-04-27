@@ -100,13 +100,49 @@ export const BOT_ARTWORKS = BOT_ARTWORK_BLUEPRINTS.map((a, i) => ({
   created_at: dayAgo(a.d),
 }));
 
+// 봇끼리 다는 댓글 — 시선집 톤 (짧고 일기처럼)
+const BOT_COMMENT_BLUEPRINTS = [
+  { artwork_id: 'bot-art:0', user_id: 'bot:salt',   text: '간판 옆 이끼만 보였다는 말, 너무 알 것 같아요.', d: 0.5 },
+  { artwork_id: 'bot-art:0', user_id: 'bot:linen',  text: '비 오기 전 색이 정말 이런 톤이죠.', d: 1 },
+  { artwork_id: 'bot-art:0', user_id: 'bot:noir',   text: '낮 사진인데 새벽 두 시 같아요.', d: 1.2 },
+
+  { artwork_id: 'bot-art:5', user_id: 'bot:moss',   text: '도마 위 빛은 도마가 만든 게 아니라 시간이 만든 거 같아요.', d: 0.3 },
+  { artwork_id: 'bot-art:5', user_id: 'bot:kettle', text: '컵 옆에 그릇이 그림자 두 번 만들어요.', d: 0.8 },
+
+  { artwork_id: 'bot-art:8', user_id: 'bot:moss',   text: '평일 오전 골목 이 톤 너무 좋아요.', d: 0.4 },
+  { artwork_id: 'bot-art:8', user_id: 'bot:salt',   text: '버스가 지나가고 남은 자리 — 제목이 사진보다 길게 남아요.', d: 1 },
+  { artwork_id: 'bot-art:8', user_id: 'bot:noir',   text: '이게 그 25번째 후보 아닌가요.', d: 2 },
+
+  { artwork_id: 'bot-art:13', user_id: 'bot:linen', text: '가로등 셋이 다 다른 색이라 좋네요.', d: 0.5 },
+  { artwork_id: 'bot-art:13', user_id: 'bot:kettle', text: '저는 야경에서 늘 길을 잃어요.', d: 1.4 },
+
+  { artwork_id: 'bot-art:17', user_id: 'bot:moss',   text: '컵 위에 떠 있는 빛 — 그 시간이 가장 짧다는 게 아쉬워요.', d: 0.2 },
+  { artwork_id: 'bot-art:17', user_id: 'bot:noir',   text: '이런 사진은 제 카메라로는 절대 안 나와요.', d: 1.1 },
+
+  { artwork_id: 'bot-art:1', user_id: 'bot:linen', text: '돌담 자국 너무 좋다.', d: 0.7 },
+  { artwork_id: 'bot-art:6', user_id: 'bot:moss',  text: '컵 그림자가 진짜로 길어 보여요.', d: 0.9 },
+  { artwork_id: 'bot-art:9', user_id: 'bot:kettle',  text: '버스 지나가고 남은 자리는 늘 비어있는데 비어있지 않아요.', d: 0.6 },
+  { artwork_id: 'bot-art:11', user_id: 'bot:salt', text: '비 오는 새벽 두 시 — 이 시간만 살아있는 사람이 있죠.', d: 0.8 },
+];
+
+const minutesAgo = (n) => new Date(Date.now() - n * 3600000).toISOString();
+
+export const BOT_COMMENTS = BOT_COMMENT_BLUEPRINTS.map((c, i) => ({
+  id: `bot-comment:${i}`,
+  artwork_id: c.artwork_id,
+  user_id: c.user_id,
+  text: c.text,
+  parent_id: null,
+  created_at: minutesAgo(c.d * 24), // d일 전 시점
+}));
+
 // 사용자 ↔ 봇 follow / hype를 메모리로 합칠 때 사용.
 // — 모든 봇이 사용자를 follow (followee_id = userId)
 // — 사용자가 일부 봇을 follow (이끼, 소금)
 // — 봇들끼리도 약간의 follow가 있어서 stats가 0이 아니게
 export function buildBotMemoryGraph(userId) {
   if (!userId) {
-    return { profiles: BOT_PROFILES, artworks: BOT_ARTWORKS, follows: [], hypes: [] };
+    return { profiles: BOT_PROFILES, artworks: BOT_ARTWORKS, follows: [], hypes: [], comments: BOT_COMMENTS };
   }
   const follows = [
     // 모든 봇 → 사용자
@@ -142,6 +178,7 @@ export function buildBotMemoryGraph(userId) {
     artworks: BOT_ARTWORKS,
     follows,
     hypes,
+    comments: BOT_COMMENTS,
   };
 }
 
