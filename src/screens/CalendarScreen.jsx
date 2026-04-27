@@ -94,11 +94,11 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
   const days = useMemo(() => getMonthDays(myWorks, year, month), [myWorks, year, month]);
   const activeDays = days.filter((d) => d.artworkIds.length > 0);
 
-  // 일주일 뷰: 오늘 중앙으로, 앞 3일 + 오늘 + 뒤 3일
+  // 일주일 뷰: 14일치 (오늘 중앙), 위/아래 페이드 마스크
   const todayStr = now.toDateString();
   const weekDays = useMemo(() => {
     const arr = [];
-    for (let i = -3; i <= 3; i++) {
+    for (let i = -7; i <= 6; i++) {
       const d = new Date(now);
       d.setDate(now.getDate() + i);
       const photos = myWorks.filter((a) => {
@@ -110,6 +110,17 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
     return arr;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myWorks]);
+
+  // 오늘 위치를 가운데로 스크롤
+  const weekScrollerRef = useRef(null);
+  useEffect(() => {
+    const el = weekScrollerRef.current;
+    if (!el) return;
+    const todayEl = el.querySelector('[data-today="true"]');
+    if (!todayEl) return;
+    const offset = todayEl.offsetTop - el.clientHeight / 2 + todayEl.clientHeight / 2;
+    el.scrollTo({ top: offset, behavior: 'instant' });
+  }, [weekDays]);
 
   const goPrev = () => {
     if (month === 1) { setYear(year - 1); setMonth(12); } else setMonth(month - 1);
@@ -123,61 +134,67 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
   return (
     <>
       <Header
-        title={`필름 · ${myWorks.length} × 4`}
+        title={`필름 · ${myWorks.length}장`}
         subtitle="매일 네 장. 25번째 자리는 가장 아름다운 사진을 위해 비어 있어요."
         kicker={`ROLL · ${monthShort} ${now.getFullYear()}`}
       />
       <div className="space-y-5">
-        {/* 이번 주 (오늘 중앙) */}
+        {/* 일주일 뷰 — 가운데 5일 선명, 위아래 페이드 */}
         <section>
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-[16px] font-extrabold tracking-[-0.05em]">📅 이번 주</h2>
-            <span className="text-[10px] text-[var(--text-muted)]">오늘이 가운데</span>
-          </div>
-          <div className="space-y-2">
-            {weekDays.map((wd) => {
-              const dayLabel = `DAY ${String(wd.date.getDate()).padStart(2, '0')}`;
-              const isToday = wd.date.toDateString() === todayStr;
-              return (
-                <div
-                  key={wd.date.toISOString()}
-                  className={`flex gap-3 rounded-[14px] p-2 ${
-                    isToday ? 'bg-[var(--ink)] text-white' : 'bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]'
-                  }`}
-                >
-                  <div className="w-[64px] shrink-0 self-center text-center">
-                    <p className={`text-[9px] font-semibold tracking-[0.14em] ${isToday ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
-                      {['일','월','화','수','목','금','토'][wd.date.getDay()]}
-                    </p>
-                    <p className="text-[20px] font-extrabold leading-tight tracking-[-0.05em]">
-                      {dayLabel.split(' ')[1]}
-                    </p>
+          <div
+            ref={weekScrollerRef}
+            className="relative h-[330px] overflow-y-auto"
+            style={{
+              maskImage: 'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
+              scrollbarWidth: 'none',
+            }}
+          >
+            <div className="flex flex-col gap-1.5 py-[120px]">
+              {weekDays.map((wd) => {
+                const isToday = wd.date.toDateString() === todayStr;
+                return (
+                  <div
+                    key={wd.date.toISOString()}
+                    data-today={isToday}
+                    className={`flex shrink-0 gap-2.5 rounded-[12px] px-3 py-2 transition ${
+                      isToday ? 'bg-[var(--ink)] text-white shadow-[0_8px_20px_rgba(0,0,0,0.18)]' : 'bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]'
+                    }`}
+                  >
+                    <div className="w-[42px] shrink-0 self-center">
+                      <p className={`text-[8px] font-semibold tracking-[0.14em] ${isToday ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
+                        {['SUN','MON','TUE','WED','THU','FRI','SAT'][wd.date.getDay()]}
+                      </p>
+                      <p className="text-[18px] font-extrabold leading-tight tracking-[-0.05em]">
+                        {String(wd.date.getDate()).padStart(2, '0')}
+                      </p>
+                    </div>
+                    <div className="grid flex-1 grid-cols-4 gap-1">
+                      {[0,1,2,3].map((slot) => {
+                        const art = wd.photos[slot];
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            onClick={() => art && openArtwork(art.id)}
+                            disabled={!art}
+                            className={`relative aspect-square overflow-hidden rounded-[6px] ${
+                              art
+                                ? ''
+                                : isToday
+                                ? 'border border-dashed border-white/20 bg-white/5'
+                                : 'border border-dashed border-[var(--border)] bg-[var(--bg)]'
+                            }`}
+                          >
+                            {art && <img src={art.imageUrl} alt={art.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="grid flex-1 grid-cols-4 gap-1">
-                    {[0,1,2,3].map((slot) => {
-                      const art = wd.photos[slot];
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => art && openArtwork(art.id)}
-                          disabled={!art}
-                          className={`relative aspect-square overflow-hidden rounded-[8px] ${
-                            art
-                              ? ''
-                              : isToday
-                              ? 'border border-dashed border-white/20 bg-white/5'
-                              : 'border border-dashed border-[var(--border)] bg-[var(--bg)]'
-                          }`}
-                        >
-                          {art && <img src={art.imageUrl} alt={art.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </section>
         <section className="rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">

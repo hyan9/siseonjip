@@ -21,6 +21,7 @@ import { FourPhotoWall, PhotoTile, PersonRow, PlaceRow, PostListRow } from '../c
 import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
 import ConfirmDialog from '../components/ConfirmDialog';
+import SettingsSheet from '../components/SettingsSheet';
 import LocationPickerModal from '../components/LocationPickerModal';
 import PhotoZoomModal from '../components/PhotoZoomModal';
 import {
@@ -113,6 +114,7 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
   const [recapBusy, setRecapBusy] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [blockOpen, setBlockOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   if (!profile) return <EmptyState title="사용자를 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
@@ -218,25 +220,14 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
         onBack={isMe ? undefined : () => setScreen('home')}
         right={
           isMe ? (
-            <div className="flex gap-2">
-              <ThemeToggleButton />
-              <button
-                type="button"
-                onClick={() => setScreen('messages')}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-base"
-                title="메시지"
-              >
-                💬
-              </button>
-              <button
-                type="button"
-                onClick={() => setLogoutOpen(true)}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]"
-                title="로그아웃"
-              >
-                <Icon name="logout" size={16} />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-base"
+              title="설정"
+            >
+              ⚙️
+            </button>
           ) : null
         }
       />
@@ -493,6 +484,14 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
         onConfirm={handleLogoutConfirm}
         onCancel={() => setLogoutOpen(false)}
       />
+
+      {settingsOpen && isMe && (
+        <SettingsSheet
+          onClose={() => setSettingsOpen(false)}
+          onMessages={() => { setSettingsOpen(false); setScreen('messages'); }}
+          onLogout={() => { setSettingsOpen(false); setLogoutOpen(true); }}
+        />
+      )}
 
       <ConfirmDialog
         open={blockOpen}

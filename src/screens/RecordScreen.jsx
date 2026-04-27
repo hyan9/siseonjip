@@ -51,6 +51,7 @@ import {
   toggleBlock,
 } from '../lib/db';
 import { readPhotoMeta } from '../lib/exif';
+import { MascotSleepyFour } from '../components/Mascot';
 import { reverseGeocode, getCurrentPosition, distanceMeters, searchPlaces } from '../lib/geocoding';
 import {
   formatTime,
@@ -290,11 +291,19 @@ export default function RecordScreen({ setScreen }) {
       />
       <div className="space-y-4">
         {dailyRemaining === 0 && (
-          <div className="rounded-[16px] border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-900">
-            🌙 오늘은 4장을 모두 채웠어요. 내일 다시 만나요.
+          <div className="rounded-[20px] bg-[var(--surface)] p-5 text-center shadow-[0_0_0_1px_var(--border)]">
+            <div className="mx-auto text-[var(--ink)]">
+              <MascotSleepyFour size={220} />
+            </div>
+            <p className="mt-2 text-[15px] font-extrabold tracking-[-0.05em] text-[var(--text)]">
+              오늘 네 장 다 썼어요
+            </p>
+            <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-muted)]">
+              필름은 잠들었어요. 내일 다시 만나요.
+            </p>
           </div>
         )}
-        {items.length === 0 ? (
+        {items.length === 0 && dailyRemaining > 0 ? (
           <label className={`block ${dailyRemaining === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}>
             <input type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} disabled={dailyRemaining === 0} />
             <div className="flex h-[430px] flex-col items-center justify-center rounded-[28px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]">

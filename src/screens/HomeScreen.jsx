@@ -236,18 +236,17 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
               <button
                 type="button"
                 onClick={() => openArtwork(featured.id)}
-                className="block w-full overflow-hidden rounded-[28px] bg-[var(--ink)] text-left shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+                className="block w-full overflow-hidden rounded-[20px] bg-[var(--ink)] text-left"
               >
                 <div className="relative">
-                  <ImageBox src={featured.imageUrl} alt={featured.title} className="h-[360px]" />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-5 text-white">
-                    <p className="text-[10px] font-semibold tracking-[0.18em] text-white/70">오늘의 한 컷</p>
-                    <h2 className="mt-1 text-[26px] font-extrabold leading-tight tracking-[-0.07em]">
+                  <ImageBox src={featured.imageUrl} alt={featured.title} className="h-[180px]" />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-3 text-white">
+                    <p className="text-[9px] font-semibold tracking-[0.18em] text-white/70">오늘의 한 컷</p>
+                    <h2 className="mt-0.5 truncate text-[18px] font-extrabold tracking-[-0.06em]">
                       {featured.title || '제목 없는 사진'}
                     </h2>
-                    <p className="mt-1 text-[13px] text-white/80">
-                      {profileLabel(getProfile(featured.user_id))} ·{' '}
-                      🔥 {getHypeCount(featured.id)}
+                    <p className="mt-0.5 truncate text-[11px] text-white/80">
+                      {profileLabel(getProfile(featured.user_id))} · 🔥 {getHypeCount(featured.id)}
                     </p>
                   </div>
                 </div>

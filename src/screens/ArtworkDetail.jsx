@@ -86,7 +86,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerson, openKeyword, openCamera, openCollectionPicker }) {
-  const { userId, artworks, getArtwork, getProfile, getPlace, getUserArtworks, getHypeCount, getCommentsFor, isSavedByMe, refresh } = useData();
+  const { userId, artworks, getArtwork, getProfile, getPlace, getUserArtworks, getHypeCount, getCommentsFor, isHypedByMe, isSavedByMe, refresh } = useData();
   const { theme } = useTheme();
   const art = getArtwork(artworkId);
   const [deleting, setDeleting] = useState(false);
@@ -110,7 +110,16 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
 
   const profile = getProfile(art.user_id);
   const hypeCount = getHypeCount(art.id);
+  const hyped = isHypedByMe(art.id);
   const commentCount = getCommentsFor(art.id).length;
+  const [busyHype, setBusyHype] = useState(false);
+  const handleHypeToggle = async () => {
+    if (!userId) return;
+    setBusyHype(true);
+    try { await toggleHype(art.id, userId, hyped); await refresh(); }
+    catch (err) { console.error(err); }
+    finally { setBusyHype(false); }
+  };
   const exifLine = [art.camera_make, art.camera_model, art.lens].filter(Boolean).join(' · ');
   const takenLabel = art.taken_at
     ? new Date(art.taken_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')
@@ -289,9 +298,14 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
           <div className="absolute right-3 top-3"><ShareButton title={art.title || '시선집'} /></div>
         </section>
 
-        {/* DC식 prominent 액션바 — 별점/댓글/공유/저장 */}
+        {/* DC식 prominent 액션바 — 추천/댓글/조회/저장 (모두 클릭 가능) */}
         <section className="grid grid-cols-4 gap-1.5 rounded-[16px] bg-[var(--surface)] p-1.5 shadow-[0_0_0_1px_var(--border)]">
-          <DcActionItem icon="⭐" label={`추천 ${hypeCount}`} />
+          <DcActionItem
+            icon={hyped ? '🔥' : '⭐'}
+            label={`추천 ${hypeCount}`}
+            onClick={userId && !isMine && !busyHype ? handleHypeToggle : null}
+            highlight={hyped}
+          />
           <DcActionItem icon="💬" label={`댓글 ${commentCount}`} onClick={() => {
             const el = document.getElementById('comment-section-anchor');
             el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -321,91 +335,66 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
           </section>
         )}
 
-        {/* 추천/저장/공유 액션바 */}
-        <section className="rounded-[20px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
-          <div className="flex flex-wrap items-center gap-2">
-            <HypeButton artwork={art} />
-            {userId && !isMine && (
-              <>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={busySave}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
-                    saved
-                      ? 'border border-[var(--ink)] bg-[var(--ink)] text-white'
-                      : 'border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)]'
-                  }`}
-                >
-                  {saved ? '🔖 저장됨' : '🔖 저장'}
-                </button>
-                {openCollectionPicker && (
-                  <button
-                    type="button"
-                    onClick={() => openCollectionPicker(art.id)}
-                    className="rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text)]"
-                  >
-                    + 컬렉션
-                  </button>
-                )}
-              </>
-            )}
+        {/* 부가 액션 — 작은 칩 한 줄 */}
+        <div className="flex flex-wrap items-center gap-1.5 px-1 text-[11px]">
+          {userId && !isMine && openCollectionPicker && (
             <button
               type="button"
-              onClick={handleShareSingle}
-              disabled={sharingCard}
-              className="rounded-full border border-[var(--border-strong)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text)] disabled:opacity-50"
-              title="이 사진을 카드로 공유"
+              onClick={() => openCollectionPicker(art.id)}
+              className="rounded-full border border-[var(--border)] px-3 py-1 font-semibold text-[var(--text-muted)]"
             >
-              {sharingCard ? '카드 만드는 중…' : '📤 공유 카드'}
+              + 컬렉션
             </button>
-            {userId && !isMine && (
+          )}
+          <button
+            type="button"
+            onClick={handleShareSingle}
+            disabled={sharingCard}
+            className="rounded-full border border-[var(--border)] px-3 py-1 font-semibold text-[var(--text-muted)] disabled:opacity-50"
+          >
+            {sharingCard ? '…' : '📤 공유 카드'}
+          </button>
+          {userId && !isMine && (
+            <button
+              type="button"
+              onClick={() => setReportOpen(true)}
+              className="rounded-full border border-red-200 px-3 py-1 font-semibold text-red-600"
+            >
+              🚩 신고
+            </button>
+          )}
+          {isMine && (
+            <>
+              <span className="ml-auto" />
               <button
                 type="button"
-                onClick={() => setReportOpen(true)}
-                className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600"
-                title="신고"
+                onClick={handleSetHero}
+                disabled={busyHero}
+                className={`rounded-full px-3 py-1 font-semibold disabled:opacity-50 ${
+                  isHero ? 'border border-yellow-400 bg-yellow-100 text-[var(--text)]' : 'border border-[var(--border)] text-[var(--text-muted)]'
+                }`}
+                title={isHero ? '대표 이미지 해제' : '내 프로필의 대표 이미지로 설정'}
               >
-                🚩
+                ⭐ {isHero ? '대표' : '대표로'}
               </button>
-            )}
-            {isMine && (
-              <>
-                <button
-                  type="button"
-                  onClick={handleSetHero}
-                  disabled={busyHero}
-                  className={`ml-auto rounded-full px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${isHero ? 'border border-yellow-400 bg-yellow-200 text-[var(--text)]' : 'border border-[var(--border-strong)] text-[var(--text)]'}`}
-                  title={isHero ? '대표 이미지 해제' : '내 프로필의 대표 이미지로 설정'}
-                >
-                  {isHero ? '⭐ 대표' : '⭐ 대표로'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setScreen('artworkEdit')}
-                  className="rounded-full border border-[var(--border-strong)] px-3 py-1.5 text-xs font-semibold text-[var(--text)]"
-                >
-                  편집
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 disabled:opacity-50"
-                >
-                  {deleting ? '삭제 중…' : '🗑'}
-                </button>
-              </>
-            )}
-          </div>
-        </section>
-
-        {/* DC 게시물 하단 큰 추천 버튼 */}
-        {userId && !isMine && (
-          <section>
-            <HypeButton artwork={art} large />
-          </section>
-        )}
+              <button
+                type="button"
+                onClick={() => setScreen('artworkEdit')}
+                className="rounded-full border border-[var(--border)] px-3 py-1 font-semibold text-[var(--text-muted)]"
+              >
+                ✎ 편집
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="rounded-full border border-red-200 px-3 py-1 font-semibold text-red-600 disabled:opacity-50"
+              >
+                {deleting ? '…' : '🗑'}
+              </button>
+            </>
+          )}
+        </div>
 
         <div id="comment-section-anchor" />
         <CommentSection artworkId={art.id} openPerson={openPerson} />
