@@ -242,7 +242,7 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
                 <div className="relative shrink-0">
                   <ImageBox src={featured.imageUrl} alt={featured.title} className="h-[88px] w-[88px] rounded-[12px]" />
                   <div className="absolute -bottom-1 -right-1 rounded-full bg-[var(--surface)] p-0.5 text-[var(--ink)] shadow">
-                    <CatPhotographer size={28} />
+                    <CatPhotographer size={28} animate />
                   </div>
                 </div>
                 <div className="min-w-0 flex-1">

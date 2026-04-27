@@ -65,64 +65,91 @@ export function CatPhotographer({ size = 100, animate = false, className = '' })
   );
 }
 
-// 잠든 고양이 + 떨어진 폴라로이드 4장 — 4장 채움 안내용
+// 카메라 옆에 잠든 고양이 + 떨어진 폴라로이드 4장 — 4장 채움 안내용
+// 정면 얼굴 + 뾰족 귀 + 수염 명확 — 사진가 고양이가 하루를 마치고 잠든 모습
 export function CatSleepyFour({ size = 220 }) {
   return (
     <svg
-      viewBox="0 0 240 200"
+      viewBox="0 0 260 220"
       width={size}
-      height={(size * 200) / 240}
+      height={(size * 220) / 260}
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label="필름 4장을 다 쓰고 잠든 고양이"
+      aria-label="필름 4장을 다 쓰고 잠든 사진가 고양이"
     >
       {/* 떨어진 폴라로이드 4장 */}
       <g>
-        <g transform="translate(20 22) rotate(-12)">
-          <rect width="42" height="50" rx="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.5"/>
-          <rect x="4" y="4" width="34" height="32" fill="currentColor" opacity="0.18"/>
+        <g transform="translate(16 18) rotate(-14)">
+          <rect width="40" height="48" rx="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.5"/>
+          <rect x="4" y="4" width="32" height="30" fill="currentColor" opacity="0.18"/>
         </g>
-        <g transform="translate(74 16) rotate(7)">
-          <rect width="42" height="50" rx="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.5"/>
-          <rect x="4" y="4" width="34" height="32" fill="currentColor" opacity="0.12"/>
+        <g transform="translate(70 14) rotate(8)">
+          <rect width="40" height="48" rx="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.5"/>
+          <rect x="4" y="4" width="32" height="30" fill="currentColor" opacity="0.12"/>
         </g>
-        <g transform="translate(140 22) rotate(-5)">
-          <rect width="42" height="50" rx="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.5"/>
-          <rect x="4" y="4" width="34" height="32" fill="currentColor" opacity="0.18"/>
+        <g transform="translate(160 24) rotate(-6)">
+          <rect width="40" height="48" rx="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.5"/>
+          <rect x="4" y="4" width="32" height="30" fill="currentColor" opacity="0.18"/>
         </g>
-        <g transform="translate(184 60) rotate(20)">
-          <rect width="42" height="50" rx="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.5"/>
-          <rect x="4" y="4" width="34" height="32" fill="currentColor" opacity="0.12"/>
+        <g transform="translate(208 60) rotate(22)">
+          <rect width="40" height="48" rx="2" fill="var(--bg)" stroke="currentColor" strokeWidth="1.5"/>
+          <rect x="4" y="4" width="32" height="30" fill="currentColor" opacity="0.12"/>
         </g>
       </g>
 
-      {/* 잠든 고양이 — 옆으로 누운 자세 */}
-      <g transform="translate(80 110)">
-        {/* 몸 (둥글게) */}
-        <ellipse cx="40" cy="40" rx="48" ry="22" fill="currentColor"/>
-        {/* 머리 */}
-        <circle cx="14" cy="32" r="20" fill="currentColor"/>
-        {/* 귀 */}
-        <path d="M 0 26 L 4 14 L 14 22 Z" fill="currentColor"/>
-        <path d="M 24 24 L 28 12 L 16 18 Z" fill="currentColor"/>
-        {/* 잠든 눈 (감김) */}
-        <path d="M 6 32 Q 9 30 12 32" stroke="var(--bg)" strokeWidth="2" fill="none" strokeLinecap="round"/>
-        <path d="M 18 32 Q 21 30 24 32" stroke="var(--bg)" strokeWidth="2" fill="none" strokeLinecap="round"/>
-        {/* 코+입 */}
-        <circle cx="15" cy="38" r="1.8" fill="var(--bg)"/>
-        <path d="M 13 41 Q 15 43 17 41" stroke="var(--bg)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-        {/* 수염 */}
-        <line x1="-4" y1="38" x2="6" y2="40" stroke="var(--bg)" strokeWidth="1.2" strokeLinecap="round"/>
-        <line x1="24" y1="40" x2="32" y2="38" stroke="var(--bg)" strokeWidth="1.2" strokeLinecap="round"/>
-        {/* 꼬리 (둥글게 말림) */}
-        <path d="M 78 40 Q 96 30 88 50" stroke="currentColor" strokeWidth="6" strokeLinecap="round" fill="none"/>
+      {/* 옆에 놓인 카메라 (사진가 신원 단서) */}
+      <g transform="translate(34 158)">
+        <rect x="0" y="6" width="46" height="22" rx="2.5" fill="var(--bg)" stroke="currentColor" strokeWidth="2"/>
+        <rect x="14" y="0" width="14" height="6" rx="1" fill="var(--bg)" stroke="currentColor" strokeWidth="1.5"/>
+        <circle cx="22" cy="17" r="7" fill="currentColor"/>
+        <circle cx="22" cy="17" r="3.5" fill="var(--bg)"/>
+        <circle cx="38" cy="11" r="1.5" fill="currentColor"/>
+      </g>
+
+      {/* 잠든 고양이 — 정면 얼굴, 카메라에 머리 기댐 */}
+      <g transform="translate(96 120)">
+        {/* 둥글게 말린 몸 (옆모습) */}
+        <path d="M 8 60 Q -8 56 -8 36 Q -8 18 14 14 L 70 14 Q 90 18 92 38 Q 92 56 78 60 Z" fill="currentColor"/>
+
+        {/* 꼬리 — 몸 위로 둥글게 */}
+        <path d="M 84 40 Q 102 24 92 14 Q 86 10 78 18" stroke="currentColor" strokeWidth="9" fill="none" strokeLinecap="round"/>
+
+        {/* 머리 (정면, 살짝 옆으로 기울어짐) */}
+        <g transform="rotate(-10 30 8)">
+          {/* 귀 (뾰족, 명확) */}
+          <path d="M 8 -4 L 14 -22 L 22 -4 Z" fill="currentColor" stroke="currentColor" strokeWidth="1"/>
+          <path d="M 38 -4 L 44 -22 L 50 -4 Z" fill="currentColor" stroke="currentColor" strokeWidth="1"/>
+          {/* 귀 안쪽 분홍/밝은 면 */}
+          <path d="M 13 -4 L 16 -16 L 20 -4 Z" fill="var(--bg)" opacity="0.85"/>
+          <path d="M 41 -4 L 44 -16 L 48 -4 Z" fill="var(--bg)" opacity="0.85"/>
+          {/* 얼굴 — 정면 둥근 */}
+          <ellipse cx="29" cy="10" rx="22" ry="20" fill="currentColor"/>
+          {/* 잠든 눈 — U자 곡선 (감김) */}
+          <path d="M 17 8 Q 21 13 25 8" stroke="var(--bg)" strokeWidth="2.2" fill="none" strokeLinecap="round"/>
+          <path d="M 33 8 Q 37 13 41 8" stroke="var(--bg)" strokeWidth="2.2" fill="none" strokeLinecap="round"/>
+          {/* 코 (작은 삼각) */}
+          <path d="M 27 16 L 31 16 L 29 19 Z" fill="var(--bg)"/>
+          {/* 입 — 작은 미소 */}
+          <path d="M 25 21 Q 29 24 33 21" stroke="var(--bg)" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+          {/* 수염 — 명확하게 양쪽 3가닥씩 */}
+          <line x1="2" y1="14" x2="14" y2="15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          <line x1="2" y1="18" x2="14" y2="18" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          <line x1="2" y1="22" x2="14" y2="20" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          <line x1="56" y1="15" x2="44" y2="15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          <line x1="56" y1="18" x2="44" y2="18" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          <line x1="56" y1="22" x2="44" y2="20" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+        </g>
+
+        {/* 발 두 개 (몸 아래로 살짝 보임) */}
+        <ellipse cx="20" cy="62" rx="6" ry="3" fill="currentColor"/>
+        <ellipse cx="40" cy="62" rx="6" ry="3" fill="currentColor"/>
       </g>
 
       {/* z z z 잠 표시 */}
-      <g fill="currentColor" opacity="0.55">
-        <text x="160" y="120" fontFamily="ui-monospace, monospace" fontSize="14" fontWeight="800">z</text>
-        <text x="174" y="135" fontFamily="ui-monospace, monospace" fontSize="11" fontWeight="700">z</text>
-        <text x="186" y="148" fontFamily="ui-monospace, monospace" fontSize="9" fontWeight="600">z</text>
+      <g fill="currentColor" opacity="0.6">
+        <text x="178" y="112" fontFamily="ui-monospace, monospace" fontSize="16" fontWeight="800">z</text>
+        <text x="194" y="128" fontFamily="ui-monospace, monospace" fontSize="12" fontWeight="700">z</text>
+        <text x="206" y="142" fontFamily="ui-monospace, monospace" fontSize="9" fontWeight="600">z</text>
       </g>
     </svg>
   );

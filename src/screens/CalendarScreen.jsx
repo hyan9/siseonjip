@@ -139,37 +139,37 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
         kicker={`ROLL · ${monthShort} ${now.getFullYear()}`}
       />
       <div className="space-y-5">
-        {/* 일주일 뷰 — 가운데 5일 선명, 위아래 페이드 */}
+        {/* 일주일 뷰 — 가운데 오늘 선명, 위/아래 강한 페이드 = 액자 느낌 */}
         <section>
           <div
             ref={weekScrollerRef}
-            className="relative h-[330px] overflow-y-auto"
+            className="relative h-[260px] overflow-x-hidden overflow-y-auto"
             style={{
-              maskImage: 'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
+              maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 12%, black 38%, black 62%, rgba(0,0,0,0.15) 88%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 12%, black 38%, black 62%, rgba(0,0,0,0.15) 88%, transparent 100%)',
               scrollbarWidth: 'none',
             }}
           >
-            <div className="flex flex-col gap-1.5 py-[120px]">
+            <div className="flex flex-col gap-1 py-[100px]">
               {weekDays.map((wd) => {
                 const isToday = wd.date.toDateString() === todayStr;
                 return (
                   <div
                     key={wd.date.toISOString()}
                     data-today={isToday}
-                    className={`flex shrink-0 items-center gap-2 rounded-[10px] px-2 py-1.5 transition ${
-                      isToday ? 'bg-[var(--ink)] text-white shadow-[0_8px_20px_rgba(0,0,0,0.18)]' : 'bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]'
+                    className={`flex w-full min-w-0 shrink-0 items-center gap-1.5 rounded-[8px] px-1.5 py-1 ${
+                      isToday ? 'bg-[var(--ink)] text-white shadow-[0_6px_18px_rgba(0,0,0,0.18)]' : 'bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]'
                     }`}
                   >
-                    <div className="w-[34px] shrink-0">
-                      <p className={`text-[8px] font-semibold tracking-[0.12em] ${isToday ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
+                    <div className="w-[24px] shrink-0 text-center">
+                      <p className={`text-[8px] font-semibold ${isToday ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
                         {['일','월','화','수','목','금','토'][wd.date.getDay()]}
                       </p>
-                      <p className="text-[16px] font-extrabold leading-tight tracking-[-0.05em]">
-                        {String(wd.date.getDate()).padStart(2, '0')}
+                      <p className="text-[13px] font-extrabold leading-tight tracking-[-0.05em]">
+                        {wd.date.getDate()}
                       </p>
                     </div>
-                    <div className="grid flex-1 grid-cols-4 gap-1">
+                    <div className="grid min-w-0 flex-1 grid-cols-4 gap-0.5">
                       {[0,1,2,3].map((slot) => {
                         const art = wd.photos[slot];
                         return (
@@ -178,7 +178,7 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
                             type="button"
                             onClick={() => art && openArtwork(art.id)}
                             disabled={!art}
-                            className={`relative aspect-square overflow-hidden rounded-[5px] ${
+                            className={`relative aspect-square overflow-hidden rounded-[4px] ${
                               art
                                 ? ''
                                 : isToday

@@ -221,119 +221,117 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
       <button type="button" onClick={() => setScreen('home')} className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]">
         <Icon name="back" size={18} />
       </button>
-      <div className="space-y-4">
-        {/* 게시물 헤더 — 제목/작성자/메타 (DC 게시물 스타일) */}
-        <section className="rounded-t-[20px] border-b border-[var(--border)] bg-[var(--surface)] p-4">
-          <h1 className="text-[22px] font-extrabold leading-tight tracking-[-0.06em]">
-            <span className="mr-1.5 align-middle text-[14px] font-semibold text-[var(--text-muted)]">[사진 📷]</span>
-            {art.title || '제목 없음'}
-          </h1>
-          <button
-            type="button"
-            onClick={() => openPerson?.(art.user_id)}
-            className="mt-2 inline-flex items-center gap-1.5 text-[13px] font-semibold"
-          >
-            <span>{profileLabel(profile)}</span>
-            <span className="text-[var(--text-faint)]">›</span>
-          </button>
-          <p className="mt-2 text-[11px] text-[var(--text-muted)]">
-            <span>📅 {formatTime(art.taken_at) || formatTime(art.created_at)}</span>
-            <span className="mx-1.5 text-[var(--text-faint)]">|</span>
-            <button
-              type="button"
-              onClick={() => place && openPlace(place.id)}
-              className="underline-offset-2 hover:underline"
-            >
-              📍 {art.location_mode === '개인전만' || art.location_mode === '숨김'
-                ? '장소 비공개'
-                : place
-                ? placeLabel(place)
-                : '장소 미상'}
-            </button>
-          </p>
-          <p className="mt-1.5 text-[10px] tracking-wide text-[var(--text-faint)]">
-            조회 {art.view_count ?? 0} · 🔥 추천 받음 {/* live count via HypeButton */}
-          </p>
-        </section>
-
-        {/* 사진 본문 — DC식 풀 폭 사진 */}
-        <section className="relative overflow-hidden rounded-[20px] bg-[var(--ink)] shadow-[0_0_0_1px_var(--ink)]">
-          <button
-            type="button"
-            onClick={() => setZoomOpen(true)}
-            className="relative flex min-h-[480px] w-full items-center justify-center bg-[var(--ink)]"
-            aria-label="사진 확대해서 보기"
-          >
-            <ImageBox src={art.imageUrl} alt={art.title} fit="contain" className="h-[560px] w-full bg-[var(--ink)]" priority />
-            {art.is_twenty_five && (
-              <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--text)]">
-                🌟 25번째 사진
-              </span>
-            )}
-            {isHero && (
-              <span className="absolute left-3 top-12 rounded-full bg-yellow-300 px-3 py-1 text-xs font-semibold text-[var(--text)]">
-                ⭐ 대표 이미지
-              </span>
-            )}
-            {(exifLine || takenLabel) && (
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/60 to-transparent px-4 pb-2 pt-8 text-[10px] tracking-wide text-white/80">
-                <span className="truncate">{exifLine}</span>
-                {takenLabel && <span className="shrink-0">{takenLabel}</span>}
-              </div>
-            )}
-          </button>
-          {exifLine && openCamera && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                openCamera({ make: art.camera_make, model: art.camera_model, lens: art.lens });
-              }}
-              className="absolute bottom-2 left-3 z-10 rounded-full bg-black/40 px-2 py-1 text-[10px] font-semibold tracking-wide text-white backdrop-blur-sm hover:bg-black/60"
-              title="이 카메라로 찍은 다른 사진 보기"
-            >
-              📷 보기
-            </button>
-          )}
-          <div className="absolute right-3 top-3"><ShareButton title={art.title || '시선집'} /></div>
-        </section>
-
-        {/* DC식 prominent 액션바 — 추천/댓글/조회/저장 (모두 클릭 가능) */}
-        <section className="grid grid-cols-4 gap-1.5 rounded-[16px] bg-[var(--surface)] p-1.5 shadow-[0_0_0_1px_var(--border)]">
-          <DcActionItem
-            icon={hyped ? '🔥' : '⭐'}
-            label={`추천 ${hypeCount}`}
-            onClick={userId && !isMine && !busyHype ? handleHypeToggle : null}
-            highlight={hyped}
-          />
-          <DcActionItem icon="💬" label={`댓글 ${commentCount}`} onClick={() => {
-            const el = document.getElementById('comment-section-anchor');
-            el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }} />
-          <DcActionItem icon="👀" label={`조회 ${art.view_count ?? 0}`} />
-          <DcActionItem
-            icon={saved ? '🔖' : '🏷'}
-            label={saved ? '저장됨' : '저장'}
-            onClick={userId && !isMine ? handleSave : null}
-            highlight={saved}
-          />
-        </section>
-
-        {/* 본문 노트 + 키워드 */}
-        {(art.note || art.daily_vision) && (
-          <section className="rounded-[20px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
-            {art.note && <p className="text-[15px] leading-7 text-[var(--text-quote)]">{art.note}</p>}
-            {art.daily_vision && (
+      <div className="space-y-3">
+        {/* 통합 본문 카드 — 제목 / 작성자 / 사진 / 노트 / 추천바 / 부가 액션 */}
+        <article className="overflow-hidden rounded-[20px] bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]">
+          {/* 헤더: 제목 + 작성자 + 메타 */}
+          <header className="border-b border-[var(--border)] p-4">
+            <h1 className="text-[22px] font-extrabold leading-tight tracking-[-0.06em]">
+              {art.title || '제목 없음'}
+            </h1>
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 text-[11px] text-[var(--text-muted)]">
               <button
                 type="button"
-                onClick={() => openKeyword?.(art.daily_vision)}
-                className={`${art.note ? 'mt-3' : ''} inline-block rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--text)]`}
+                onClick={() => openPerson?.(art.user_id)}
+                className="font-semibold text-[var(--text)]"
               >
-                #{art.daily_vision}
+                {profileLabel(profile)}
+              </button>
+              <span className="text-[var(--text-faint)]">·</span>
+              <span>{formatTime(art.taken_at) || formatTime(art.created_at)}</span>
+              <span className="text-[var(--text-faint)]">·</span>
+              <button
+                type="button"
+                onClick={() => place && openPlace(place.id)}
+                className="hover:underline"
+              >
+                📍 {art.location_mode === '개인전만' || art.location_mode === '숨김'
+                  ? '장소 비공개'
+                  : place
+                  ? placeLabel(place)
+                  : '장소 미상'}
+              </button>
+            </div>
+          </header>
+
+          {/* 사진 */}
+          <div className="relative bg-[var(--ink)]">
+            <button
+              type="button"
+              onClick={() => setZoomOpen(true)}
+              className="relative flex min-h-[420px] w-full items-center justify-center"
+              aria-label="사진 확대해서 보기"
+            >
+              <ImageBox src={art.imageUrl} alt={art.title} fit="contain" className="h-[520px] w-full bg-[var(--ink)]" priority />
+              {art.is_twenty_five && (
+                <span className="absolute left-3 top-3 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-[var(--text)]">
+                  🌟 25번째 사진
+                </span>
+              )}
+              {isHero && (
+                <span className="absolute left-3 top-12 rounded-full bg-yellow-300 px-2.5 py-1 text-[10px] font-semibold text-[var(--text)]">
+                  ⭐ 대표
+                </span>
+              )}
+              {(exifLine || takenLabel) && (
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/60 to-transparent px-4 pb-2 pt-8 text-[10px] tracking-wide text-white/80">
+                  <span className="truncate">{exifLine}</span>
+                  {takenLabel && <span className="shrink-0">{takenLabel}</span>}
+                </div>
+              )}
+            </button>
+            {exifLine && openCamera && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openCamera({ make: art.camera_make, model: art.camera_model, lens: art.lens });
+                }}
+                className="absolute bottom-2 left-3 z-10 rounded-full bg-black/40 px-2 py-1 text-[10px] font-semibold tracking-wide text-white backdrop-blur-sm"
+              >
+                📷 보기
               </button>
             )}
-          </section>
-        )}
+            <div className="absolute right-3 top-3"><ShareButton title={art.title || '시선집'} /></div>
+          </div>
+
+          {/* 본문 노트 + 키워드 */}
+          {(art.note || art.daily_vision) && (
+            <div className="border-t border-[var(--border)] p-4">
+              {art.note && <p className="text-[15px] leading-7 text-[var(--text-quote)]">{art.note}</p>}
+              {art.daily_vision && (
+                <button
+                  type="button"
+                  onClick={() => openKeyword?.(art.daily_vision)}
+                  className={`${art.note ? 'mt-3' : ''} inline-block rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--text)]`}
+                >
+                  #{art.daily_vision}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* DC 액션바 — 추천/댓글/조회/저장 */}
+          <div className="grid grid-cols-4 gap-1.5 border-t border-[var(--border)] bg-[var(--bg)] p-1.5">
+            <DcActionItem
+              icon={hyped ? '🔥' : '⭐'}
+              label={`추천 ${hypeCount}`}
+              onClick={userId && !isMine && !busyHype ? handleHypeToggle : null}
+              highlight={hyped}
+            />
+            <DcActionItem icon="💬" label={`댓글 ${commentCount}`} onClick={() => {
+              const el = document.getElementById('comment-section-anchor');
+              el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }} />
+            <DcActionItem icon="👀" label={`조회 ${art.view_count ?? 0}`} />
+            <DcActionItem
+              icon={saved ? '🔖' : '🏷'}
+              label={saved ? '저장됨' : '저장'}
+              onClick={userId && !isMine ? handleSave : null}
+              highlight={saved}
+            />
+          </div>
+        </article>
 
         {/* 부가 액션 — 작은 칩 한 줄 */}
         <div className="flex flex-wrap items-center gap-1.5 px-1 text-[11px]">
@@ -400,15 +398,15 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
         <CommentSection artworkId={art.id} openPerson={openPerson} />
 
         {(feedNav.prev || feedNav.next) && (
-          <section className="flex gap-2">
+          <section className="flex items-stretch divide-x divide-[var(--border)] overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--surface)] text-[12px]">
             <button
               type="button"
               onClick={() => feedNav.prev && openArtwork(feedNav.prev.id)}
               disabled={!feedNav.prev}
-              className="flex-1 truncate rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-left text-xs disabled:opacity-40"
+              className="flex flex-1 items-center gap-1 truncate px-3 py-2.5 disabled:opacity-40"
             >
-              <span className="block text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">‹ 이전 글</span>
-              <span className="mt-0.5 block truncate font-bold text-[var(--text)]">
+              <span className="text-[var(--text-muted)]">‹</span>
+              <span className="truncate font-semibold">
                 {feedNav.prev ? (feedNav.prev.title || '제목 없음') : '없음'}
               </span>
             </button>
@@ -416,12 +414,12 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
               type="button"
               onClick={() => feedNav.next && openArtwork(feedNav.next.id)}
               disabled={!feedNav.next}
-              className="flex-1 truncate rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-right text-xs disabled:opacity-40"
+              className="flex flex-1 items-center justify-end gap-1 truncate px-3 py-2.5 disabled:opacity-40"
             >
-              <span className="block text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">다음 글 ›</span>
-              <span className="mt-0.5 block truncate font-bold text-[var(--text)]">
+              <span className="truncate font-semibold">
                 {feedNav.next ? (feedNav.next.title || '제목 없음') : '없음'}
               </span>
+              <span className="text-[var(--text-muted)]">›</span>
             </button>
           </section>
         )}

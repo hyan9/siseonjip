@@ -79,42 +79,29 @@ export function PostListRow({ artwork, onOpen }) {
     <button
       type="button"
       onClick={() => onOpen(artwork.id)}
-      className="flex w-full items-stretch gap-3 border-b border-[var(--border)] py-3 text-left last:border-b-0"
+      className="flex w-full items-center gap-3 border-b border-[var(--border)] py-2 text-left last:border-b-0"
     >
       <div className="min-w-0 flex-1">
-        <p className="text-[17px] font-extrabold leading-tight tracking-[-0.05em]">
+        <p className="truncate text-[16px] font-extrabold leading-tight tracking-[-0.05em]">
           {hot && <span className="mr-1 text-yellow-500">⭐</span>}
-          <span className="break-words">{artwork.title || '제목 없음'}</span>
+          {artwork.title || '제목 없음'}
           {commentCount > 0 && (
-            <span className="ml-1.5 align-middle text-[14px] font-bold text-[var(--ink)]">
-              [{commentCount}]
-            </span>
+            <span className="ml-1 align-middle text-[13px] font-bold text-[var(--ink)]">[{commentCount}]</span>
           )}
         </p>
-        {artwork.note && (
-          <p className="mt-1 line-clamp-1 text-[12px] italic leading-snug text-[var(--text-quote)]">
-            "{artwork.note}"
-          </p>
-        )}
-        <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[10px] text-[var(--text-muted)]">
+        <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
           <span className="font-semibold">{profileLabel(profile)}</span>
-          <span className="text-[var(--text-faint)]">·</span>
-          <span className="font-semibold text-[var(--ink)]">🔥 {hype}</span>
-          <span className="text-[var(--text-faint)]">·</span>
-          <span>{timeAgo(artwork.created_at)}</span>
-          {artwork.daily_vision && (
-            <>
-              <span className="text-[var(--text-faint)]">·</span>
-              <span className="truncate">#{artwork.daily_vision}</span>
-            </>
-          )}
+          {hype > 0 && <span className="ml-1 text-[var(--ink)]">🔥 {hype}</span>}
+          <span className="mx-1 text-[var(--text-faint)]">·</span>
+          {timeAgo(artwork.created_at)}
+          {artwork.daily_vision && <span className="ml-1 text-[var(--text-faint)]">#{artwork.daily_vision}</span>}
         </p>
       </div>
       {artwork.imageUrl && (
         <ImageBox
           src={artwork.imageUrl}
           alt={artwork.title}
-          className="h-[78px] w-[78px] shrink-0 self-center rounded-[10px]"
+          className="h-[56px] w-[56px] shrink-0 rounded-[8px]"
         />
       )}
     </button>
