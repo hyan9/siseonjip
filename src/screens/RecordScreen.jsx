@@ -104,6 +104,9 @@ async function processPickedFile(file) {
     gpsSource: meta.lat != null ? 'exif' : null,
     gps: { lat: meta.lat, lng: meta.lng },
     takenAt: meta.takenAt,
+    cameraMake: meta.cameraMake,
+    cameraModel: meta.cameraModel,
+    lens: meta.lens,
     neighborhood,
     title: '',
   };
@@ -244,6 +247,9 @@ export default function RecordScreen({ setScreen }) {
           lat: storeExact ? item.gps.lat : null,
           lng: storeExact ? item.gps.lng : null,
           placeId,
+          cameraMake: item.cameraMake,
+          cameraModel: item.cameraModel,
+          lens: item.lens,
         });
         createdIds.push(created.id);
         setProgress((p) => ({ ...p, done: p.done + 1 }));

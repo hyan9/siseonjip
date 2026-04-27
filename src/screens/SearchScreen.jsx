@@ -17,7 +17,7 @@ import Icon from '../components/Icon';
 import MapView from '../components/MapView';
 import HypeButton from '../components/HypeButton';
 import ShareButton from '../components/ShareButton';
-import { FourPhotoWall, PhotoTile, PersonRow, PlaceRow } from '../components/Cards';
+import { FourPhotoWall, PhotoTile, PersonRow, PlaceRow, PostListRow } from '../components/Cards';
 import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
 import LocationPickerModal from '../components/LocationPickerModal';
@@ -206,7 +206,11 @@ export default function SearchScreen({ openArtwork, openPerson, openPlace }) {
         {tab === '사진' && (
           filteredArts.length === 0
             ? <EmptyState title="검색 결과 없음" hint="다른 키워드를 시도해보세요." />
-            : <div className="grid grid-cols-2 gap-3">{filteredArts.map((art) => <PhotoTile key={art.id} artwork={art} onOpen={openArtwork} />)}</div>
+            : (
+              <div className="rounded-[20px] bg-[var(--surface)] px-4 shadow-[0_0_0_1px_var(--border)]">
+                {filteredArts.map((art) => <PostListRow key={art.id} artwork={art} onOpen={openArtwork} />)}
+              </div>
+            )
         )}
         {tab === '사람' && (
           filteredUsers.length === 0

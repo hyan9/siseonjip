@@ -17,7 +17,7 @@ import Icon from '../components/Icon';
 import MapView from '../components/MapView';
 import HypeButton from '../components/HypeButton';
 import ShareButton from '../components/ShareButton';
-import { FourPhotoWall, PhotoTile, PersonRow, PlaceRow } from '../components/Cards';
+import { FourPhotoWall, PhotoTile, PersonRow, PlaceRow, PostListRow } from '../components/Cards';
 import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
 import LocationPickerModal from '../components/LocationPickerModal';
@@ -447,10 +447,19 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
         </section>
 
         <section>
-          <h2 className="mb-3 text-[25px] font-extrabold tracking-[-0.07em]">필름</h2>
-          {works.length === 0
-            ? <EmptyState title="아직 사진이 없어요" />
-            : <div className="grid grid-cols-2 gap-3">{works.map((art) => <PhotoTile key={art.id} artwork={art} onOpen={openArtwork} />)}</div>}
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-[25px] font-extrabold tracking-[-0.07em]">필름</h2>
+            <span className="text-[11px] text-[var(--text-muted)]">{works.length}건</span>
+          </div>
+          {works.length === 0 ? (
+            <EmptyState title="아직 사진이 없어요" />
+          ) : (
+            <div className="rounded-[20px] bg-[var(--surface)] px-4 shadow-[0_0_0_1px_var(--border)]">
+              {works.map((art) => (
+                <PostListRow key={art.id} artwork={art} onOpen={openArtwork} />
+              ))}
+            </div>
+          )}
         </section>
       </div>
 

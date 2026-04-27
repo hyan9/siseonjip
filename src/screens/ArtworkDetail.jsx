@@ -49,6 +49,7 @@ import {
   markMessagesRead,
   reportContent,
   toggleBlock,
+  incrementArtworkView,
 } from '../lib/db';
 import { readPhotoMeta } from '../lib/exif';
 import { reverseGeocode, getCurrentPosition, distanceMeters, searchPlaces } from '../lib/geocoding';
@@ -96,9 +97,22 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
   const [reportOpen, setReportOpen] = useState(false);
   const [sharingCard, setSharingCard] = useState(false);
 
+  // 조회수 +1 (세션당 한 번)
+  useEffect(() => {
+    if (!artworkId) return;
+    const key = `siseonjip:viewed:${artworkId}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+    incrementArtworkView(artworkId);
+  }, [artworkId]);
+
   if (!art) return <EmptyState title="사진을 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
   const profile = getProfile(art.user_id);
+  const exifLine = [art.camera_make, art.camera_model, art.lens].filter(Boolean).join(' · ');
+  const takenLabel = art.taken_at
+    ? new Date(art.taken_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')
+    : null;
   const place = getPlace(art.place_id);
   const userPhotos = getUserArtworks(art.user_id);
   const related = userPhotos.filter((item) => item.id !== art.id).slice(0, 3);
@@ -192,6 +206,9 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
                 : '장소 미상'}
             </button>
           </p>
+          <p className="mt-1.5 text-[10px] tracking-wide text-[var(--text-faint)]">
+            조회 {art.view_count ?? 0} · 🔥 추천 받음 {/* live count via HypeButton */}
+          </p>
         </section>
 
         {/* 사진 본문 — DC식 풀 폭 사진 */}
@@ -212,6 +229,12 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
               <span className="absolute left-3 top-12 rounded-full bg-yellow-300 px-3 py-1 text-xs font-semibold text-[var(--text)]">
                 ⭐ 대표 이미지
               </span>
+            )}
+            {(exifLine || takenLabel) && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/60 to-transparent px-4 pb-2 pt-8 text-[10px] tracking-wide text-white/80">
+                <span className="truncate">{exifLine}</span>
+                {takenLabel && <span className="shrink-0">{takenLabel}</span>}
+              </div>
             )}
           </button>
           <div className="absolute right-3 top-3"><ShareButton title={art.title || '시선집'} /></div>

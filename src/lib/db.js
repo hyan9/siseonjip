@@ -172,6 +172,9 @@ export async function insertArtwork({
   lat,
   lng,
   placeId,
+  cameraMake,
+  cameraModel,
+  lens,
 }) {
   const { data, error } = await supabase
     .from('artworks')
@@ -187,11 +190,21 @@ export async function insertArtwork({
       lat: lat ?? null,
       lng: lng ?? null,
       place_id: placeId ?? null,
+      camera_make: cameraMake || null,
+      camera_model: cameraModel || null,
+      lens: lens || null,
     })
     .select()
     .single();
   if (error) throw error;
   return data;
+}
+
+// 조회수 +1 (RPC 호출, 실패 시 무시)
+export async function incrementArtworkView(artworkId) {
+  if (!artworkId) return;
+  const { error } = await supabase.rpc('increment_artwork_view', { art_id: artworkId });
+  if (error) console.warn('[view] increment failed', error);
 }
 
 // ============================================================
