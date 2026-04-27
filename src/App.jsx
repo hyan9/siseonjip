@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { AuthProvider, useAuth, signInWithEmail, signOut } from './lib/auth-context';
+import {
+  AuthProvider,
+  useAuth,
+  signInWithEmail,
+  signInWithGoogle,
+  signInAnonymous,
+  signOut,
+} from './lib/auth-context';
 import { DataProvider, useData } from './lib/data-context';
 import { hasSupabaseConfig } from './lib/supabase';
 import { readPhotoMeta } from './lib/exif';
@@ -15,6 +22,7 @@ import {
   setTwentyFive,
   updateProfile,
   seedDemoArtworks,
+  deleteArtwork,
 } from './lib/db';
 
 import Icon from './components/Icon';
@@ -268,13 +276,14 @@ function EmptyState({ title, hint, onAction, actionLabel }) {
 function LoginScreen() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
   const [error, setError] = useState(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(null); // 'email' | 'google' | 'anon' | null
 
-  const handleSubmit = async (event) => {
+  const handleEmail = async (event) => {
     event.preventDefault();
     if (!email) return;
-    setBusy(true);
+    setBusy('email');
     setError(null);
     try {
       await signInWithEmail(email);
@@ -282,7 +291,30 @@ function LoginScreen() {
     } catch (err) {
       setError(err.message || '로그인 실패');
     } finally {
-      setBusy(false);
+      setBusy(null);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setBusy('google');
+    setError(null);
+    try {
+      await signInWithGoogle();
+      // OAuth 리디렉션이 일어나므로 여기까지 도달하지 않음
+    } catch (err) {
+      setError(err.message || 'Google 로그인 실패. Supabase에서 Google provider가 활성화 됐는지 확인해주세요.');
+      setBusy(null);
+    }
+  };
+
+  const handleAnon = async () => {
+    setBusy('anon');
+    setError(null);
+    try {
+      await signInAnonymous();
+    } catch (err) {
+      setError(err.message || '익명 로그인 실패. Supabase Auth → Providers → Anonymous Sign-Ins이 켜져있는지 확인해주세요.');
+      setBusy(null);
     }
   };
 
@@ -317,30 +349,76 @@ function LoginScreen() {
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="mt-8 space-y-3">
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="이메일"
-                    className="w-full rounded-full border border-white/30 bg-white/5 px-5 py-4 text-sm text-white placeholder:text-white/50 outline-none focus:border-white/60"
-                  />
+                <div className="mt-8 space-y-3">
                   <button
-                    type="submit"
-                    disabled={busy}
-                    className="w-full rounded-full bg-white px-5 py-4 text-sm font-semibold text-[#151515] disabled:opacity-50"
+                    type="button"
+                    onClick={handleGoogle}
+                    disabled={!!busy}
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-4 text-sm font-semibold text-[#151515] disabled:opacity-50"
                   >
-                    {busy ? '메일 보내는 중…' : '매직 링크 받기'}
+                    <GoogleLogo />
+                    {busy === 'google' ? 'Google로 이동…' : 'Google로 계속하기'}
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={handleAnon}
+                    disabled={!!busy}
+                    className="w-full rounded-full border border-white/30 bg-white/5 px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
+                  >
+                    {busy === 'anon' ? '입장 중…' : '먼저 둘러보기 (익명)'}
+                  </button>
+
+                  {!showEmail ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowEmail(true)}
+                      className="w-full text-center text-xs text-white/60 underline"
+                    >
+                      이메일 매직 링크로 로그인
+                    </button>
+                  ) : (
+                    <form onSubmit={handleEmail} className="space-y-2 rounded-[20px] bg-white/5 p-3">
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder="이메일"
+                        className="w-full rounded-full border border-white/30 bg-transparent px-5 py-3 text-sm text-white placeholder:text-white/50 outline-none focus:border-white/60"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!!busy}
+                        className="w-full rounded-full bg-white/15 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                      >
+                        {busy === 'email' ? '메일 보내는 중…' : '매직 링크 받기'}
+                      </button>
+                    </form>
+                  )}
+
                   {error && <p className="text-xs text-red-300">{error}</p>}
-                </form>
+                  <p className="text-[10px] leading-4 text-white/50">
+                    "익명"으로 시작하면 이메일 없이 바로 둘러볼 수 있어요. 단, 브라우저 데이터를 지우거나 다른 기기로 옮기면 계정이 사라집니다.
+                  </p>
+                </div>
               )}
             </div>
           </div>
         </section>
       </div>
     </div>
+  );
+}
+
+function GoogleLogo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.5 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z"/>
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16.2 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/>
+      <path fill="#4CAF50" d="M24 44c5.2 0 9.8-2 13.4-5.2l-6.2-5.2C29.2 35 26.7 36 24 36c-5.3 0-9.7-3.4-11.3-8.1l-6.5 5C9.5 39.5 16.2 44 24 44z"/>
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.2 5.2C40.6 35.6 44 30.2 44 24c0-1.2-.1-2.4-.4-3.5z"/>
+    </svg>
   );
 }
 
@@ -751,8 +829,9 @@ function RecordScreen({ setScreen }) {
    ====================================================================== */
 
 function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace }) {
-  const { getArtwork, getProfile, getPlace, getUserArtworks, getCommentsFor } = useData();
+  const { userId, getArtwork, getProfile, getPlace, getUserArtworks, getCommentsFor, refresh } = useData();
   const art = getArtwork(artworkId);
+  const [deleting, setDeleting] = useState(false);
 
   if (!art) return <EmptyState title="사진을 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
@@ -760,6 +839,20 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace }) {
   const place = getPlace(art.place_id);
   const related = getUserArtworks(art.user_id).filter((item) => item.id !== art.id).slice(0, 3);
   const artComments = getCommentsFor(art.id);
+  const isMine = art.user_id === userId;
+
+  const handleDelete = async () => {
+    if (!window.confirm('이 사진을 정말 삭제할까요? 되돌릴 수 없어요.')) return;
+    setDeleting(true);
+    try {
+      await deleteArtwork(art.id, userId, art.storage_path);
+      await refresh();
+      setScreen('archive');
+    } catch (err) {
+      alert('삭제 실패: ' + err.message);
+      setDeleting(false);
+    }
+  };
 
   return (
     <>
@@ -801,7 +894,19 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace }) {
             </div>
           </div>
           {art.note && <p className="mt-4 text-[15px] leading-7 text-[#3f3a34]">{art.note}</p>}
-          <div className="mt-4"><HypeButton artwork={art} /></div>
+          <div className="mt-4 flex items-center gap-2">
+            <HypeButton artwork={art} />
+            {isMine && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="ml-auto rounded-full border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 disabled:opacity-50"
+              >
+                {deleting ? '삭제 중…' : '🗑 삭제'}
+              </button>
+            )}
+          </div>
         </section>
 
         {related.length > 0 && (
@@ -1492,6 +1597,78 @@ function Splash({ message = '불러오는 중…' }) {
   );
 }
 
+function OnboardingModal() {
+  const { userId, getProfile, refresh } = useData();
+  const profile = getProfile(userId);
+  const needsOnboarding = profile && /^user_[a-f0-9]+$/i.test(profile.nickname);
+  const [nickname, setNickname] = useState('');
+  const [bio, setBio] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  if (!needsOnboarding) return null;
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!nickname.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await updateProfile(userId, {
+        nickname: nickname.trim(),
+        bio: bio.trim() || null,
+      });
+      await refresh();
+    } catch (err) {
+      // 닉네임 중복 등
+      if (err.code === '23505') setError('이미 쓰는 닉네임이에요. 다른 걸로.');
+      else setError(err.message || '저장 실패');
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center">
+      <div className="mx-auto w-full max-w-[400px] rounded-[24px] bg-[#fbf8f2] p-6 shadow-xl">
+        <p className="text-[11px] font-semibold tracking-[0.16em] text-[#746e66]">시선집에 오신 걸 환영해요</p>
+        <h2 className="mt-1 text-[26px] font-extrabold leading-tight tracking-[-0.07em]">
+          어떻게 불러드릴까요?
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-[#4d4943]">
+          닉네임과 짧은 소개를 적어주세요. 다른 사람의 개인전에 보이는 이름이에요.
+        </p>
+
+        <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+          <input
+            value={nickname}
+            onChange={(event) => setNickname(event.target.value)}
+            placeholder="닉네임 (필수)"
+            required
+            maxLength={20}
+            autoFocus
+            className="w-full rounded-[16px] border border-[#e4dccd] bg-white px-4 py-3 text-sm outline-none focus:border-[#151515]"
+          />
+          <textarea
+            value={bio}
+            onChange={(event) => setBio(event.target.value)}
+            placeholder="짧은 소개 (선택) — 예: 모서리와 빛을 모읍니다"
+            maxLength={80}
+            className="min-h-20 w-full resize-none rounded-[16px] border border-[#e4dccd] bg-white px-4 py-3 text-sm outline-none focus:border-[#151515]"
+          />
+          {error && <p className="rounded-[12px] bg-red-50 p-2 text-xs text-red-700">{error}</p>}
+          <button
+            type="submit"
+            disabled={busy || !nickname.trim()}
+            className="w-full rounded-full bg-[#151515] px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {busy ? '시작 중…' : '시작하기'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function MainApp() {
   const [screen, setScreen] = useState('home');
   const [selectedArtworkId, setSelectedArtworkId] = useState(null);
@@ -1516,7 +1693,12 @@ function MainApp() {
   if (screen === 'archive') content = <CalendarScreen openArtwork={openArtwork} setScreen={setScreen} />;
   if (screen === 'twentyFive') content = <TwentyFiveScreen setScreen={setScreen} />;
 
-  return <Shell screen={screen} setScreen={setScreen}>{content}</Shell>;
+  return (
+    <>
+      <Shell screen={screen} setScreen={setScreen}>{content}</Shell>
+      <OnboardingModal />
+    </>
+  );
 }
 
 function PersonExhibitionMe({ setScreen, openArtwork }) {

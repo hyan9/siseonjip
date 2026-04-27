@@ -47,8 +47,29 @@ Supabase 대시보드 → 좌측 **SQL Editor → New query**
 
 좌측 **Authentication → Providers**
 
-- **Email** 활성화 (기본값) — Magic Link 방식 사용
-- (선택) **Site URL**: `http://localhost:5173` (개발용). 배포 후 Vercel URL로 변경.
+세 가지 로그인 방법 중 원하는 것 활성화 (다 켜두면 사용자가 골라 씀):
+
+### 5-1. Email (Magic Link) — 기본 활성화
+별도 설정 없음.
+
+### 5-2. Anonymous Sign-In (가장 편한 방법)
+**Authentication → Sign In / Providers** 에서 **Anonymous Sign-Ins** 토글 ON.
+이메일 없이 "둘러보기" 버튼으로 즉시 입장 가능. 단, 브라우저 데이터 지우면 계정 사라짐.
+
+### 5-3. Google OAuth (1탭 로그인, 셋업 10분)
+1. https://console.cloud.google.com → 새 프로젝트
+2. **APIs & Services → Credentials → Create credentials → OAuth client ID** 선택
+3. Application type: **Web application**
+4. Authorized redirect URIs에 추가 (Supabase Project Settings → API → "Project URL" 참고):
+   ```
+   https://<project-ref>.supabase.co/auth/v1/callback
+   ```
+5. 생성된 **Client ID + Client Secret** 복사
+6. Supabase로 돌아와 **Authentication → Providers → Google → Enable** 후 두 값 붙여넣고 Save
+
+### URL Configuration
+- **Site URL**: 배포 후엔 Vercel URL로. 개발만 할 거면 `http://localhost:5173`
+- **Redirect URLs**: `http://localhost:5173/**`, `https://<vercel-url>/**` 둘 다 등록 (와일드카드 `**` 필수)
 
 ## 6. 실행
 

@@ -284,6 +284,26 @@ export async function setTwentyFive(userId, artworkId) {
   return data;
 }
 
+export async function deleteArtwork(artworkId, userId, storagePath) {
+  // RLS가 본인 것만 삭제 가능하도록 막아주지만 명시적으로 user_id도 매칭
+  const { error } = await supabase
+    .from('artworks')
+    .delete()
+    .eq('id', artworkId)
+    .eq('user_id', userId);
+  if (error) throw error;
+
+  // Storage 객체도 삭제 (외부 image_url이면 storagePath가 비어있을 수 있음)
+  if (storagePath) {
+    const { error: storageError } = await supabase.storage
+      .from(PHOTO_BUCKET)
+      .remove([storagePath]);
+    if (storageError) {
+      console.warn('[db] storage 삭제 실패 (권한 또는 미존재):', storageError);
+    }
+  }
+}
+
 export async function updateProfile(userId, fields) {
   const { data, error } = await supabase
     .from('profiles')
