@@ -85,7 +85,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerson, openKeyword, openCollectionPicker }) {
+export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerson, openKeyword, openCamera, openCollectionPicker }) {
   const { userId, artworks, getArtwork, getProfile, getPlace, getUserArtworks, getHypeCount, isSavedByMe, refresh } = useData();
   const { theme } = useTheme();
   const art = getArtwork(artworkId);
@@ -271,6 +271,19 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
               </div>
             )}
           </button>
+          {exifLine && openCamera && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openCamera({ make: art.camera_make, model: art.camera_model, lens: art.lens });
+              }}
+              className="absolute bottom-2 left-3 z-10 rounded-full bg-black/40 px-2 py-1 text-[10px] font-semibold tracking-wide text-white backdrop-blur-sm hover:bg-black/60"
+              title="이 카메라로 찍은 다른 사진 보기"
+            >
+              📷 보기
+            </button>
+          )}
           <div className="absolute right-3 top-3"><ShareButton title={art.title || '시선집'} /></div>
         </section>
 

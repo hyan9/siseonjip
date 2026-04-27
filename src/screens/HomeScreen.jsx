@@ -150,7 +150,7 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
   );
 
   // 단일 알고리즘 피드 (최신성 + 인기 + 친화도 가중)
-  const feedList = useMemo(() => {
+  const fullFeed = useMemo(() => {
     const candidates = visibleArtworks.filter((a) => a.location_mode !== '숨김');
     const now = Date.now();
     const scored = candidates.map((art) => {
@@ -161,11 +161,30 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
       const followBonus = followingIds.has(art.user_id) ? 0.4 : 0;
       return { art, score: recencyScore + hypeScore + followBonus };
     });
-    return scored
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 40)
-      .map((s) => s.art);
+    return scored.sort((a, b) => b.score - a.score).map((s) => s.art);
   }, [visibleArtworks, getHypeCount, followingIds]);
+
+  const PAGE = 20;
+  const [displayCount, setDisplayCount] = useState(PAGE);
+  // 피드 변경(필터 등) 시 페이지 리셋
+  useEffect(() => { setDisplayCount(PAGE); }, [feedFilter]);
+  const feedList = fullFeed.slice(0, displayCount);
+  const sentinelRef = useRef(null);
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return undefined;
+    if (displayCount >= fullFeed.length) return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setDisplayCount((c) => Math.min(c + PAGE, fullFeed.length));
+        }
+      },
+      { rootMargin: '300px 0px' }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [displayCount, fullFeed.length]);
 
   return (
     <>
@@ -344,21 +363,26 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
                 <div className="flex items-baseline gap-2">
                   <span className="text-[18px]">📋</span>
                   <h2 className="text-[18px] font-extrabold tracking-[-0.06em]">시선집</h2>
-                  <span className="text-[10px] text-[var(--text-faint)]">최신·인기 가중</span>
+                  <span className="text-[10px] text-[var(--text-faint)]">
+                    {feedList.length}/{fullFeed.length} · 최신·인기 가중
+                  </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setScreen('search')}
-                  className="text-[11px] font-semibold text-[var(--text-muted)]"
-                >
-                  더보기 ›
-                </button>
               </div>
               <div>
                 {feedList.map((art) => (
                   <PostListRow key={art.id} artwork={art} onOpen={openArtwork} />
                 ))}
               </div>
+              {displayCount < fullFeed.length && (
+                <div ref={sentinelRef} className="py-4 text-center text-[11px] text-[var(--text-muted)]">
+                  불러오는 중…
+                </div>
+              )}
+              {displayCount >= fullFeed.length && fullFeed.length > PAGE && (
+                <div className="py-4 text-center text-[11px] text-[var(--text-faint)]">
+                  · 끝 ·
+                </div>
+              )}
             </section>
           )}
         </div>

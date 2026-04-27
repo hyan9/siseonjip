@@ -25,6 +25,7 @@ import CalendarScreen from './screens/CalendarScreen';
 import TwentyFiveScreen from './screens/TwentyFiveScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 import KeywordScreen from './screens/KeywordScreen';
+import CameraScreen from './screens/CameraScreen';
 import BulkPrivacyScreen from './screens/BulkPrivacyScreen';
 import SavedScreen from './screens/SavedScreen';
 import ActivityScreen from './screens/ActivityScreen';
@@ -39,6 +40,7 @@ function MainApp() {
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedKeyword, setSelectedKeyword] = useState(null);
+  const [selectedCamera, setSelectedCamera] = useState(null);
   const [selectedCollectionId, setSelectedCollectionId] = useState(null);
   const [selectedConvOtherId, setSelectedConvOtherId] = useState(null);
   const [collectionPickerArtwork, setCollectionPickerArtwork] = useState(null);
@@ -47,6 +49,7 @@ function MainApp() {
   const openPlace = (id) => { setSelectedPlaceId(id); setScreen('place'); };
   const openPerson = (id) => { setSelectedUserId(id); setScreen('person'); };
   const openKeyword = (word) => { setSelectedKeyword(word); setScreen('keyword'); };
+  const openCamera = (camera) => { setSelectedCamera(camera); setScreen('camera'); };
   const openCollection = (id) => { setSelectedCollectionId(id); setScreen('collectionDetail'); };
   const openConversation = (otherId) => { setSelectedConvOtherId(otherId); setScreen('conversation'); };
   const openCollectionPicker = (artworkId) => { setCollectionPickerArtwork(artworkId); };
@@ -56,7 +59,7 @@ function MainApp() {
   if (screen === 'search') content = <SearchScreen openArtwork={openArtwork} openPerson={openPerson} openPlace={openPlace} />;
   if (screen === 'space') content = <SpaceScreen openPlace={openPlace} openArtwork={openArtwork} />;
   if (screen === 'record') content = <RecordScreen setScreen={setScreen} />;
-  if (screen === 'detail') content = <ArtworkDetail artworkId={selectedArtworkId} setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} openPerson={openPerson} openKeyword={openKeyword} openCollectionPicker={openCollectionPicker} />;
+  if (screen === 'detail') content = <ArtworkDetail artworkId={selectedArtworkId} setScreen={setScreen} openArtwork={openArtwork} openPlace={openPlace} openPerson={openPerson} openKeyword={openKeyword} openCamera={openCamera} openCollectionPicker={openCollectionPicker} />;
   if (screen === 'artworkEdit') content = <ArtworkEditScreen artworkId={selectedArtworkId} setScreen={setScreen} />;
   if (screen === 'person') content = <PersonExhibition userId={selectedUserId} setScreen={setScreen} openArtwork={openArtwork} openConversation={openConversation} />;
   if (screen === 'profile') content = <PersonExhibitionMe setScreen={setScreen} openArtwork={openArtwork} openConversation={openConversation} />;
@@ -67,6 +70,7 @@ function MainApp() {
   if (screen === 'twentyFive') content = <TwentyFiveScreen setScreen={setScreen} />;
   if (screen === 'notifications') content = <NotificationsScreen setScreen={setScreen} openArtwork={openArtwork} openPerson={openPerson} />;
   if (screen === 'keyword') content = <KeywordScreen keyword={selectedKeyword} setScreen={setScreen} openArtwork={openArtwork} />;
+  if (screen === 'camera') content = <CameraScreen camera={selectedCamera || {}} setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'bulkPrivacy') content = <BulkPrivacyScreen setScreen={setScreen} />;
   if (screen === 'saved') content = <SavedScreen setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'activity') content = <ActivityScreen setScreen={setScreen} openArtwork={openArtwork} openPerson={openPerson} />;
