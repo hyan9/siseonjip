@@ -6,12 +6,13 @@ import {
   EmptyState,
 } from '../components/ui';
 import Icon from '../components/Icon';
-import MapView from '../components/MapView';
+import NearbyConstellation from '../components/NearbyConstellation';
 
 
 import { getCurrentPosition, distanceMeters, searchPlaces } from '../lib/geocoding';
 import {
   placeLabel,
+  formatDistance,
 } from '../lib/utils';
 
 
@@ -21,13 +22,14 @@ import {
 
 
 export default function SpaceScreen({ openPlace, openArtwork }) {
-  const { artworks, places, getPlaceArtworks, getRecommendedArtworks } = useData();
+  const { artworks, places, getPlaceArtworks } = useData();
   const [myLocation, setMyLocation] = useState(null);
   const [locating, setLocating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
-  const [flyTarget, setFlyTarget] = useState(null);
+  // 검색 결과로 중심 이동 시 사용 (선택한 동네 = 새 중심)
+  const [searchCenter, setSearchCenter] = useState(null);
 
   useEffect(() => {
     const q = searchQuery.trim();
@@ -49,48 +51,12 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
     };
   }, [searchQuery]);
 
-  const flyToResult = (result) => {
-    setFlyTarget({ lat: result.lat, lng: result.lng, zoom: 15, _ts: Date.now() });
-    setSearchResults([]);
-    setSearchQuery(result.shortName || '');
-  };
-
-  const placePoints = places
-    .filter((p) => p.lat != null && p.lng != null)
-    .map((p) => {
-      const photo = getPlaceArtworks(p.id)[0];
-      return {
-        id: `place:${p.id}`,
-        lat: p.lat,
-        lng: p.lng,
-        label: placeLabel(p),
-        imageUrl: photo?.imageUrl,
-        kind: 'place',
-        ref: p,
-      };
-    });
-
-  const exactArtPoints = artworks
-    .filter((a) => a.location_mode === '정확한 위치' && a.lat != null && a.lng != null)
-    .map((a) => ({
-      id: `art:${a.id}`,
-      lat: a.lat,
-      lng: a.lng,
-      label: a.title || '제목 없음',
-      imageUrl: a.imageUrl,
-      kind: 'artwork',
-      ref: a,
-    }));
-
-  const points = [...placePoints, ...exactArtPoints];
-  const center = myLocation || (points[0] ? { lat: points[0].lat, lng: points[0].lng } : null);
-
   const handleLocate = async () => {
     setLocating(true);
     try {
       const pos = await getCurrentPosition();
       setMyLocation({ lat: pos.lat, lng: pos.lng });
-      setFlyTarget({ lat: pos.lat, lng: pos.lng, zoom: 15, _ts: Date.now() });
+      setSearchCenter(null);
     } catch (error) {
       console.warn('locate fail', error);
     } finally {
@@ -111,41 +77,73 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const nearbyPlaces = myLocation
+  // 별자리 중심 — 검색해서 옮긴 곳 우선, 없으면 내 위치
+  const center = searchCenter || myLocation;
+  const centerLabel = searchCenter ? searchCenter.label : (myLocation ? '내 위치' : null);
+
+  const handleSearchPick = (result) => {
+    setSearchCenter({ lat: result.lat, lng: result.lng, label: result.shortName || '검색한 동네' });
+    setSearchResults([]);
+    setSearchQuery(result.shortName || '');
+  };
+
+  // 별자리에 표시할 점들 — 사진이 있는 점만 (사진이 별이니까)
+  const allPoints = (() => {
+    const placePts = places
+      .filter((p) => p.lat != null && p.lng != null)
+      .map((p) => {
+        const photo = getPlaceArtworks(p.id)[0];
+        if (!photo) return null;
+        return {
+          id: `place:${p.id}`,
+          lat: p.lat,
+          lng: p.lng,
+          label: placeLabel(p),
+          imageUrl: photo.imageUrl,
+          kind: 'place',
+          ref: p,
+        };
+      })
+      .filter(Boolean);
+
+    const artPts = artworks
+      .filter((a) => a.location_mode !== '숨김')
+      .map((a) => {
+        let lat = a.lat, lng = a.lng;
+        if (lat == null || lng == null) {
+          const place = places.find((p) => p.id === a.place_id);
+          if (!place || place.lat == null) return null;
+          lat = place.lat; lng = place.lng;
+        }
+        return {
+          id: `art:${a.id}`,
+          lat,
+          lng,
+          label: a.title || '제목 없음',
+          imageUrl: a.imageUrl,
+          kind: 'artwork',
+          ref: a,
+        };
+      })
+      .filter(Boolean);
+
+    // place 우선이지만 art 도 같이 (artwork에는 imageUrl이 더 풍부)
+    return [...artPts, ...placePts];
+  })();
+
+  const nearbyPlaces = center
     ? places
         .filter((p) => p.lat != null && p.lng != null)
-        .map((p) => ({ ...p, distance: distanceMeters(myLocation.lat, myLocation.lng, p.lat, p.lng) }))
+        .map((p) => ({ ...p, distance: distanceMeters(center.lat, center.lng, p.lat, p.lng) }))
         .sort((a, b) => a.distance - b.distance)
         .slice(0, 5)
-    : [];
-
-  // 가장 가까운 사진들 — 2km 이내 우선이지만 부족하면 거리 무관 채워줌 (지도가 비어있지 않게)
-  const nearbyPhotos = myLocation
-    ? (() => {
-        const all = artworks
-          .filter((a) => a.location_mode !== '숨김')
-          .map((a) => {
-            let lat = a.lat, lng = a.lng;
-            if (lat == null || lng == null) {
-              const place = places.find((p) => p.id === a.place_id);
-              if (!place || place.lat == null) return null;
-              lat = place.lat; lng = place.lng;
-            }
-            return { ...a, distance: distanceMeters(myLocation.lat, myLocation.lng, lat, lng) };
-          })
-          .filter(Boolean)
-          .sort((a, b) => a.distance - b.distance);
-        const within = all.filter((a) => a.distance <= 2000);
-        // 2km 이내가 부족하면 가장 가까운 12장으로 채움
-        return within.length >= 6 ? within.slice(0, 12) : all.slice(0, 12);
-      })()
     : [];
 
   return (
     <>
       <Header
-        title="지도"
-        subtitle="위치를 공유한 사진들이 여기에 걸립니다."
+        title="별자리"
+        subtitle="내 주변 사진들을 별처럼 띄워봤어요."
         kicker="공간"
         right={
           <button
@@ -172,7 +170,7 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
             {searchQuery && (
               <button
                 type="button"
-                onClick={() => { setSearchQuery(''); setSearchResults([]); }}
+                onClick={() => { setSearchQuery(''); setSearchResults([]); setSearchCenter(null); }}
                 className="text-[var(--text-muted)]"
                 aria-label="지우기"
               >
@@ -186,7 +184,7 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
                 <button
                   key={result.id}
                   type="button"
-                  onClick={() => flyToResult(result)}
+                  onClick={() => handleSearchPick(result)}
                   className="flex w-full items-start gap-2 border-b border-[var(--border)] p-3 text-left last:border-b-0"
                 >
                   <Icon name="pin" size={14} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
@@ -200,7 +198,7 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
           )}
         </div>
 
-        {!myLocation && (
+        {!center && (
           <button
             type="button"
             onClick={handleLocate}
@@ -217,48 +215,40 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
           </button>
         )}
 
-        {myLocation && (
-          <section className="rounded-[18px] bg-[var(--ink)] p-4 text-white">
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-white/70">📍 가까운 곳</p>
-            <p className="mt-1 text-[20px] font-extrabold tracking-[-0.06em]">
-              사진 {nearbyPhotos.length}장 · 동네 {nearbyPlaces.length}곳
-            </p>
-            {nearbyPhotos.length > 0 && (
-              <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
-                {nearbyPhotos.map((art) => (
-                  <button
-                    key={art.id}
-                    type="button"
-                    onClick={() => openArtwork(art.id)}
-                    className="shrink-0 text-left"
-                  >
-                    <ImageBox src={art.imageUrl} alt={art.title} className="h-[110px] w-[110px] rounded-[12px]" />
-                    <p className="mt-1 truncate text-[10px] text-white/80">{Math.round(art.distance)}m</p>
-                  </button>
-                ))}
-              </div>
+        {center && (
+          <section className="rounded-[24px] bg-[var(--surface)] py-5 shadow-[0_0_0_1px_var(--border)]">
+            <div className="mb-2 flex items-center justify-between px-4">
+              <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
+                ✦ {centerLabel} 주변
+              </p>
+              {searchCenter && (
+                <button
+                  type="button"
+                  onClick={() => { setSearchCenter(null); setSearchQuery(''); }}
+                  className="text-[10px] font-semibold text-[var(--text-muted)] underline"
+                >
+                  내 위치로
+                </button>
+              )}
+            </div>
+            {allPoints.length === 0 ? (
+              <p className="px-4 py-8 text-center text-[12px] text-[var(--text-muted)]">
+                아직 별이 없어요. 위치를 켠 사진이 올라오면 여기로 떠올라요.
+              </p>
+            ) : (
+              <NearbyConstellation
+                center={center}
+                points={allPoints}
+                onPhotoClick={(point) => {
+                  if (point.kind === 'place') openPlace(point.ref.id);
+                  else openArtwork(point.ref.id);
+                }}
+              />
             )}
           </section>
         )}
 
-        {points.length === 0 ? (
-          <EmptyState
-            title="아직 지도에 표시할 사진이 없어요"
-            hint="'정확한 위치' 또는 '동네'로 사진을 올리면 자동으로 지도에 표시됩니다."
-          />
-        ) : (
-          <MapView
-            points={points}
-            center={center}
-            flyTarget={flyTarget}
-            onMarkerClick={(point) => {
-              if (point.kind === 'place') openPlace(point.ref.id);
-              else openArtwork(point.ref.id);
-            }}
-          />
-        )}
-
-        {myLocation && nearbyPlaces.length > 0 && (
+        {center && nearbyPlaces.length > 0 && (
           <section>
             <h2 className="mb-3 text-[20px] font-extrabold tracking-[-0.07em]">가장 가까운 공간</h2>
             <div className="space-y-2">
@@ -275,7 +265,7 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold tracking-[-0.04em]">{placeLabel(p)}</p>
                       <p className="text-[11px] text-[var(--text-muted)]">
-                        {Math.round(p.distance)}m · 사진 {photos.length}장
+                        {formatDistance(p.distance)} · 사진 {photos.length}장
                       </p>
                     </div>
                   </button>
@@ -283,6 +273,13 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
               })}
             </div>
           </section>
+        )}
+
+        {!center && allPoints.length === 0 && (
+          <EmptyState
+            title="아직 별자리에 띄울 사진이 없어요"
+            hint="'정확한 위치' 또는 '동네'로 사진을 올리면 자동으로 별이 됩니다."
+          />
         )}
 
         {/* 장소별 사진 모음 — 홈에서 옮겨온 "근방 네컷" 영역 */}

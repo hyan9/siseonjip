@@ -75,6 +75,28 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
     ? '월터의 상상은 현실이 된다 — 가장 오래 남은 한 장'
     : '아직 찾는 중';
 
+  // 카든 온도 — 사진/팔로워/하입을 합친 활동성 지표 (당근마켓 매너온도 오마주)
+  // 기본 36.5°C + 사진(0.05) + 팔로워(0.03) + 받은 하입(0.02) + 25번째(0.5)
+  const totalHypeReceived = works.reduce((sum, a) => sum + getHypeCount(a.id), 0);
+  const temperature = Math.min(
+    99.9,
+    36.5
+      + works.length * 0.05
+      + stats.followerCount * 0.03
+      + totalHypeReceived * 0.02
+      + (twentyFiveArt ? 0.5 : 0)
+  );
+  const tempColor =
+    temperature >= 39 ? 'text-red-500' :
+    temperature >= 37.5 ? 'text-orange-500' :
+    temperature >= 36.8 ? 'text-emerald-600' :
+    'text-[var(--text-muted)]';
+  const tempEmoji =
+    temperature >= 39 ? '🔥' :
+    temperature >= 37.5 ? '☀️' :
+    temperature >= 36.8 ? '🌱' :
+    '❄️';
+
   const handleLogoutConfirm = async () => {
     setLogoutOpen(false);
     await signOut();
@@ -216,18 +238,34 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
             })()}
 
             <div className="min-w-0 flex-1">
-              {profile.exhibition_title && (
-                <h2 className="line-clamp-2 text-[20px] font-extrabold leading-[1.15] tracking-[-0.07em]">
-                  {profile.exhibition_title}
-                </h2>
-              )}
+              <div className="flex items-start justify-between gap-2">
+                {profile.exhibition_title ? (
+                  <h2 className="line-clamp-2 flex-1 text-[20px] font-extrabold leading-[1.15] tracking-[-0.07em]">
+                    {profile.exhibition_title}
+                  </h2>
+                ) : (
+                  <span className="flex-1" />
+                )}
+                {/* 카든 온도 — 우상단 작은 pill */}
+                <div
+                  className="flex shrink-0 flex-col items-end"
+                  title={`사진 ${works.length}장 · 받은 하입 ${totalHypeReceived} · 팔로워 ${stats.followerCount}`}
+                >
+                  <span className={`flex items-baseline gap-0.5 text-[16px] font-extrabold leading-none tracking-[-0.05em] ${tempColor}`}>
+                    {tempEmoji}{temperature.toFixed(1)}°
+                  </span>
+                  <span className="mt-0.5 text-[8.5px] font-semibold tracking-[0.16em] text-[var(--text-faint)]">
+                    카든 온도
+                  </span>
+                </div>
+              </div>
               {profile.note && (
-                <p className={`${profile.exhibition_title ? 'mt-2' : ''} line-clamp-3 text-[12px] leading-[1.6] text-[var(--text-body)]`}>
+                <p className={`${profile.exhibition_title ? 'mt-2' : 'mt-1'} line-clamp-3 text-[12px] leading-[1.6] text-[var(--text-body)]`}>
                   {profile.note}
                 </p>
               )}
               {profile.words?.length > 0 && (
-                <div className={`${(profile.exhibition_title || profile.note) ? 'mt-2' : ''} flex flex-wrap gap-1`}>
+                <div className={`${(profile.exhibition_title || profile.note) ? 'mt-2' : 'mt-1'} flex flex-wrap gap-1`}>
                   {profile.words.map((word) => (
                     <span key={word} className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-muted)]">{word}</span>
                   ))}

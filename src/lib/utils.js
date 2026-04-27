@@ -44,6 +44,21 @@ export function profileLabel(profile) {
   return profile?.nickname || '익명';
 }
 
+// 거리 포맷 — 100m 이내는 "가까워요", 1km 이내는 "n0m", 그 이상은 "x.xkm"
+// 카든냥 톤: 정확한 숫자보다 감각적 거리감
+export function formatDistance(meters) {
+  if (meters == null || Number.isNaN(meters)) return '';
+  if (meters < 100) return '가까워요';
+  if (meters < 1000) {
+    const rounded = Math.round(meters / 50) * 50; // 50m 단위
+    return `${rounded}m`;
+  }
+  if (meters < 10000) {
+    return `${(meters / 1000).toFixed(1)}km`;
+  }
+  return `${Math.round(meters / 1000)}km`;
+}
+
 export function timeAgo(iso) {
   if (!iso) return '';
   const diff = Date.now() - new Date(iso).getTime();

@@ -120,7 +120,7 @@ export function BottomNav({ screen, setScreen }) {
   const { unreadCount } = useNotifications();
   const tabs = [
     { id: 'home', label: '홈', icon: 'eye' },
-    { id: 'space', label: '지도', icon: 'map' },
+    { id: 'space', label: '별자리', icon: 'map' },
     { id: 'record', label: '기록', icon: 'plus', accent: true },
     { id: 'archive', label: '필름', icon: 'archive' },
     { id: 'profile', label: '내 전시', icon: 'user', dot: unreadCount > 0 },
