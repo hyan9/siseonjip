@@ -80,35 +80,43 @@ export function PostListRow({ artwork, onOpen }) {
     <button
       type="button"
       onClick={() => onOpen(artwork.id)}
-      className="flex w-full items-center gap-3 border-b border-[var(--border)] py-2 text-left last:border-b-0"
+      className="flex w-full items-stretch gap-3 px-3 py-2.5 text-left hover:bg-[var(--surface-2)]/40"
     >
+      {/* 썸네일 — 좌측 고정 */}
+      <ImageBox
+        src={artwork.imageUrl}
+        alt={artwork.title}
+        className="h-[52px] w-[52px] shrink-0 rounded-[6px]"
+      />
+      {/* 본문 — 좌측 정렬 축 (제목 / 메타) */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[16px] font-extrabold leading-tight tracking-[-0.05em]">
-          {hot && <span className="mr-1 text-yellow-500">⭐</span>}
-          {artwork.title}
-          {commentCount > 0 && (
-            <span className="ml-1 align-middle text-[13px] font-bold text-[var(--ink)]">[{commentCount}]</span>
-          )}
-        </p>
-        <p className="mt-0.5 truncate text-[10px] text-[var(--text-muted)]">
-          <span className="font-semibold">{profileLabel(profile)}</span>
-          {hype > 0 && (
-            <span className="ml-1 inline-flex items-center gap-0.5 align-middle text-[var(--ink)]">
-              <IconHype size={11} filled /> {hype}
+        <p className="line-clamp-1 text-[14px] font-bold leading-tight tracking-[-0.04em] text-[var(--text)]">
+          {hot && (
+            <span className="mr-0.5 inline-flex align-[-1px] text-[var(--accent)]">
+              <IconHype size={11} filled />
             </span>
           )}
-          <span className="mx-1 text-[var(--text-faint)]">·</span>
-          {timeAgo(artwork.created_at)}
-          {artwork.daily_vision && <span className="ml-1 text-[var(--text-faint)]">#{artwork.daily_vision}</span>}
+          {artwork.title}
+        </p>
+        <p className="mt-1 flex items-center gap-1.5 text-[11px] leading-tight text-[var(--text-muted)]">
+          <span className="truncate font-semibold text-[var(--text-body)]">{profileLabel(profile)}</span>
+          <span className="text-[var(--text-faint)]">·</span>
+          <span className="shrink-0">{timeAgo(artwork.created_at)}</span>
         </p>
       </div>
-      {artwork.imageUrl && (
-        <ImageBox
-          src={artwork.imageUrl}
-          alt={artwork.title}
-          className="h-[56px] w-[56px] shrink-0 rounded-[8px]"
-        />
-      )}
+      {/* 우측 — 댓글 수 / hype (고정 위치) */}
+      <div className="flex shrink-0 flex-col items-end justify-center gap-1 text-[10px] text-[var(--text-muted)]">
+        {commentCount > 0 && (
+          <span className="rounded-full bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--ink)]">
+            {commentCount}
+          </span>
+        )}
+        {hype > 0 && (
+          <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-[var(--ink)]">
+            <IconHype size={10} filled /> {hype}
+          </span>
+        )}
+      </div>
     </button>
   );
 }

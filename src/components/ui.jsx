@@ -4,14 +4,60 @@ import { useTheme } from '../lib/theme-context';
 import Icon from './Icon';
 import { CatPhotographer } from './Mascot';
 
+// 디시·인스티즈처럼 — 상단바 고정 / 하단바 고정 / 가운데만 스크롤
 export function Shell({ children, screen, setScreen, showNav = true }) {
+  // 인증/온보딩 등에서는 chrome 숨김
+  const noChrome = screen === 'login';
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
-      <div className="mx-auto min-h-screen max-w-[430px] bg-[var(--bg)]">
-        <main className="min-h-[calc(100vh-70px)] px-4 pb-7 pt-4">{children}</main>
-        {showNav && <BottomNav screen={screen} setScreen={setScreen} />}
+      <div className="relative mx-auto flex min-h-screen max-w-[430px] flex-col bg-[var(--bg)]">
+        {!noChrome && <TopBar screen={screen} setScreen={setScreen} />}
+        {/* 가운데만 스크롤. 리스트(시선집, 알림 등)는 -mx-3으로 풀폭 */}
+        <main className="flex-1 px-3 pb-2">{children}</main>
+        {showNav && !noChrome && <BottomNav screen={screen} setScreen={setScreen} />}
       </div>
     </div>
+  );
+}
+
+// 고정 상단바 — 앱 이름 + 글로벌 액션(탐색/알림). 모든 화면 공통
+export function TopBar({ screen, setScreen }) {
+  const { unreadCount } = useNotifications();
+  return (
+    <header className="sticky top-0 z-40 flex h-11 items-center justify-between border-b border-[var(--border)] bg-[var(--surface)]/95 px-3 backdrop-blur">
+      <button
+        type="button"
+        onClick={() => setScreen('home')}
+        className="flex items-center gap-1.5 text-[15px] font-extrabold tracking-[-0.07em]"
+        aria-label="시선집 홈"
+      >
+        <span className="text-[var(--ink)]">
+          <CatPhotographer size={20} />
+        </span>
+        시선집
+      </button>
+      <div className="flex items-center gap-1 text-[var(--text-muted)]">
+        <button
+          type="button"
+          onClick={() => setScreen('search')}
+          className={`flex h-8 w-8 items-center justify-center rounded-full ${screen === 'search' ? 'bg-[var(--surface-2)] text-[var(--text)]' : ''}`}
+          aria-label="탐색"
+        >
+          <Icon name="search" size={16} />
+        </button>
+        <button
+          type="button"
+          onClick={() => setScreen('notifications')}
+          className={`relative flex h-8 w-8 items-center justify-center rounded-full ${screen === 'notifications' ? 'bg-[var(--surface-2)] text-[var(--text)]' : ''}`}
+          aria-label="알림"
+        >
+          <Icon name="bell" size={16} />
+          {unreadCount > 0 && (
+            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
+          )}
+        </button>
+      </div>
+    </header>
   );
 }
 
@@ -25,7 +71,7 @@ export function BottomNav({ screen, setScreen }) {
     { id: 'profile', label: '내 전시', icon: 'user', dot: unreadCount > 0 },
   ];
   return (
-    <nav className="sticky bottom-0 z-40 border-t border-[var(--border)] bg-[var(--surface)]/95 px-3 py-2 backdrop-blur">
+    <nav className="sticky bottom-0 z-40 border-t border-[var(--border)] bg-[var(--surface)]/95 px-3 py-1.5 backdrop-blur">
       <div className="grid grid-cols-5 items-end gap-1">
         {tabs.map((tab) => {
           const active = screen === tab.id;
@@ -66,18 +112,31 @@ export function ToastStack() {
   );
 }
 
-export function Header({ title, subtitle, kicker = '시선집', onBack, right }) {
+// 페이지 제목 — TopBar 아래 흐르는 영역 안의 페이지 헤더 (sticky 아님)
+// 좌우 padding은 main이 책임 → 여기서는 세로 간격만 잡음
+export function Header({ title, subtitle, kicker, onBack, right }) {
   return (
-    <header className="mb-5 flex items-start justify-between gap-3">
-      <div className="flex min-w-0 flex-1 items-start gap-3">
-        {onBack && <button type="button" onClick={onBack} className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]"><Icon name="back" size={18} /></button>}
+    <header className="flex items-start justify-between gap-3 pb-3 pt-2">
+      <div className="flex min-w-0 flex-1 items-start gap-2">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--surface)]"
+            aria-label="뒤로"
+          >
+            <Icon name="back" size={16} />
+          </button>
+        )}
         <div className="min-w-0 flex-1">
-          <p className="mb-1 text-[11px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">{kicker}</p>
-          <h1 className="truncate text-[30px] font-extrabold leading-none tracking-[-0.08em]">{title}</h1>
-          {subtitle && <p className="mt-3 max-w-[31ch] truncate text-[14px] leading-6 text-[var(--text-muted)]">{subtitle}</p>}
+          {kicker && (
+            <p className="mb-0.5 text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">{kicker}</p>
+          )}
+          <h1 className="truncate text-[22px] font-extrabold leading-tight tracking-[-0.07em]">{title}</h1>
+          {subtitle && <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-[var(--text-muted)]">{subtitle}</p>}
         </div>
       </div>
-      {right}
+      {right && <div className="shrink-0 pt-0.5">{right}</div>}
     </header>
   );
 }
