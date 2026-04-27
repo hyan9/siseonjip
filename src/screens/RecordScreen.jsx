@@ -463,10 +463,20 @@ export default function RecordScreen({ setScreen, openArtwork }) {
 }
 function RecordItemCard({ item, onRemove, onTitleChange, onUseMyLocation, onPickOnMap, locating }) {
   const showLocationFallback = item.gpsStatus === 'empty' || item.gpsStatus === 'error';
+  const [grid, setGrid] = useState(false); // 9분할 격자 토글
   return (
     <div className="overflow-hidden rounded-[18px] bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]">
       <div className="relative">
         <ImageBox src={item.previewUrl} alt={item.title || ''} className="aspect-square w-full" priority />
+        {/* 9분할 격자 — 사진가 도구 (rule of thirds) */}
+        {grid && (
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute inset-x-0 top-1/3 h-px bg-white/60" />
+            <div className="absolute inset-x-0 top-2/3 h-px bg-white/60" />
+            <div className="absolute inset-y-0 left-1/3 w-px bg-white/60" />
+            <div className="absolute inset-y-0 left-2/3 w-px bg-white/60" />
+          </div>
+        )}
         <button
           type="button"
           onClick={onRemove}
@@ -474,6 +484,17 @@ function RecordItemCard({ item, onRemove, onTitleChange, onUseMyLocation, onPick
           aria-label="제거"
         >
           <Icon name="x" size={13} />
+        </button>
+        <button
+          type="button"
+          onClick={() => setGrid((v) => !v)}
+          className={`absolute right-9 top-1.5 flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${
+            grid ? 'bg-white text-black' : 'bg-black/70 text-white'
+          }`}
+          aria-label="9분할 격자 토글"
+          title="3분할 구도 격자"
+        >
+          ⌗
         </button>
         <div className="absolute left-1.5 bottom-1.5 flex flex-wrap gap-1">
           <GpsStatusBadge status={item.gpsStatus} source={item.gpsSource} />

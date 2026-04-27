@@ -8,6 +8,7 @@ import {
 import { PhotoTile, PostListRow } from '../components/Cards';
 import { CatPhotographer } from '../components/Mascot';
 import { IconHype } from '../components/icons/AppIcons';
+import { getTodayKeyword } from '../lib/daily-keyword';
 
 
 import {
@@ -95,6 +96,25 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
   const [displayCount, setDisplayCount] = useState(PAGE);
   // 피드 변경(필터 등) 시 페이지 리셋
   useEffect(() => { setDisplayCount(PAGE); }, [feedFilter, feedMode]);
+
+  // 하루 1번 toast — 오늘 셔터 안 눌렀으면 부드럽게 찔러주기
+  const { pushToast } = useNotifications();
+  useEffect(() => {
+    if (!userId) return;
+    const todayKey = new Date().toLocaleDateString('ko-KR');
+    const lastNudgeKey = `kadennyang:nudge:${todayKey}`;
+    if (sessionStorage.getItem(lastNudgeKey)) return;
+    const myToday = getUserArtworks(userId).filter(
+      (a) => new Date(a.created_at).toLocaleDateString('ko-KR') === todayKey
+    ).length;
+    if (myToday === 0) {
+      sessionStorage.setItem(lastNudgeKey, '1');
+      pushToast?.({
+        title: '오늘은 어떤 네 장이 남을까요?',
+        body: `오늘의 주제 #${getTodayKeyword()} — 함께 셔터 눌러봐요.`,
+      });
+    }
+  }, [userId, getUserArtworks, pushToast]);
   const feedList = fullFeed.slice(0, displayCount);
   const sentinelRef = useRef(null);
   useEffect(() => {
@@ -175,8 +195,34 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
           hint="'전체' 탭으로 다른 사람들의 사진을 둘러보세요."
         />
       ) : feedMode === '추천' ? (
-        // === 추천: 오늘의 한 컷 + 카드형 피드 + 작가 추천 ===
+        // === 추천: 오늘의 주제 + 오늘의 한 컷 + 카드형 피드 + 작가 추천 ===
         <div className="space-y-5 pt-3">
+          {/* 오늘의 주제 — 일일 키워드 사진전 */}
+          {(() => {
+            const today = getTodayKeyword();
+            const todaysCount = artworks.filter((a) => a.daily_vision === today).length;
+            return (
+              <button
+                type="button"
+                onClick={() => openKeyword?.(today)}
+                className="block w-full overflow-hidden rounded-[20px] bg-gradient-to-br from-[var(--accent)] to-[var(--ink)] p-4 text-left text-white shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
+              >
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">
+                  오늘의 주제 · {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                </p>
+                <h2 className="mt-1 text-[26px] font-extrabold leading-tight tracking-[-0.07em]">
+                  #{today}
+                </h2>
+                <p className="mt-2 text-[12px] leading-5 text-white/80">
+                  카든냥이 오늘 골라준 단어. 이 단어로 셔터를 눌러 일일 사진전에 참여하세요.
+                </p>
+                <p className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-white/90">
+                  지금까지 {todaysCount}장 →
+                </p>
+              </button>
+            );
+          })()}
+
           {featured && (
             <section>
               <button

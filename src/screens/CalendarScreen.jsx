@@ -7,7 +7,7 @@ import {
 } from '../components/ui';
 import Icon from '../components/Icon';
 import PhotoZoomModal from '../components/PhotoZoomModal';
-import { CatPhotographer } from '../components/Mascot';
+import { CatPhotographer, CatShutter } from '../components/Mascot';
 
 
 import {
@@ -124,66 +124,80 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
         kicker={`ROLL · ${monthShort} ${now.getFullYear()}`}
       />
       <div className="space-y-5">
-        {/* 25칸 진행률 — 게이미피케이션 (이번 달 한 롤) */}
+        {/* 25칸 진행률 — "카든냥 밭" 발자국 모티프 */}
         {filmView === 'roll' && (
-        <section className={`rounded-[20px] p-4 transition ${
+        <section className={`overflow-hidden rounded-[20px] p-5 transition ${
           rollComplete
             ? 'bg-[var(--ink)] text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)]'
             : 'bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]'
         }`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className={`text-[10px] font-semibold tracking-[0.16em] ${rollComplete ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
-                {monthShort} {now.getFullYear()} ROLL
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className={`text-[10px] font-bold tracking-[0.18em] ${rollComplete ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
+                {monthShort} {now.getFullYear()} · 카든냥 밭
               </p>
-              <p className="mt-0.5 text-[20px] font-extrabold tracking-[-0.06em]">
+              <p className="mt-1 text-[22px] font-extrabold leading-tight tracking-[-0.06em]">
                 {rollComplete
                   ? '완성된 한 롤'
                   : has25
                   ? `24장까지 ${filled24}/24`
                   : filled24 < 24
-                  ? `${filled24}/24장 · 25번째는 다 채운 뒤`
+                  ? `${filled24}장 · 24장 채우면 25번째`
                   : '25번째를 골라주세요'}
               </p>
+              <p className={`mt-1 text-[11px] leading-5 ${rollComplete ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
+                {rollComplete
+                  ? '한 달의 발자국이 모두 찍혔어요. 다음 달에 또 만나요.'
+                  : '냥이의 발자국이 한 칸씩 찍힙니다.'}
+              </p>
             </div>
-            {rollComplete ? (
-              <CatPhotographer size={36} />
-            ) : filled24 >= 24 && !has25 ? (
-              <button
-                type="button"
-                onClick={() => setScreen('twentyFive')}
-                className="rounded-full bg-[var(--ink)] px-3 py-1.5 text-[11px] font-semibold text-white"
-              >
-                25번째 고르기 →
-              </button>
-            ) : null}
+            {filled24 >= 24 && !has25 && (
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <CatShutter size={36} />
+                <button
+                  type="button"
+                  onClick={() => setScreen('twentyFive')}
+                  className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-[11px] font-bold text-white"
+                >
+                  25번째 →
+                </button>
+              </div>
+            )}
           </div>
-          {/* 25칸 그리드 — 24개는 사진 채움 / 25번째는 별도 슬롯 */}
-          <div className="mt-3 grid grid-cols-[repeat(12,1fr)_auto] items-center gap-[3px]">
+
+          {/* 발자국 밭 — 6×4 grid, 각 칸은 발자국 SVG */}
+          <div className="mt-4 grid grid-cols-6 gap-2">
             {Array.from({ length: 24 }).map((_, i) => {
               const filled = i < filled24;
               return (
-                <span
+                <PawSlot
                   key={i}
-                  className={`aspect-square rounded-[2px] ${
-                    filled
-                      ? rollComplete ? 'bg-white' : 'bg-[var(--ink)]'
-                      : rollComplete ? 'bg-white/20' : 'bg-[var(--surface-2)]'
-                  }`}
+                  filled={filled}
+                  rollComplete={rollComplete}
+                  index={i}
                 />
               );
             })}
-            {/* 25번째 — 별도로 살짝 떨어진 칸 */}
-            <span
-              className={`ml-1 flex h-3 w-3 items-center justify-center rounded-full text-[8px] font-bold ${
-                has25
-                  ? rollComplete ? 'bg-[var(--accent)] text-white' : 'bg-[var(--accent)] text-white'
-                  : 'border border-dashed border-[var(--border-strong)]'
-              }`}
-              title={has25 ? '25번째 결정됨' : '25번째 미정'}
-            >
-              {has25 ? '★' : ''}
-            </span>
+          </div>
+
+          {/* 25번째 — 발자국 옆 별도 자리, 가운데 큰 발자국 + ★ */}
+          <div className="mt-4 flex items-center justify-between rounded-[14px] border border-dashed border-[var(--border-strong)] px-3 py-2.5">
+            <div className="flex items-center gap-2">
+              <PawSlot
+                filled={has25}
+                rollComplete={rollComplete}
+                size="lg"
+                index={99}
+                isStar
+              />
+              <div>
+                <p className="text-[10px] font-bold tracking-[0.16em] opacity-70">25번째 발자국</p>
+                <p className="text-[12px] font-bold">
+                  {has25 ? '결정됨 — 가장 오래 남은 한 장' : '24장 다 채우면 골라주세요'}
+                </p>
+              </div>
+            </div>
+            {rollComplete && <CatPhotographer size={32} />}
           </div>
         </section>
         )}
@@ -193,11 +207,11 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
         <section>
           <div
             ref={weekScrollerRef}
-            className="relative h-[280px] overflow-x-hidden overflow-y-auto"
+            className="relative h-[420px] overflow-x-hidden overflow-y-auto"
             style={{ scrollbarWidth: 'none', scrollSnapType: 'y proximity', scrollBehavior: 'smooth' }}
           >
-            {/* 필름 스트립 — 행끼리 붙어 흐르듯 */}
-            <div className="flex flex-col gap-[2px] py-[110px]">
+            {/* 필름 스트립 — 행 높이 줄여서 한 화면에 5-6개 보이도록 */}
+            <div className="flex flex-col gap-[2px] py-[170px]">
               {weekDays.map((wd, i) => {
                 const isToday = wd.date.toDateString() === todayStr;
                 const todayIdx = weekDays.findIndex((w) => w.date.toDateString() === todayStr);
@@ -362,5 +376,43 @@ function FilmDayGrid({ year, month, day, artworkIds, works, onOpenDay }) {
         ))}
       </div>
     </section>
+  );
+}
+
+// 발자국 한 칸 — 채워졌으면 진한 ink 발자국, 비었으면 옅은 흙 자국
+function PawSlot({ filled, rollComplete, size = 'sm', isStar = false, index = 0 }) {
+  const dim = size === 'lg' ? 36 : 26;
+  const padding = size === 'lg' ? 'p-1.5' : 'p-1';
+  // 살짝 회전을 줘서 발자국이 자연스럽게 흩어진 느낌 (deterministic)
+  const rot = ((index * 37) % 25) - 12; // -12 ~ +12도
+  const filledColor = rollComplete ? 'text-white' : 'text-[var(--ink)]';
+  const emptyColor = rollComplete ? 'text-white/15' : 'text-[var(--text-faint)]/30';
+  return (
+    <div
+      className={`relative flex aspect-square items-center justify-center ${padding}`}
+      style={{ transform: filled ? `rotate(${rot}deg)` : 'none' }}
+    >
+      <svg
+        viewBox="0 0 32 32"
+        width={dim}
+        height={dim}
+        className={filled ? filledColor : emptyColor}
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        {/* 발바닥 패드 (큰 가운데) */}
+        <ellipse cx="16" cy="22" rx="7" ry="5" />
+        {/* 발가락 4개 */}
+        <ellipse cx="8.5" cy="13" rx="2.5" ry="3" />
+        <ellipse cx="13.5" cy="9" rx="2.5" ry="3.2" />
+        <ellipse cx="18.5" cy="9" rx="2.5" ry="3.2" />
+        <ellipse cx="23.5" cy="13" rx="2.5" ry="3" />
+      </svg>
+      {isStar && filled && (
+        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--accent)] text-[7px] font-bold text-white">
+          ★
+        </span>
+      )}
+    </div>
   );
 }

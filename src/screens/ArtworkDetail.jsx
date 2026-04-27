@@ -224,15 +224,15 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
             </div>
           </header>
 
-          {/* 사진 — 메인은 사진/제목/노트 위주. 메타는 토글로 */}
-          <div className="relative bg-[var(--ink)]">
+          {/* 사진 — 가로 사진은 비율에 맞춰 (검은 박스 줄임). 세로/정방형은 풀 폭 cover */}
+          <div className="relative bg-[var(--surface-2)]">
             <button
               type="button"
               onClick={() => setZoomOpen(true)}
-              className="relative flex min-h-[420px] w-full items-center justify-center"
+              className="relative block w-full"
               aria-label="사진 확대해서 보기"
             >
-              <ImageBox src={art.imageUrl} alt={art.title} fit="contain" className="h-[520px] w-full bg-[var(--ink)]" priority />
+              <ImageBox src={art.imageUrl} alt={art.title} fit="cover" className="aspect-square w-full" priority />
               {art.is_twenty_five && (
                 <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-[var(--text)]">
                   <IconStar size={10} filled /> 25번째
@@ -272,6 +272,24 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
               </button>
             )}
             <div className="absolute right-3 top-3"><ShareButton title={art.title || '카든냥'} /></div>
+
+            {/* 사진 우하단 — Hype 큰 floating 버튼 (위치 명확화) */}
+            {!isMine && userId && (
+              <button
+                type="button"
+                onClick={handleHypeToggle}
+                disabled={busyHype}
+                aria-label="Hype"
+                className={`absolute bottom-3 right-3 z-10 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-extrabold backdrop-blur-md transition ${
+                  hyped
+                    ? 'bg-yellow-400 text-black shadow-[0_4px_16px_rgba(0,0,0,0.25)]'
+                    : 'bg-black/55 text-white shadow-[0_4px_16px_rgba(0,0,0,0.25)]'
+                } disabled:opacity-50`}
+              >
+                <IconStar size={16} filled={hyped} />
+                <span>{hypeCount}</span>
+              </button>
+            )}
             {/* 사진 좌우에 작은 이전/다음 화살표 (제목 없음, 방향만) */}
             {feedNav.prev && (
               <button

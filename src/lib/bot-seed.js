@@ -109,41 +109,67 @@ export const BOT_ARTWORKS = BOT_ARTWORK_BLUEPRINTS.map((a, i) => ({
   created_at: dayAgo(a.d),
 }));
 
-// 봇끼리 다는 댓글 — 카든냥 톤 (짧고 일기처럼)
-const BOT_COMMENT_BLUEPRINTS = [
-  { artwork_id: 'bot-art:0', user_id: 'bot:salt',   text: '간판 옆 이끼만 보였다는 말, 너무 알 것 같아요.', d: 0.5 },
-  { artwork_id: 'bot-art:0', user_id: 'bot:linen',  text: '비 오기 전 색이 정말 이런 톤이죠.', d: 1 },
-  { artwork_id: 'bot-art:0', user_id: 'bot:noir',   text: '낮 사진인데 새벽 두 시 같아요.', d: 1.2 },
-
-  { artwork_id: 'bot-art:5', user_id: 'bot:moss',   text: '도마 위 빛은 도마가 만든 게 아니라 시간이 만든 거 같아요.', d: 0.3 },
-  { artwork_id: 'bot-art:5', user_id: 'bot:kettle', text: '컵 옆에 그릇이 그림자 두 번 만들어요.', d: 0.8 },
-
-  { artwork_id: 'bot-art:8', user_id: 'bot:moss',   text: '평일 오전 골목 이 톤 너무 좋아요.', d: 0.4 },
-  { artwork_id: 'bot-art:8', user_id: 'bot:salt',   text: '버스가 지나가고 남은 자리 — 제목이 사진보다 길게 남아요.', d: 1 },
-  { artwork_id: 'bot-art:8', user_id: 'bot:noir',   text: '이게 그 25번째 후보 아닌가요.', d: 2 },
-
-  { artwork_id: 'bot-art:13', user_id: 'bot:linen', text: '가로등 셋이 다 다른 색이라 좋네요.', d: 0.5 },
-  { artwork_id: 'bot-art:13', user_id: 'bot:kettle', text: '저는 야경에서 늘 길을 잃어요.', d: 1.4 },
-
-  { artwork_id: 'bot-art:17', user_id: 'bot:moss',   text: '컵 위에 떠 있는 빛 — 그 시간이 가장 짧다는 게 아쉬워요.', d: 0.2 },
-  { artwork_id: 'bot-art:17', user_id: 'bot:noir',   text: '이런 사진은 제 카메라로는 절대 안 나와요.', d: 1.1 },
-
-  { artwork_id: 'bot-art:1', user_id: 'bot:linen', text: '돌담 자국 너무 좋다.', d: 0.7 },
-  { artwork_id: 'bot-art:6', user_id: 'bot:moss',  text: '컵 그림자가 진짜로 길어 보여요.', d: 0.9 },
-  { artwork_id: 'bot-art:9', user_id: 'bot:kettle',  text: '버스 지나가고 남은 자리는 늘 비어있는데 비어있지 않아요.', d: 0.6 },
-  { artwork_id: 'bot-art:11', user_id: 'bot:salt', text: '비 오는 새벽 두 시 — 이 시간만 살아있는 사람이 있죠.', d: 0.8 },
+// 봇 댓글 풀 — 어디 작품에든 어울리도록 보편적인 카든냥 톤 한 줄들
+const COMMENT_POOL = [
+  '톤 너무 좋아요.',
+  '이 한 장에 오늘 하루가 다 있네요.',
+  '제가 보고 싶었던 그 색.',
+  '셔터 누르는 순간이 들리는 듯.',
+  '제목이 사진보다 길게 남아요.',
+  '저는 이런 빛을 못 잡아요. 부럽다.',
+  '이게 그 25번째 후보 아닌가요?',
+  '컵 옆 그림자만 봐도 알겠다.',
+  '이런 톤은 시간이 만든 거 같아요.',
+  '오늘 새벽이 떠올라요.',
+  '카메라가 좋아하는 풍경이네요.',
+  '잠깐 멈춰 세우는 사진.',
+  '냥이도 이 색은 좋아할 듯.',
+  '이건 제 카메라로는 절대 안 나와요.',
+  '평일에 본 풍경이 주말 같아요.',
+  '이 칸에 오래 머물게 돼요.',
+  '저는 야경에서 늘 길을 잃어요.',
+  '제목 한 글자가 무게가 다르네요.',
 ];
+
+// 결정론적 hash — artwork_id 기반으로 같은 입력은 같은 댓글 생성
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
 
 const minutesAgo = (n) => new Date(Date.now() - n * 3600000).toISOString();
 
-export const BOT_COMMENTS = BOT_COMMENT_BLUEPRINTS.map((c, i) => ({
-  id: `bot-comment:${i}`,
-  artwork_id: c.artwork_id,
-  user_id: c.user_id,
-  text: c.text,
-  parent_id: null,
-  created_at: minutesAgo(c.d * 24), // d일 전 시점
-}));
+// 모든 봇 작품에 1~2개 댓글을 결정론적으로 생성. 봇끼리만 다는 댓글이라 자기 작품엔 안 달림.
+function generateBotComments() {
+  const out = [];
+  BOT_ARTWORKS.forEach((art) => {
+    const seed = hashStr(art.id);
+    const count = 1 + (seed % 2); // 1 or 2
+    const used = new Set();
+    for (let k = 0; k < count; k++) {
+      // 댓글 단 봇 — 자기 작품 댓글은 피함
+      let attempts = 0;
+      let commenter = BOT_PROFILES[(seed + k * 7) % BOT_PROFILES.length];
+      while ((commenter.id === art.user_id || used.has(commenter.id)) && attempts < 10) {
+        commenter = BOT_PROFILES[(seed + k * 7 + ++attempts) % BOT_PROFILES.length];
+      }
+      used.add(commenter.id);
+      const text = COMMENT_POOL[(seed + k * 13) % COMMENT_POOL.length];
+      out.push({
+        id: `bot-comment:${art.id}:${k}`,
+        artwork_id: art.id,
+        user_id: commenter.id,
+        text,
+        parent_id: null,
+        created_at: minutesAgo((seed % 24) + k * 6 + 0.3),
+      });
+    }
+  });
+  return out;
+}
+
+export const BOT_COMMENTS = generateBotComments();
 
 // 사용자 ↔ 봇 follow / hype를 메모리로 합칠 때 사용.
 // — 모든 봇이 사용자를 follow (followee_id = userId)
@@ -251,11 +277,12 @@ export function isBotArtworkId(id) {
 }
 
 // 봇 관련 액션이면 alert로 안내. true 리턴 시 호출 측은 더 진행하지 말 것.
+// 'comment'는 더 이상 막지 않음 — 봇 작품에도 사용자가 댓글 달 수 있고, 메모리에만 저장.
 export function blockIfBotAction({ artworkId, userId, kind }) {
+  if (kind === 'comment') return false; // 댓글은 봇 작품에도 허용 (메모리 저장)
   if (isBotArtworkId(artworkId) || isBotId(userId)) {
     const msg = {
       hype: '데모 봇 작품이라 hype는 저장되지 않아요. 직접 사진을 올려보세요.',
-      comment: '데모 봇 작품엔 댓글을 남길 수 없어요. 직접 사진을 올려보세요.',
       message: '데모 봇과는 메시지를 주고받을 수 없어요.',
       save: '데모 봇 작품은 저장되지 않아요.',
       follow: '데모 봇이라 실제 팔로우는 작동하지 않아요. 봇 프로필은 둘러볼 수 있어요.',

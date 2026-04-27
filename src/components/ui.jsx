@@ -4,7 +4,7 @@ import { useNotifications } from '../lib/notifications-context';
 import { useTheme } from '../lib/theme-context';
 import { transformedPhotoUrl } from '../lib/db';
 import Icon from './Icon';
-import { CatPhotographer } from './Mascot';
+import { CatPhotographer, CatLoaf, CatShutter, CatAlien } from './Mascot';
 
 // 디시·인스티즈처럼 — 상단바 고정 / 하단바 고정 / 가운데만 스크롤
 export function Shell({ children, screen, setScreen, showNav = true }) {
@@ -236,11 +236,18 @@ export function GpsStatusBadge({ status, source }) {
 }
 
 export function EmptyState({ title, hint, onAction, actionLabel, mascot = true }) {
+  const { theme } = useTheme();
+  // 테마-마스코트 연동: 외계 테마면 외계 냥이, 식빵/치즈 톤은 식빵 자세, 그 외는 기본 카메라 든 냥이
+  const Mascot =
+    theme === 'alien' ? CatAlien :
+    theme === 'cyberpunk' ? CatShutter :
+    theme === 'bread' || theme === 'cheese' ? CatLoaf :
+    CatPhotographer;
   return (
     <div className="rounded-[24px] border border-dashed border-[var(--border-strong)] bg-[var(--surface)] p-8 text-center">
       {mascot && (
         <div className="mb-3 flex justify-center text-[var(--ink)]">
-          <CatPhotographer size={64} animate />
+          <Mascot size={64} animate />
         </div>
       )}
       <p className="text-sm font-semibold text-[var(--text)]">{title}</p>

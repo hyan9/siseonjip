@@ -30,6 +30,8 @@ export function DataProvider({ children }) {
   const [curateSlots, setCurateSlots] = useState([]);
   const [follows, setFollows] = useState([]);
   const [commentReactions, setCommentReactions] = useState([]);
+  // 봇 작품에 단 사용자 댓글 — DB에는 저장 안 되고 브라우저 메모리에만 남음
+  const [localBotComments, setLocalBotComments] = useState([]);
   const [saves, setSaves] = useState([]);
   const [collections, setCollections] = useState([]);
   const [collectionItems, setCollectionItems] = useState([]);
@@ -93,7 +95,7 @@ export function DataProvider({ children }) {
     const mergedArtworks = [...artworks, ...bot.artworks];
     const mergedFollows = [...follows, ...bot.follows];
     const mergedHypes = [...hypes, ...bot.hypes];
-    const mergedComments = [...comments, ...bot.comments];
+    const mergedComments = [...comments, ...bot.comments, ...localBotComments];
 
     const enrichedArtworks = mergedArtworks.map((art) => ({
       ...art,
@@ -379,8 +381,24 @@ export function DataProvider({ children }) {
       blocks,
       isBlocked,
       visible,
+      // 봇 작품 메모리 댓글
+      addLocalBotComment: (artworkId, text, parentId = null) => {
+        if (!userId) return;
+        setLocalBotComments((prev) => [
+          ...prev,
+          {
+            id: `local-bot-comment:${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            artwork_id: artworkId,
+            user_id: userId,
+            text,
+            parent_id: parentId,
+            created_at: new Date().toISOString(),
+            is_local: true,
+          },
+        ]);
+      },
     };
-  }, [profiles, places, artworks, comments, hypes, curateSlots, follows, commentReactions, saves, collections, collectionItems, messages, blocks, session?.user?.id, loading, error, refresh]);
+  }, [profiles, places, artworks, comments, hypes, curateSlots, follows, commentReactions, saves, collections, collectionItems, messages, blocks, session?.user?.id, loading, error, refresh, localBotComments]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

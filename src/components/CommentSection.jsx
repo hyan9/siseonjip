@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useData } from '../lib/data-context';
 import { postComment, deleteComment, toggleCommentReaction } from '../lib/db';
-import { blockIfBotAction } from '../lib/bot-seed';
+import { isBotArtworkId } from '../lib/bot-seed';
 import { profileLabel, timeAgo, renderTextWithMentions } from '../lib/utils';
 import Avatar from './Avatar';
 
 export default function CommentSection({ artworkId, openPerson }) {
-  const { userId, getProfile, getRootCommentsFor, getRepliesFor, refresh } = useData();
+  const { userId, getProfile, getRootCommentsFor, getRepliesFor, refresh, addLocalBotComment } = useData();
+  const isBotArt = isBotArtworkId(artworkId);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
@@ -37,7 +38,13 @@ export default function CommentSection({ artworkId, openPerson }) {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!text.trim() || !userId) return;
-    if (blockIfBotAction({ artworkId, userId, kind: 'comment' })) return;
+    // 봇 작품: DB 호출 없이 메모리에만 추가 (브라우저 새로고침 시 사라짐)
+    if (isBotArt) {
+      addLocalBotComment(artworkId, text.trim(), replyingTo);
+      setText('');
+      setReplyingTo(null);
+      return;
+    }
     setBusy(true);
     try {
       await postComment(artworkId, userId, text.trim(), replyingTo);
