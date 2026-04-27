@@ -113,7 +113,10 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
 
   if (!profile) return <EmptyState title="사용자를 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
+  const twentyFiveArt = works.find((a) => a.is_twenty_five) || null;
   const heroArtwork = profile.hero_artwork_id ? works.find((a) => a.id === profile.hero_artwork_id) : null;
+  const featured = twentyFiveArt || heroArtwork;
+  const featuredLabel = twentyFiveArt ? '🌟 25번째 사진' : '대표 이미지';
 
   const handleLogout = () => {
     if (window.confirm('로그아웃 할까요?')) signOut();
@@ -215,6 +218,14 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
               <ThemeToggleButton />
               <button
                 type="button"
+                onClick={() => setScreen('messages')}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-base"
+                title="메시지"
+              >
+                💬
+              </button>
+              <button
+                type="button"
                 onClick={handleLogout}
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]"
                 title="로그아웃"
@@ -226,24 +237,21 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
         }
       />
       <div className="space-y-4">
-        {heroArtwork && (
-          <section className="-mx-4 -mt-2 mb-2">
-            <button
-              type="button"
-              onClick={() => openArtwork(heroArtwork.id)}
-              className="block w-full overflow-hidden bg-[var(--ink)] text-left"
-            >
-              <div className="relative">
-                <ImageBox src={heroArtwork.imageUrl} alt={heroArtwork.title} className="h-[280px] w-full" priority />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-4 text-white">
-                  <p className="text-[10px] font-semibold tracking-[0.18em] text-white/70">대표 이미지</p>
-                  <p className="mt-1 text-[20px] font-extrabold leading-tight tracking-[-0.06em]">
-                    {heroArtwork.title || '제목 없는 사진'}
-                  </p>
-                </div>
-              </div>
-            </button>
-          </section>
+        {featured && (
+          <button
+            type="button"
+            onClick={() => openArtwork(featured.id)}
+            className="flex w-full items-center gap-3 rounded-[18px] bg-[var(--surface)] p-2.5 text-left shadow-[0_0_0_1px_var(--border)]"
+          >
+            <ImageBox src={featured.imageUrl} alt={featured.title} className="h-16 w-16 shrink-0 rounded-[12px]" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">{featuredLabel}</p>
+              <p className="mt-0.5 truncate text-sm font-bold tracking-[-0.04em]">
+                {featured.title || '제목 없는 사진'}
+              </p>
+            </div>
+            <span className="text-lg text-[var(--text-faint)]">›</span>
+          </button>
         )}
 
         <section className="rounded-[28px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
@@ -316,77 +324,84 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
           )}
 
           {isMe && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setScreen('profileEdit')}
-                className="rounded-full border border-[var(--ink)] px-3 py-1.5 text-xs font-semibold"
-              >
-                프로필 편집
-              </button>
-              <button
-                type="button"
-                onClick={() => setScreen('saved')}
-                className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold"
-              >
-                🔖 저장한 사진
-              </button>
-              <button
-                type="button"
-                onClick={() => setScreen('activity')}
-                className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold"
-              >
-                내 활동
-              </button>
-              <button
-                type="button"
-                onClick={() => setScreen('collections')}
-                className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold"
-              >
-                📚 컬렉션
-              </button>
-              <button
-                type="button"
-                onClick={() => setScreen('messages')}
-                className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold"
-              >
-                💬 메시지
-              </button>
-              {wall.length >= 1 && (
+            <div className="mt-4 space-y-3">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={handleExport4Cut}
-                  disabled={exporting}
-                  className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                  onClick={() => setScreen('saved')}
+                  className="flex flex-col items-center gap-1 rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-2 py-2.5 text-[11px] font-semibold"
                 >
-                  {exporting ? '카드 만드는 중…' : '📤 4컷 카드'}
+                  <span className="text-base leading-none">🔖</span>
+                  저장
                 </button>
-              )}
-              {works.length > 0 && (
                 <button
                   type="button"
-                  onClick={handleWeeklyRecap}
-                  disabled={recapBusy}
-                  className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                  onClick={() => setScreen('collections')}
+                  className="flex flex-col items-center gap-1 rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-2 py-2.5 text-[11px] font-semibold"
                 >
-                  {recapBusy ? '회고 만드는 중…' : '🗓 이번 주 회고'}
+                  <span className="text-base leading-none">📚</span>
+                  컬렉션
                 </button>
-              )}
-              {works.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => setScreen('bulkPrivacy')}
-                  className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold"
+                  onClick={() => setScreen('activity')}
+                  className="flex flex-col items-center gap-1 rounded-[14px] border border-[var(--border)] bg-[var(--bg)] px-2 py-2.5 text-[11px] font-semibold"
                 >
-                  공개 일괄 변경
+                  <span className="text-base leading-none">⚡</span>
+                  활동
                 </button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setScreen('profileEdit')}
+                  className="rounded-full border border-[var(--ink)] px-4 py-1.5 text-xs font-semibold"
+                >
+                  프로필 편집
+                </button>
+                {works.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setScreen('bulkPrivacy')}
+                    className="rounded-full border border-[var(--border)] px-4 py-1.5 text-xs font-semibold text-[var(--text-muted)]"
+                  >
+                    공개 일괄 변경
+                  </button>
+                )}
+              </div>
+
+              {(wall.length >= 1 || works.length > 0) && (
+                <div className="flex gap-2 border-t border-[var(--border)] pt-3">
+                  {wall.length >= 1 && (
+                    <button
+                      type="button"
+                      onClick={handleExport4Cut}
+                      disabled={exporting}
+                      className="flex-1 rounded-full border border-[var(--border)] px-3 py-2 text-xs font-semibold disabled:opacity-50"
+                    >
+                      {exporting ? '만드는 중…' : '📤 4컷 카드'}
+                    </button>
+                  )}
+                  {works.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleWeeklyRecap}
+                      disabled={recapBusy}
+                      className="flex-1 rounded-full border border-[var(--border)] px-3 py-2 text-xs font-semibold disabled:opacity-50"
+                    >
+                      {recapBusy ? '만드는 중…' : '🗓 이번 주 회고'}
+                    </button>
+                  )}
+                </div>
               )}
+
               {works.length === 0 && (
                 <button
                   type="button"
                   onClick={handleSeed}
                   disabled={seeding}
-                  className="rounded-full bg-[var(--ink)] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                  className="w-full rounded-full bg-[var(--ink)] px-3 py-2.5 text-xs font-semibold text-white disabled:opacity-50"
                 >
                   {seeding ? '샘플 추가 중…' : '🌱 샘플 사진 5장 추가'}
                 </button>

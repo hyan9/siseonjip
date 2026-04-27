@@ -1,38 +1,67 @@
 import { useData } from '../lib/data-context';
 import { ImageBox } from './ui';
 
-function ExhibitionSlot({ artwork, onOpen, large = false }) {
+function ExhibitionSlot({ artwork, onOpen }) {
+  if (!artwork) return null;
   return (
     <button
       type="button"
-      onClick={() => artwork && onOpen(artwork.id)}
-      className={`group relative overflow-hidden bg-[var(--surface-3)] text-left ${large ? 'rounded-[24px]' : 'rounded-[18px]'} ${!artwork ? 'border border-dashed border-[var(--border-dashed)]' : ''}`}
+      onClick={() => onOpen(artwork.id)}
+      className="group relative h-full w-full overflow-hidden rounded-[20px] bg-[var(--surface-3)] text-left"
     >
-      {artwork ? (
-        <>
-          <ImageBox src={artwork.imageUrl} alt={artwork.title} className="h-full w-full" />
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 transition group-hover:opacity-100">
-            <p className="line-clamp-2 text-sm font-semibold leading-5 text-white">{artwork.title}</p>
-          </div>
-        </>
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-[11px] text-[var(--text-faint)]">빈 벽</div>
-      )}
+      <ImageBox src={artwork.imageUrl} alt={artwork.title} className="h-full w-full" />
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 opacity-0 transition group-hover:opacity-100">
+        <p className="line-clamp-2 text-sm font-semibold leading-5 text-white">{artwork.title}</p>
+      </div>
     </button>
   );
 }
 
 export function FourPhotoWall({ photos, onOpen, mini = false, compact = false }) {
-  const slots = [photos[0], photos[1], photos[2], photos[3]];
+  const list = photos.filter(Boolean);
+  const count = list.length;
+  const heightClass = mini ? 'h-[150px]' : compact ? 'h-[204px]' : 'h-[254px]';
+
+  if (count === 0) return null;
+
+  if (count === 1) {
+    return (
+      <div className={heightClass}>
+        <ExhibitionSlot artwork={list[0]} onOpen={onOpen} />
+      </div>
+    );
+  }
+
+  if (count === 2) {
+    return (
+      <div className={`grid grid-cols-2 gap-1.5 ${heightClass}`}>
+        <ExhibitionSlot artwork={list[0]} onOpen={onOpen} />
+        <ExhibitionSlot artwork={list[1]} onOpen={onOpen} />
+      </div>
+    );
+  }
+
+  if (count === 3) {
+    return (
+      <div className={`grid grid-cols-2 gap-1.5 ${heightClass}`}>
+        <ExhibitionSlot artwork={list[0]} onOpen={onOpen} />
+        <div className="grid min-h-0 grid-rows-2 gap-1.5">
+          <ExhibitionSlot artwork={list[1]} onOpen={onOpen} />
+          <ExhibitionSlot artwork={list[2]} onOpen={onOpen} />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`grid grid-cols-2 gap-1.5 overflow-hidden ${mini ? 'h-[150px]' : compact ? 'h-[204px]' : 'h-[254px]'}`}>
+    <div className={`grid grid-cols-2 gap-1.5 overflow-hidden ${heightClass}`}>
       <div className="grid min-h-0 grid-rows-2 gap-1.5">
-        <ExhibitionSlot artwork={slots[0]} onOpen={onOpen} large />
-        <ExhibitionSlot artwork={slots[1]} onOpen={onOpen} large />
+        <ExhibitionSlot artwork={list[0]} onOpen={onOpen} />
+        <ExhibitionSlot artwork={list[1]} onOpen={onOpen} />
       </div>
       <div className="grid min-h-0 grid-rows-2 gap-1.5">
-        <ExhibitionSlot artwork={slots[2]} onOpen={onOpen} large />
-        <ExhibitionSlot artwork={slots[3]} onOpen={onOpen} large />
+        <ExhibitionSlot artwork={list[2]} onOpen={onOpen} />
+        <ExhibitionSlot artwork={list[3]} onOpen={onOpen} />
       </div>
     </div>
   );
