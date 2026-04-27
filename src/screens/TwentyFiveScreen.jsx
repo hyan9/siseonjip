@@ -22,6 +22,7 @@ import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
 import LocationPickerModal from '../components/LocationPickerModal';
 import PhotoZoomModal from '../components/PhotoZoomModal';
+import { CatPhotographer } from '../components/Mascot';
 import {
   uploadPhoto,
   upsertPlace,
@@ -90,6 +91,7 @@ export default function TwentyFiveScreen({ setScreen }) {
   const current = works.find((a) => a.is_twenty_five);
   const [selectedId, setSelectedId] = useState(current?.id || works[0]?.id || null);
   const [busy, setBusy] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
   const selected = works.find((a) => a.id === selectedId);
 
   const handleSave = async () => {
@@ -98,7 +100,12 @@ export default function TwentyFiveScreen({ setScreen }) {
     try {
       await setTwentyFive(userId, selectedId);
       await refresh();
-      setScreen('archive');
+      // 마스코트가 등장하는 짧은 축하 모먼트
+      setCelebrating(true);
+      setTimeout(() => {
+        setCelebrating(false);
+        setScreen('archive');
+      }, 1600);
     } catch (error) {
       console.error(error);
     } finally {
@@ -134,6 +141,22 @@ export default function TwentyFiveScreen({ setScreen }) {
           >
             {busy ? '저장 중…' : '가장 아름다운 사진으로 정하기'}
           </button>
+        </div>
+      )}
+
+      {celebrating && (
+        <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center bg-black/55 p-6 backdrop-blur-sm">
+          <div className="rounded-[28px] bg-[var(--surface)] px-8 py-7 text-center shadow-[0_24px_48px_rgba(0,0,0,0.35)]">
+            <div className="text-[var(--ink)]">
+              <CatPhotographer size={120} animate />
+            </div>
+            <p className="mt-3 text-[10px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
+              25번째 사진 결정
+            </p>
+            <p className="mt-1 text-[20px] font-extrabold tracking-[-0.06em]">
+              한 롤이 완성됐어요
+            </p>
+          </div>
         </div>
       )}
     </>

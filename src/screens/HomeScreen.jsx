@@ -248,24 +248,28 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
               <button
                 type="button"
                 onClick={() => openArtwork(featured.id)}
-                className="flex w-full items-center gap-3 overflow-hidden rounded-[18px] bg-[var(--surface)] p-2 text-left shadow-[0_0_0_1px_var(--border)]"
+                className="block w-full overflow-hidden rounded-[20px] bg-[var(--surface)] text-left shadow-[0_0_0_1px_var(--border)]"
               >
-                <div className="relative shrink-0">
-                  <ImageBox src={featured.imageUrl} alt={featured.title} className="h-[88px] w-[88px] rounded-[12px]" />
-                  <div className="absolute -bottom-1 -right-1 rounded-full bg-[var(--surface)] p-0.5 text-[var(--ink)] shadow">
-                    <CatPhotographer size={28} animate />
+                <div className="relative">
+                  <ImageBox src={featured.imageUrl} alt={featured.title} className="h-[260px] w-full" />
+                  <div className="absolute right-2 top-2 rounded-full bg-[var(--surface)]/90 p-1 text-[var(--ink)] backdrop-blur">
+                    <CatPhotographer size={26} animate />
                   </div>
+                  <span className="absolute left-3 top-3 rounded-full bg-[var(--ink)]/85 px-2 py-0.5 text-[9px] font-semibold tracking-[0.18em] text-white">
+                    오늘의 한 컷
+                  </span>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[9px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">오늘의 한 컷</p>
-                  <h2 className="mt-0.5 line-clamp-2 text-[18px] font-extrabold leading-tight tracking-[-0.06em]">
+                <div className="p-4">
+                  <h2 className="line-clamp-2 text-[28px] font-extrabold leading-[1.05] tracking-[-0.08em]">
                     {featured.title}
                   </h2>
-                  <p className="mt-1 inline-flex items-center gap-1 truncate text-[11px] text-[var(--text-muted)]">
-                    {profileLabel(getProfile(featured.user_id))}
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-[var(--text-muted)]">
+                    <span className="font-semibold text-[var(--text-body)]">
+                      {profileLabel(getProfile(featured.user_id))}
+                    </span>
                     <span className="text-[var(--text-faint)]">·</span>
-                    <IconHype size={11} filled />
-                    {getHypeCount(featured.id)}
+                    <IconHype size={12} filled />
+                    <span>{getHypeCount(featured.id)}</span>
                   </p>
                 </div>
               </button>

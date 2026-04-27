@@ -1,4 +1,5 @@
 // 공용 UI 프리미티브
+import { useEffect, useRef, useState } from 'react';
 import { useNotifications } from '../lib/notifications-context';
 import { useTheme } from '../lib/theme-context';
 import Icon from './Icon';
@@ -20,9 +21,31 @@ export function Shell({ children, screen, setScreen, showNav = true }) {
   );
 }
 
-// 고정 상단바 — 앱 이름 + 글로벌 액션(탐색/알림). 모든 화면 공통
+// 고정 상단바 — 앱 이름 + 글로벌 액션(탐색/알림/메뉴). 모든 화면 공통
 export function TopBar({ screen, setScreen }) {
   const { unreadCount } = useNotifications();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onDoc = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [menuOpen]);
+
+  const goto = (s) => { setMenuOpen(false); setScreen(s); };
+
+  const menuItems = [
+    { id: 'saved', label: '저장한 사진', icon: 'bookmark' },
+    { id: 'collections', label: '컬렉션', icon: 'folder' },
+    { id: 'activity', label: '내 활동', icon: 'activity' },
+    { id: 'messages', label: '메시지', icon: 'message' },
+    { id: 'profileEdit', label: '프로필 편집', icon: 'edit' },
+  ];
+
   return (
     <header className="sticky top-0 z-40 flex h-11 items-center justify-between border-b border-[var(--border)] bg-[var(--surface)]/95 px-3 backdrop-blur">
       <button
@@ -36,7 +59,7 @@ export function TopBar({ screen, setScreen }) {
         </span>
         시선집
       </button>
-      <div className="flex items-center gap-1 text-[var(--text-muted)]">
+      <div className="flex items-center gap-1 text-[var(--text-muted)]" ref={menuRef}>
         <button
           type="button"
           onClick={() => setScreen('search')}
@@ -56,6 +79,29 @@ export function TopBar({ screen, setScreen }) {
             <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
           )}
         </button>
+        <button
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          className={`flex h-8 w-8 items-center justify-center rounded-full ${menuOpen ? 'bg-[var(--surface-2)] text-[var(--text)]' : ''}`}
+          aria-label="메뉴"
+        >
+          <Icon name="menu" size={16} />
+        </button>
+        {menuOpen && (
+          <div className="absolute right-2 top-full mt-1 w-44 overflow-hidden rounded-[12px] bg-[var(--surface)] shadow-[0_12px_32px_rgba(0,0,0,0.18),0_0_0_1px_var(--border)]">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => goto(item.id)}
+                className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] font-semibold text-[var(--text)] hover:bg-[var(--surface-2)]"
+              >
+                <Icon name={item.icon} size={14} className="text-[var(--text-muted)]" />
+                {item.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </header>
   );
@@ -178,9 +224,14 @@ export function GpsStatusBadge({ status, source }) {
   return <span className={`rounded-full px-3 py-1 text-[11px] ${dark ? 'bg-[var(--ink)]/85 text-white' : 'bg-white/90 text-[var(--text)]'}`}>{baseLabel}</span>;
 }
 
-export function EmptyState({ title, hint, onAction, actionLabel }) {
+export function EmptyState({ title, hint, onAction, actionLabel, mascot = true }) {
   return (
     <div className="rounded-[24px] border border-dashed border-[var(--border-strong)] bg-[var(--surface)] p-8 text-center">
+      {mascot && (
+        <div className="mb-3 flex justify-center text-[var(--ink)]">
+          <CatPhotographer size={64} animate />
+        </div>
+      )}
       <p className="text-sm font-semibold text-[var(--text)]">{title}</p>
       {hint && <p className="mt-2 whitespace-pre-line text-xs leading-5 text-[var(--text-muted)]">{hint}</p>}
       {onAction && (

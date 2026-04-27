@@ -110,6 +110,10 @@ export default function ConversationScreen({ otherId, setScreen, openPerson }) {
   const handleSend = async (event) => {
     event.preventDefault();
     if (!text.trim() || !userId) return;
+    if (other?.is_bot) {
+      alert('데모 봇과는 메시지를 주고받을 수 없어요.');
+      return;
+    }
     setBusy(true);
     try {
       await sendMessage(userId, otherId, text.trim());

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useData } from '../lib/data-context';
 import { postComment, deleteComment, toggleCommentReaction } from '../lib/db';
+import { blockIfBotAction } from '../lib/bot-seed';
 import { profileLabel, timeAgo, renderTextWithMentions } from '../lib/utils';
 import Avatar from './Avatar';
 
@@ -36,6 +37,7 @@ export default function CommentSection({ artworkId, openPerson }) {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!text.trim() || !userId) return;
+    if (blockIfBotAction({ artworkId, userId, kind: 'comment' })) return;
     setBusy(true);
     try {
       await postComment(artworkId, userId, text.trim(), replyingTo);

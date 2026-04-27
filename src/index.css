@@ -12,7 +12,7 @@
   --surface: #ffffff;
   --surface-2: #e7e8e3;
   --surface-3: #d4d6d0;
-  --image-bg: #c8cac4;
+  --image-bg: #b8bbb4; /* 살짝 진하게 — 사진이 묻히지 않게 */
 
   --ink: #1a1d1f;
   --ink-text: #ffffff;
@@ -44,7 +44,7 @@
   --surface: #161a20;
   --surface-2: #1f242b;
   --surface-3: #2a3038;
-  --image-bg: #232830;
+  --image-bg: #06080b; /* 다크에서는 거의 검정 — 사진 발색을 살림 */
 
   --ink: #050608;
   --ink-text: #ffffff;

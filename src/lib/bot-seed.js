@@ -148,3 +148,23 @@ export function buildBotMemoryGraph(userId) {
 export function isBotId(id) {
   return typeof id === 'string' && id.startsWith('bot:');
 }
+
+export function isBotArtworkId(id) {
+  return typeof id === 'string' && id.startsWith('bot-art:');
+}
+
+// 봇 관련 액션이면 alert로 안내. true 리턴 시 호출 측은 더 진행하지 말 것.
+export function blockIfBotAction({ artworkId, userId, kind }) {
+  if (isBotArtworkId(artworkId) || isBotId(userId)) {
+    const msg = {
+      hype: '데모 봇 작품이라 hype는 저장되지 않아요. 직접 사진을 올려보세요.',
+      comment: '데모 봇 작품엔 댓글을 남길 수 없어요. 직접 사진을 올려보세요.',
+      message: '데모 봇과는 메시지를 주고받을 수 없어요.',
+      save: '데모 봇 작품은 저장되지 않아요.',
+      follow: '데모 봇이라 실제 팔로우는 작동하지 않아요. 봇 프로필은 둘러볼 수 있어요.',
+    }[kind] || '데모 봇은 일부 기능이 제한돼요.';
+    alert(msg);
+    return true;
+  }
+  return false;
+}

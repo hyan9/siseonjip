@@ -24,6 +24,7 @@ import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
 import LocationPickerModal from '../components/LocationPickerModal';
 import PhotoZoomModal from '../components/PhotoZoomModal';
+import { blockIfBotAction, isBotArtworkId } from '../lib/bot-seed';
 import {
   uploadPhoto,
   upsertPlace,
@@ -98,6 +99,7 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
   const [busySave, setBusySave] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [sharingCard, setSharingCard] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false); // 카메라/시간 등 메타 토글
 
   // 조회수 +1 (세션당 한 번)
   useEffect(() => {
@@ -117,6 +119,7 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
   const [busyHype, setBusyHype] = useState(false);
   const handleHypeToggle = async () => {
     if (!userId) return;
+    if (blockIfBotAction({ artworkId: art.id, userId: art.user_id, kind: 'hype' })) return;
     setBusyHype(true);
     try { await toggleHype(art.id, userId, hyped); await refresh(); }
     catch (err) { console.error(err); }
@@ -173,6 +176,7 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
   const saved = isSavedByMe(art.id);
   const handleSave = async () => {
     if (!userId) return;
+    if (blockIfBotAction({ artworkId: art.id, userId: art.user_id, kind: 'save' })) return;
     setBusySave(true);
     try {
       await toggleSave(art.id, userId, saved);
@@ -272,7 +276,7 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
             </div>
           </header>
 
-          {/* 사진 */}
+          {/* 사진 — 메인은 사진/제목/노트 위주. 메타는 토글로 */}
           <div className="relative bg-[var(--ink)]">
             <button
               type="button"
@@ -282,32 +286,41 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
             >
               <ImageBox src={art.imageUrl} alt={art.title} fit="contain" className="h-[520px] w-full bg-[var(--ink)]" priority />
               {art.is_twenty_five && (
-                <span className="absolute left-3 top-3 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-[var(--text)]">
-                  🌟 25번째 사진
+                <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-[var(--text)]">
+                  <IconStar size={10} filled /> 25번째
                 </span>
               )}
               {isHero && (
-                <span className="absolute left-3 top-12 rounded-full bg-yellow-300 px-2.5 py-1 text-[10px] font-semibold text-[var(--text)]">
-                  ⭐ 대표
+                <span className="absolute left-3 top-12 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-semibold text-white">
+                  <IconStar size={10} filled /> 대표
                 </span>
               )}
-              {(exifLine || takenLabel) && (
+              {detailOpen && (exifLine || takenLabel) && (
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/60 to-transparent px-4 pb-2 pt-8 text-[10px] tracking-wide text-white/80">
                   <span className="truncate">{exifLine}</span>
                   {takenLabel && <span className="shrink-0">{takenLabel}</span>}
                 </div>
               )}
             </button>
-            {exifLine && openCamera && (
+            {/* 정보 토글 — 닫혀 있을 때만 작은 (i) 버튼 */}
+            <button
+              type="button"
+              onClick={() => setDetailOpen((v) => !v)}
+              aria-label="사진 정보"
+              className="absolute bottom-2 left-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-[10px] font-bold text-white backdrop-blur-sm hover:bg-black/60"
+            >
+              {detailOpen ? '×' : 'i'}
+            </button>
+            {detailOpen && exifLine && openCamera && (
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   openCamera({ make: art.camera_make, model: art.camera_model, lens: art.lens });
                 }}
-                className="absolute bottom-2 left-3 z-10 rounded-full bg-black/40 px-2 py-1 text-[10px] font-semibold tracking-wide text-white backdrop-blur-sm"
+                className="absolute bottom-2 left-12 z-10 rounded-full bg-black/40 px-2 py-1 text-[10px] font-semibold tracking-wide text-white backdrop-blur-sm"
               >
-                📷 보기
+                카메라 보기
               </button>
             )}
             <div className="absolute right-3 top-3"><ShareButton title={art.title || '시선집'} /></div>

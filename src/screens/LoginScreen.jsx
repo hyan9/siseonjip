@@ -161,23 +161,24 @@ export default function LoginScreen() {
                 </div>
               ) : (
                 <div className="mt-8 space-y-3">
-                  <button
-                    type="button"
-                    onClick={handleGoogle}
-                    disabled={!!busy}
-                    className="flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-4 text-sm font-semibold text-[var(--text)] disabled:opacity-50"
-                  >
-                    <GoogleLogo />
-                    {busy === 'google' ? 'Google로 이동…' : 'Google로 계속하기'}
-                  </button>
-
+                  {/* 체험하기 — 가장 빠른 입구로 부각 */}
                   <button
                     type="button"
                     onClick={handleAnon}
                     disabled={!!busy}
-                    className="w-full rounded-full border border-white/30 bg-white/5 px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
+                    className="w-full rounded-full bg-white px-5 py-4 text-sm font-extrabold text-[var(--text)] tracking-[-0.04em] shadow-[0_8px_24px_rgba(255,255,255,0.18)] disabled:opacity-50"
                   >
-                    {busy === 'anon' ? '입장 중…' : '먼저 둘러보기 (익명)'}
+                    {busy === 'anon' ? '입장 중…' : '체험하기 (1초 시작)'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleGoogle}
+                    disabled={!!busy}
+                    className="flex w-full items-center justify-center gap-2 rounded-full border border-white/30 bg-white/5 px-5 py-4 text-sm font-semibold text-white disabled:opacity-50"
+                  >
+                    <GoogleLogo />
+                    {busy === 'google' ? 'Google로 이동…' : 'Google로 계속하기'}
                   </button>
 
                   {!showEmail ? (
@@ -210,7 +211,7 @@ export default function LoginScreen() {
 
                   {error && <p className="text-xs text-red-300">{error}</p>}
                   <p className="text-[10px] leading-4 text-white/50">
-                    "익명"으로 시작하면 이메일 없이 바로 둘러볼 수 있어요. 단, 브라우저 데이터를 지우거나 다른 기기로 옮기면 계정이 사라집니다.
+                    체험은 익명 계정으로 시작해요. 브라우저 데이터를 지우거나 다른 기기로 옮기면 계정이 사라집니다. 데모 봇 5명과 작품들이 함께 보입니다.
                   </p>
                 </div>
               )}

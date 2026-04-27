@@ -43,6 +43,9 @@ export default function Icon({ name, size = 20, className = '', strokeWidth = 1.
     edit: <svg {...common}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z" /></svg>,
     check: <svg {...common}><path d="M20 6 9 17l-5-5" /></svg>,
     x: <svg {...common}><path d="M18 6 6 18M6 6l12 12" /></svg>,
+    menu: <svg {...common}><path d="M3 6h18M3 12h18M3 18h18" /></svg>,
+    message: <svg {...common}><path d="M5 5h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-4 4V6a1 1 0 0 1 1-1Z" /></svg>,
+    folder: <svg {...common}><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" /></svg>,
   };
 
   return icons[name] || icons.eye;

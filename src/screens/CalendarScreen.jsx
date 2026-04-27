@@ -22,6 +22,7 @@ import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
 import LocationPickerModal from '../components/LocationPickerModal';
 import PhotoZoomModal from '../components/PhotoZoomModal';
+import { CatPhotographer, CatSleepyFour } from '../components/Mascot';
 import {
   uploadPhoto,
   upsertPlace,
@@ -94,6 +95,20 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
   const days = useMemo(() => getMonthDays(myWorks, year, month), [myWorks, year, month]);
   const activeDays = days.filter((d) => d.artworkIds.length > 0);
 
+  // 25번째 진행률 — 이 달의 사진 24장 + 25번째 결정 = 한 롤
+  const monthArtworks = useMemo(
+    () =>
+      myWorks.filter((a) => {
+        const d = new Date(a.created_at);
+        return d.getFullYear() === year && d.getMonth() + 1 === month;
+      }),
+    [myWorks, year, month]
+  );
+  const monthCount = monthArtworks.length;
+  const filled24 = Math.min(24, monthCount);
+  const has25 = monthArtworks.some((a) => a.is_twenty_five);
+  const rollComplete = filled24 >= 24 && has25;
+
   // 그날의 4장을 위아래 스크롤로 보는 zoom
   const [zoomDay, setZoomDay] = useState(null); // { photos, initialIndex }
   const openDayZoom = (photos, initialIndex = 0) => {
@@ -149,6 +164,68 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
         kicker={`ROLL · ${monthShort} ${now.getFullYear()}`}
       />
       <div className="space-y-5">
+        {/* 25칸 진행률 — 게이미피케이션 (이번 달 한 롤) */}
+        <section className={`rounded-[20px] p-4 transition ${
+          rollComplete
+            ? 'bg-[var(--ink)] text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)]'
+            : 'bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-[10px] font-semibold tracking-[0.16em] ${rollComplete ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
+                {monthShort} {now.getFullYear()} ROLL
+              </p>
+              <p className="mt-0.5 text-[20px] font-extrabold tracking-[-0.06em]">
+                {rollComplete
+                  ? '완성된 한 롤'
+                  : has25
+                  ? `24장까지 ${filled24}/24`
+                  : filled24 < 24
+                  ? `${filled24}/24장 · 25번째는 다 채운 뒤`
+                  : '25번째를 골라주세요'}
+              </p>
+            </div>
+            {rollComplete ? (
+              <CatPhotographer size={36} />
+            ) : filled24 >= 24 && !has25 ? (
+              <button
+                type="button"
+                onClick={() => setScreen('twentyFive')}
+                className="rounded-full bg-[var(--ink)] px-3 py-1.5 text-[11px] font-semibold text-white"
+              >
+                25번째 고르기 →
+              </button>
+            ) : null}
+          </div>
+          {/* 25칸 그리드 — 24개는 사진 채움 / 25번째는 별도 슬롯 */}
+          <div className="mt-3 grid grid-cols-[repeat(12,1fr)_auto] items-center gap-[3px]">
+            {Array.from({ length: 24 }).map((_, i) => {
+              const filled = i < filled24;
+              return (
+                <span
+                  key={i}
+                  className={`aspect-square rounded-[2px] ${
+                    filled
+                      ? rollComplete ? 'bg-white' : 'bg-[var(--ink)]'
+                      : rollComplete ? 'bg-white/20' : 'bg-[var(--surface-2)]'
+                  }`}
+                />
+              );
+            })}
+            {/* 25번째 — 별도로 살짝 떨어진 칸 */}
+            <span
+              className={`ml-1 flex h-3 w-3 items-center justify-center rounded-full text-[8px] font-bold ${
+                has25
+                  ? rollComplete ? 'bg-[var(--accent)] text-white' : 'bg-[var(--accent)] text-white'
+                  : 'border border-dashed border-[var(--border-strong)]'
+              }`}
+              title={has25 ? '25번째 결정됨' : '25번째 미정'}
+            >
+              {has25 ? '★' : ''}
+            </span>
+          </div>
+        </section>
+
         {/* 일주일 뷰 — 블록별 거리 기반 투명도 (객체지향) */}
         <section>
           <div
