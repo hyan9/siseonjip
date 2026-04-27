@@ -116,6 +116,19 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
   const place = getPlace(art.place_id);
   const userPhotos = getUserArtworks(art.user_id);
   const related = userPhotos.filter((item) => item.id !== art.id).slice(0, 3);
+  const sameNeighborhood = artworks
+    .filter((a) => a.id !== art.id && art.place_id && a.place_id === art.place_id && a.location_mode !== '숨김')
+    .slice(0, 6);
+  const sameKeyword = artworks
+    .filter(
+      (a) =>
+        a.id !== art.id &&
+        art.daily_vision &&
+        a.daily_vision === art.daily_vision &&
+        a.location_mode !== '숨김' &&
+        (!art.place_id || a.place_id !== art.place_id)
+    )
+    .slice(0, 6);
   const isMine = art.user_id === userId;
   const isHero = profile?.hero_artwork_id === art.id;
 
@@ -356,6 +369,13 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
           </div>
         </section>
 
+        {/* DC 게시물 하단 큰 추천 버튼 */}
+        {userId && !isMine && (
+          <section>
+            <HypeButton artwork={art} large />
+          </section>
+        )}
+
         <CommentSection artworkId={art.id} openPerson={openPerson} />
 
         {(feedNav.prev || feedNav.next) && (
@@ -387,11 +407,61 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
 
         {related.length > 0 && (
           <section>
-            <h2 className="mb-3 text-[22px] font-extrabold tracking-[-0.07em]">같은 사람의 사진</h2>
+            <h2 className="mb-3 text-[20px] font-extrabold tracking-[-0.06em]">같은 사람의 사진</h2>
             <div className="grid grid-cols-3 gap-2">
               {related.map((item) => (
                 <button key={item.id} type="button" onClick={() => openArtwork(item.id)}>
                   <ImageBox src={item.imageUrl} alt={item.title} className="aspect-square rounded-[16px]" />
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {sameNeighborhood.length > 0 && place && (
+          <section>
+            <button
+              type="button"
+              onClick={() => openPlace(place.id)}
+              className="mb-3 flex w-full items-baseline justify-between text-left"
+            >
+              <h2 className="text-[20px] font-extrabold tracking-[-0.06em]">📍 {place.name || placeLabel(place)}의 다른 사진</h2>
+              <span className="text-[11px] text-[var(--text-muted)]">전체 ›</span>
+            </button>
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4">
+              {sameNeighborhood.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => openArtwork(item.id)}
+                  className="shrink-0"
+                >
+                  <ImageBox src={item.imageUrl} alt={item.title} className="h-[140px] w-[140px] rounded-[14px]" />
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {sameKeyword.length > 0 && (
+          <section>
+            <button
+              type="button"
+              onClick={() => openKeyword?.(art.daily_vision)}
+              className="mb-3 flex w-full items-baseline justify-between text-left"
+            >
+              <h2 className="text-[20px] font-extrabold tracking-[-0.06em]">#{art.daily_vision}</h2>
+              <span className="text-[11px] text-[var(--text-muted)]">전체 ›</span>
+            </button>
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4">
+              {sameKeyword.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => openArtwork(item.id)}
+                  className="shrink-0"
+                >
+                  <ImageBox src={item.imageUrl} alt={item.title} className="h-[140px] w-[140px] rounded-[14px]" />
                 </button>
               ))}
             </div>

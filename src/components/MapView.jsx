@@ -82,11 +82,27 @@ export default function MapView({
     ? [points[0].lat, points[0].lng]
     : [37.5665, 126.978]; // 서울 시청
 
+  const photoIcon = (url) =>
+    L.divIcon({
+      html: `<div style="
+        width:48px;
+        height:48px;
+        border-radius:50%;
+        background:#151515 url('${url}') center/cover;
+        border:3px solid #fff;
+        box-shadow:0 4px 10px rgba(0,0,0,0.3);
+      "></div>`,
+      className: 'siseonjip-photo-marker',
+      iconSize: L.point(48, 48, true),
+      iconAnchor: [24, 24],
+    });
+
   const renderMarkers = () =>
     points.map((point) => (
       <Marker
         key={point.id}
         position={[point.lat, point.lng]}
+        icon={point.imageUrl ? photoIcon(point.imageUrl) : undefined}
         eventHandlers={{
           click: () => onMarkerClick?.(point),
         }}

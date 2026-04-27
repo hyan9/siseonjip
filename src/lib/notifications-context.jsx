@@ -129,6 +129,10 @@ export function NotificationsProvider({ children }) {
             case 'message':
               title = `${sourceName}이(가) 메시지를 보냈어요`;
               break;
+            case 'milestone':
+              title = '🔥 개념글 등극!';
+              body = `${artTitle} — 추천 5+`;
+              break;
             default:
               title = '새 알림';
           }

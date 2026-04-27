@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useData } from '../lib/data-context';
 import { toggleHype } from '../lib/db';
 
-export default function HypeButton({ artwork, compact = false }) {
+export default function HypeButton({ artwork, compact = false, large = false }) {
   const { userId, getHypeCount, isHypedByMe, refresh } = useData();
   const [busy, setBusy] = useState(false);
   const count = getHypeCount(artwork.id);
@@ -21,6 +21,27 @@ export default function HypeButton({ artwork, compact = false }) {
       setBusy(false);
     }
   };
+
+  if (large) {
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={busy || !userId}
+        aria-label="Hype"
+        className={`flex w-full flex-col items-center justify-center gap-1 rounded-[18px] py-4 transition-transform active:scale-[0.98] disabled:opacity-50 ${
+          hyped
+            ? 'bg-[var(--ink)] text-white shadow-[0_8px_20px_rgba(0,0,0,0.18)]'
+            : 'border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)]'
+        }`}
+      >
+        <span className="text-[28px] leading-none">{hyped ? '🔥' : '↑'}</span>
+        <span className="text-[11px] font-semibold tracking-[0.16em]">
+          {hyped ? `HYPED · ${count}` : `추천 ${count}`}
+        </span>
+      </button>
+    );
+  }
 
   return (
     <button

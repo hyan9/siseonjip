@@ -121,14 +121,18 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
 
   const placePoints = places
     .filter((p) => p.lat != null && p.lng != null)
-    .map((p) => ({
-      id: `place:${p.id}`,
-      lat: p.lat,
-      lng: p.lng,
-      label: placeLabel(p),
-      kind: 'place',
-      ref: p,
-    }));
+    .map((p) => {
+      const photo = getPlaceArtworks(p.id)[0];
+      return {
+        id: `place:${p.id}`,
+        lat: p.lat,
+        lng: p.lng,
+        label: placeLabel(p),
+        imageUrl: photo?.imageUrl,
+        kind: 'place',
+        ref: p,
+      };
+    });
 
   const exactArtPoints = artworks
     .filter((a) => a.location_mode === '정확한 위치' && a.lat != null && a.lng != null)
@@ -137,6 +141,7 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
       lat: a.lat,
       lng: a.lng,
       label: a.title || '제목 없음',
+      imageUrl: a.imageUrl,
       kind: 'artwork',
       ref: a,
     }));

@@ -129,6 +129,7 @@ export default function NotificationsScreen({ setScreen, openArtwork, openPerson
                 case 'mention': return `${sourceName}이(가) @멘션`;
                 case 'follow': return `${sourceName}이(가) 팔로우`;
                 case 'message': return `${sourceName}이(가) 메시지`;
+                case 'milestone': return '🔥 개념글 등극!';
                 default: return '새 알림';
               }
             })();

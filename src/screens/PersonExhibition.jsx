@@ -255,19 +255,26 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
           </button>
         )}
 
-        <section className="rounded-[28px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
-          <h2 className="text-[24px] font-extrabold leading-tight tracking-[-0.075em]">{profile.exhibition_title || '제목 없는 전시'}</h2>
-          {profile.note && <p className="mt-2 text-sm leading-6 text-[var(--text-body)]">{profile.note}</p>}
+        <section className="rounded-[24px] bg-[var(--surface)] p-5 shadow-[0_0_0_1px_var(--border)]">
+          <p className="text-[10px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
+            {profile.nickname}의 개인전
+          </p>
+          <h2 className="mt-1.5 text-[26px] font-extrabold leading-[1.15] tracking-[-0.075em]">
+            {profile.exhibition_title || (
+              <span className="text-[var(--text-faint)]">제목 미정</span>
+            )}
+          </h2>
+          {profile.note && <p className="mt-2.5 text-[14px] leading-[1.7] text-[var(--text-body)]">{profile.note}</p>}
           {profile.words?.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {profile.words.map((word) => (
-                <span key={word} className="rounded-full border border-[var(--border)] px-3 py-1 text-xs text-[var(--text-muted)]">{word}</span>
+                <span key={word} className="rounded-full bg-[var(--surface-2)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--text-muted)]">{word}</span>
               ))}
             </div>
           )}
 
           {/* Stats — 인라인 메타 */}
-          <div className="mt-4 flex items-center gap-1 text-[12px] text-[var(--text-muted)]">
+          <div className="mt-4 flex flex-wrap items-center gap-1 border-t border-[var(--border)] pt-3 text-[12px] text-[var(--text-muted)]">
             <span><b className="text-[var(--text)]">{stats.artworkCount}</b> 사진</span>
             <span className="px-1 text-[var(--text-faint)]">·</span>
             <span>🔥 <b className="text-[var(--text)]">{stats.totalHype}</b></span>
