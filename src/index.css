@@ -161,12 +161,19 @@
   --hero-to: #000000;
 }
 
-/* 점박이 패턴 — 검정 도트가 규칙적으로. body에만 적용 (카드/이미지는 깨끗) */
-html[data-theme="spotted"] body {
+/* 점박이 패턴 — 검정 도트가 다닥다닥. html/body 둘 다 강제로 (Shell 안쪽까지 비치게) */
+html[data-theme="spotted"],
+html[data-theme="spotted"] body,
+html[data-theme="spotted"] #root {
   background-color: var(--bg);
-  background-image: radial-gradient(circle, rgba(20, 20, 20, 0.16) 1.5px, transparent 1.6px);
-  background-size: 22px 22px;
-  background-position: 0 0;
+  background-image: radial-gradient(circle, rgba(20, 20, 20, 0.32) 4px, transparent 4.5px);
+  background-size: 28px 28px;
+  background-attachment: fixed;
+}
+/* Shell 안의 max-width 박스도 같은 패턴으로 (검은 점이 자연스럽게 이어짐) */
+html[data-theme="spotted"] main {
+  background-image: radial-gradient(circle, rgba(20, 20, 20, 0.32) 4px, transparent 4.5px);
+  background-size: 28px 28px;
 }
 
 /* 고등어 — 은빛 줄무늬 + 차콜 */
@@ -197,6 +204,130 @@ html[data-theme="spotted"] body {
 
   --hero-from: #2c343d;
   --hero-via: #15191e;
+  --hero-to: #000000;
+}
+
+/* 보라냥 — 라벤더 안개 + 깊은 자주 + 보라 */
+[data-theme="lavender"] {
+  --bg: #efebf6;
+  --surface: #faf8fe;
+  --surface-2: #ddd5ee;
+  --surface-3: #c5b8e0;
+  --image-bg: #b0a0d0;
+
+  --ink: #2e1f49;
+  --ink-text: #ffffff;
+
+  --text: #2e1f49;
+  --text-muted: #6e5a8e;
+  --text-faint: #9d8db5;
+  --text-body: #41305e;
+  --text-quote: #322351;
+  --text-meta: #7c6a99;
+  --placeholder: #ada1c5;
+
+  --border: #d8cee8;
+  --border-strong: #c2b3da;
+  --border-dashed: #b09cd0;
+
+  --accent: #8b5cf6;
+  --accent-soft: #e1d4fb;
+
+  --hero-from: #2e1f49;
+  --hero-via: #19102b;
+  --hero-to: #000000;
+}
+
+/* 엽록소 — 식물 잎의 초록 + 흙냄새 */
+[data-theme="chlorophyll"] {
+  --bg: #eef3e9;
+  --surface: #f7faf3;
+  --surface-2: #d6e3cb;
+  --surface-3: #bdcfae;
+  --image-bg: #a3ba93;
+
+  --ink: #1f3a26;
+  --ink-text: #ffffff;
+
+  --text: #1f3a26;
+  --text-muted: #5a7561;
+  --text-faint: #8aa291;
+  --text-body: #2f4d36;
+  --text-quote: #234029;
+  --text-meta: #6c8775;
+  --placeholder: #9bb3a3;
+
+  --border: #d3deca;
+  --border-strong: #b9c9ac;
+  --border-dashed: #a8ba99;
+
+  --accent: #4f9e5e;          /* 초록 액센트 */
+  --accent-soft: #cfe6d3;
+
+  --hero-from: #1f3a26;
+  --hero-via: #0e1c12;
+  --hero-to: #000000;
+}
+
+/* 사이버펑크 — 네온 핑크/시안, 깊은 자줏빛 검정 */
+[data-theme="cyberpunk"] {
+  --bg: #0a0814;
+  --surface: #14102a;
+  --surface-2: #1e1838;
+  --surface-3: #2c2148;
+  --image-bg: #050410;
+
+  --ink: #050410;
+  --ink-text: #ffffff;
+
+  --text: #f0f0ff;
+  --text-muted: #a89cc8;
+  --text-faint: #6f5e94;
+  --text-body: #d8d2ee;
+  --text-quote: #e8e2ff;
+  --text-meta: #998cb6;
+  --placeholder: #635480;
+
+  --border: #261d44;
+  --border-strong: #3c2e6c;
+  --border-dashed: #3c2e6c;
+
+  --accent: #ff2d92;          /* 네온 핑크 */
+  --accent-soft: #4a0e2f;
+
+  --hero-from: #18102e;
+  --hero-via: #0a0814;
+  --hero-to: #000000;
+}
+
+/* 외계냥이 — 우주 배경 + 에일리언 그린 */
+[data-theme="alien"] {
+  --bg: #0e1a14;
+  --surface: #15281d;
+  --surface-2: #1f3528;
+  --surface-3: #2c4636;
+  --image-bg: #060f0a;
+
+  --ink: #060f0a;
+  --ink-text: #a3ff57;
+
+  --text: #d8f5d6;
+  --text-muted: #8eb98d;
+  --text-faint: #5a7d5a;
+  --text-body: #b6dab4;
+  --text-quote: #c4e6c2;
+  --text-meta: #82a980;
+  --placeholder: #547054;
+
+  --border: #25402d;
+  --border-strong: #355c41;
+  --border-dashed: #355c41;
+
+  --accent: #7c5cff;          /* 우주 보라 */
+  --accent-soft: #2a1f50;
+
+  --hero-from: #15281d;
+  --hero-via: #0e1a14;
   --hero-to: #000000;
 }
 

@@ -11,6 +11,7 @@ import { FourPhotoWall } from '../components/Cards';
 import ReportModal from '../components/ReportModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SettingsSheet from '../components/SettingsSheet';
+import PhotoZoomModal from '../components/PhotoZoomModal';
 import { IconSaved, IconCollections, IconActivity, IconEdit, IconSettings, IconShare, IconCalendar, IconLock, IconMessage, IconReport, IconBlock, IconHype, IconStar } from '../components/icons/AppIcons';
 import {
   seedDemoArtworks,
@@ -61,6 +62,7 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
   const [blockOpen, setBlockOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [followListType, setFollowListType] = useState(null); // 'followers' | 'following'
+  const [galleryStart, setGalleryStart] = useState(null); // 갤러리 zoom 시작 인덱스
 
   if (!profile) return <EmptyState title="사용자를 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
@@ -388,7 +390,7 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
           {works.length === 0 ? (
             <EmptyState title="아직 사진이 없어요" />
           ) : (
-            <FilmTimeline works={works} openArtwork={openArtwork} />
+            <FilmTimeline works={works} onOpenAt={(i) => setGalleryStart(i)} />
           )}
         </section>
       </div>
@@ -451,6 +453,14 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
         onCancel={() => setBlockOpen(false)}
       />
 
+      {galleryStart != null && (
+        <PhotoZoomModal
+          photos={works}
+          initialIndex={galleryStart}
+          onClose={() => setGalleryStart(null)}
+        />
+      )}
+
       {followListType && (
         <FollowListModal
           title={followListType === 'followers' ? `팔로워 ${stats.followerCount}` : `팔로잉 ${stats.followingCount}`}
@@ -506,17 +516,24 @@ function FollowListModal({ title, rows, onClose, onOpenPerson }) {
 }
 
 // 필름 타임라인 — 날짜별 그룹, 작은 썸네일 그리드
-function FilmTimeline({ works, openArtwork }) {
+// onOpenAt(globalIndex)을 받아 갤러리 zoom 시작 인덱스를 부모에 전달.
+function FilmTimeline({ works, onOpenAt }) {
   const groups = useMemo(() => {
     const map = new Map();
     for (const art of works) {
-      // 업로드 일자 기준
       const d = new Date(art.created_at);
       const key = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(art);
     }
     return Array.from(map.entries()).sort((a, b) => (a[0] < b[0] ? 1 : -1));
+  }, [works]);
+
+  // works 배열 내 글로벌 인덱스를 미리 매핑
+  const indexById = useMemo(() => {
+    const m = new Map();
+    works.forEach((a, i) => m.set(a.id, i));
+    return m;
   }, [works]);
 
   return (
@@ -534,7 +551,7 @@ function FilmTimeline({ works, openArtwork }) {
               <button
                 key={art.id}
                 type="button"
-                onClick={() => openArtwork(art.id)}
+                onClick={() => onOpenAt?.(indexById.get(art.id) ?? 0)}
                 className="relative overflow-hidden rounded-[8px]"
               >
                 <ImageBox src={art.imageUrl} alt={art.title} className="aspect-square w-full" />

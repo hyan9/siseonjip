@@ -114,19 +114,25 @@ export function BottomNav({ screen, setScreen }) {
   const tabs = [
     { id: 'home', label: '홈', icon: 'eye' },
     { id: 'space', label: '지도', icon: 'map' },
-    { id: 'record', label: '기록', icon: 'plus', primary: true },
+    { id: 'record', label: '기록', icon: 'plus', accent: true },
     { id: 'archive', label: '필름', icon: 'archive' },
     { id: 'profile', label: '내 전시', icon: 'user', dot: unreadCount > 0 },
   ];
   return (
     <nav className="sticky bottom-0 z-40 border-t border-[var(--border)] bg-[var(--surface)]/95 px-3 py-1.5 backdrop-blur">
-      <div className="grid grid-cols-5 items-end gap-1">
+      <div className="grid grid-cols-5 items-center gap-1">
         {tabs.map((tab) => {
           const active = screen === tab.id;
+          // 모든 탭 동일 크기. 기록(accent)은 색만 강조 (액센트 컬러)
+          const ringClass = tab.accent
+            ? `bg-[var(--accent)] text-white ${active ? 'ring-2 ring-[var(--ink)] ring-offset-2 ring-offset-[var(--surface)]' : ''}`
+            : active
+            ? 'bg-[var(--surface-2)] text-[var(--text)]'
+            : 'text-[var(--text-muted)]';
           return (
             <button key={tab.id} type="button" onClick={() => setScreen(tab.id)} className="flex flex-col items-center gap-1 text-[11px]">
-              <span className={`relative flex items-center justify-center rounded-full ${tab.primary ? 'h-11 w-11 bg-[var(--ink)] text-white' : active ? 'h-8 w-8 bg-[var(--surface-2)] text-[var(--text)]' : 'h-8 w-8 text-[var(--text-muted)]'}`}>
-                <Icon name={tab.icon} size={tab.primary ? 20 : 17} />
+              <span className={`relative flex h-8 w-8 items-center justify-center rounded-full ${ringClass}`}>
+                <Icon name={tab.icon} size={17} />
                 {tab.dot && (
                   <span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-[var(--surface)] bg-red-500" />
                 )}

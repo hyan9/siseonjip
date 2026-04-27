@@ -49,6 +49,34 @@ export const THEMES = [
     swatch: ['#fafafa', '#141414', '#e23a72'],
     color: '#fafafa',
   },
+  {
+    id: 'lavender',
+    label: '보라냥',
+    hint: '라벤더 안개 속 보라색 고양이',
+    swatch: ['#efebf6', '#3d2a5c', '#8b5cf6'],
+    color: '#efebf6',
+  },
+  {
+    id: 'chlorophyll',
+    label: '엽록소',
+    hint: '식물 같은 초록 고양이의 숲',
+    swatch: ['#eef3e9', '#1f3a26', '#4f9e5e'],
+    color: '#eef3e9',
+  },
+  {
+    id: 'cyberpunk',
+    label: '사이버펑크',
+    hint: '네온 핑크와 시안의 야경',
+    swatch: ['#0a0814', '#f0f0ff', '#ff2d92'],
+    color: '#0a0814',
+  },
+  {
+    id: 'alien',
+    label: '외계냥이',
+    hint: '에일리언 그린과 우주의 보랏빛',
+    swatch: ['#0e1a14', '#a3ff57', '#7c5cff'],
+    color: '#0e1a14',
+  },
 ];
 
 const VALID_IDS = new Set(THEMES.map((t) => t.id));

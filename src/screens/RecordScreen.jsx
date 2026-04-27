@@ -341,16 +341,8 @@ export default function RecordScreen({ setScreen, openArtwork }) {
             </section>
           )
         )}
-        {items.length === 0 && false && dailyRemaining > 0 ? (
-          <label className="block cursor-pointer">
-            <input type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} />
-            <div className="flex h-[430px] flex-col items-center justify-center rounded-[28px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]">
-              <Icon name="camera" size={34} />
-              <span className="mt-3 text-sm">사진 고르기 (오늘 {dailyRemaining}장 가능)</span>
-              <span className="mt-2 text-xs text-[var(--text-faint)]">사진 안의 위치 정보도 함께 확인합니다.</span>
-            </div>
-          </label>
-        ) : (
+        {/* items가 있을 때만 추가 카드 + 노트/모드/저장 폼이 보임 (items 0이면 위 4-slot만) */}
+        {items.length > 0 && (
           <>
             <div className="grid grid-cols-2 gap-2">
               {items.map((item) => (
