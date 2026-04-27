@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useTheme } from '../lib/theme-context';
+import { IconMoon, IconSun, IconMessage, IconLogout } from './icons/AppIcons';
 
 export default function SettingsSheet({ onClose, onMessages, onLogout, extraItems = [] }) {
   const { theme, setTheme } = useTheme();
@@ -34,7 +35,7 @@ export default function SettingsSheet({ onClose, onMessages, onLogout, extraItem
             className="flex w-full items-center justify-between rounded-[14px] px-3 py-3 text-left hover:bg-[var(--surface-2)]"
           >
             <span className="flex items-center gap-3 text-sm font-semibold">
-              <span className="text-lg">{isDark ? '☀️' : '🌙'}</span>
+              {isDark ? <IconSun size={18} /> : <IconMoon size={18} />}
               {isDark ? '라이트 모드' : '다크 모드'}
             </span>
             <span className="text-[11px] text-[var(--text-muted)]">{isDark ? '환하게' : '어둡게'}</span>
@@ -46,7 +47,7 @@ export default function SettingsSheet({ onClose, onMessages, onLogout, extraItem
             className="flex w-full items-center justify-between rounded-[14px] px-3 py-3 text-left hover:bg-[var(--surface-2)]"
           >
             <span className="flex items-center gap-3 text-sm font-semibold">
-              <span className="text-lg">💬</span>
+              <IconMessage size={18} />
               메시지
             </span>
             <span className="text-[var(--text-faint)]">›</span>
@@ -62,7 +63,7 @@ export default function SettingsSheet({ onClose, onMessages, onLogout, extraItem
               className="flex w-full items-center justify-between rounded-[14px] px-3 py-3 text-left hover:bg-[var(--surface-2)] disabled:opacity-50"
             >
               <span className="flex items-center gap-3 text-sm font-semibold">
-                <span className="text-lg">{item.icon}</span>
+                {item.iconNode || <span className="text-base">{item.icon}</span>}
                 {item.busy ? '만드는 중…' : item.label}
               </span>
               <span className="text-[var(--text-faint)]">›</span>
@@ -77,7 +78,7 @@ export default function SettingsSheet({ onClose, onMessages, onLogout, extraItem
             className="flex w-full items-center justify-between rounded-[14px] px-3 py-3 text-left text-red-600 hover:bg-red-50"
           >
             <span className="flex items-center gap-3 text-sm font-semibold">
-              <span className="text-lg">🚪</span>
+              <IconLogout size={18} />
               로그아웃
             </span>
           </button>

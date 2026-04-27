@@ -15,6 +15,7 @@ import {
 } from '../components/ui';
 import Icon from '../components/Icon';
 import Avatar from '../components/Avatar';
+import { IconShare, IconCollections, IconReport, IconStar, IconEdit, IconTrash, IconBookmark } from '../components/icons/AppIcons';
 import MapView from '../components/MapView';
 import HypeButton from '../components/HypeButton';
 import ShareButton from '../components/ShareButton';
@@ -194,7 +195,14 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
     }
   };
 
-  const zoomIndex = Math.max(0, userPhotos.findIndex((a) => a.id === art.id));
+  // 줌 모달 — 같은 날 작성자가 올린 4장만 묶음 (오늘의 4컷)
+  const dayPhotos = useMemo(() => {
+    const target = new Date(art.created_at).toDateString();
+    return userPhotos
+      .filter((a) => new Date(a.created_at).toDateString() === target)
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  }, [userPhotos, art.created_at]);
+  const zoomIndex = Math.max(0, dayPhotos.findIndex((a) => a.id === art.id));
 
   // 이전/다음 글 네비게이션 — 전체 피드(공개)에서 같은 알고리즘 정렬로 인접 항목 찾기
   const feedNav = useMemo(() => {
@@ -228,7 +236,7 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
           {/* 헤더: 제목 + 작성자 아바타 + 메타 */}
           <header className="border-b border-[var(--border)] p-4">
             <h1 className="text-[22px] font-extrabold leading-tight tracking-[-0.06em]">
-              {art.title || '제목 없음'}
+              {art.title}
             </h1>
             <div className="mt-2 flex items-center gap-2">
               <button
@@ -326,69 +334,60 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
             )}
           </div>
 
-          {/* 본문 노트 + 키워드 */}
-          {(art.note || art.daily_vision) && (
+          {/* 본문 노트 */}
+          {art.note && (
             <div className="border-t border-[var(--border)] p-4">
-              {art.note && <p className="text-[15px] leading-7 text-[var(--text-quote)]">{art.note}</p>}
-              {art.daily_vision && (
-                <button
-                  type="button"
-                  onClick={() => openKeyword?.(art.daily_vision)}
-                  className={`${art.note ? 'mt-3' : ''} inline-block rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--text)]`}
-                >
-                  #{art.daily_vision}
-                </button>
-              )}
+              <p className="text-[15px] leading-7 text-[var(--text-quote)]">{art.note}</p>
             </div>
           )}
 
-          {/* 액션 — 가벼운 한 줄 (추천/저장 + 조회 숫자) */}
+          {/* 액션 — 가벼운 한 줄 */}
           <div className="flex items-center justify-between gap-3 border-t border-[var(--border)] px-4 py-2.5">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <button
                 type="button"
                 onClick={userId && !isMine && !busyHype ? handleHypeToggle : undefined}
                 disabled={!userId || isMine || busyHype}
-                className={`flex items-center gap-1 text-[14px] font-bold transition ${
-                  hyped ? 'text-[var(--ink)]' : 'text-[var(--text-muted)]'
+                className={`flex items-center gap-1.5 text-[14px] font-bold transition ${
+                  hyped ? 'text-yellow-500' : 'text-[var(--text-muted)]'
                 } disabled:opacity-50`}
               >
-                <span className="text-[18px]">{hyped ? '🔥' : '⭐'}</span>
+                <IconStar size={20} filled={hyped} />
                 {hypeCount}
               </button>
               <button
                 type="button"
                 onClick={userId && !isMine ? handleSave : undefined}
                 disabled={!userId || isMine}
-                className={`text-[18px] transition ${saved ? '' : 'opacity-60'} disabled:opacity-30`}
+                className={`flex items-center transition ${saved ? 'text-[var(--ink)]' : 'text-[var(--text-muted)]'} disabled:opacity-30`}
                 title={saved ? '저장됨' : '저장'}
               >
-                {saved ? '🔖' : '🏷'}
+                <IconBookmark size={20} filled={saved} />
               </button>
             </div>
             <span className="text-[11px] text-[var(--text-muted)]">조회 {art.view_count ?? 0}</span>
           </div>
         </article>
 
-        {/* 부가 액션 — 이모지만, 작은 한 줄 */}
-        <div className="flex items-center gap-3 px-2 text-[18px] text-[var(--text-muted)]">
+        {/* 부가 액션 — SVG 아이콘 한 줄 */}
+        <div className="flex items-center gap-3 px-2 text-[var(--text-muted)]">
           <button
             type="button"
             onClick={handleShareSingle}
             disabled={sharingCard}
             title="공유 카드"
-            className="hover:opacity-80 disabled:opacity-40"
+            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:opacity-40"
           >
-            {sharingCard ? '⏳' : '📤'}
+            <IconShare size={17} />
           </button>
           {userId && !isMine && openCollectionPicker && (
             <button
               type="button"
               onClick={() => openCollectionPicker(art.id)}
               title="컬렉션에 추가"
-              className="hover:opacity-80"
+              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
             >
-              📚
+              <IconCollections size={17} />
             </button>
           )}
           {userId && !isMine && (
@@ -396,9 +395,9 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
               type="button"
               onClick={() => setReportOpen(true)}
               title="신고"
-              className="hover:opacity-80"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-red-500 hover:bg-[var(--surface-2)]"
             >
-              🚩
+              <IconReport size={17} />
             </button>
           )}
           {isMine && (
@@ -409,26 +408,26 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
                 onClick={handleSetHero}
                 disabled={busyHero}
                 title={isHero ? '대표 해제' : '대표로'}
-                className={`disabled:opacity-50 ${isHero ? '' : 'opacity-60'}`}
+                className={`flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] disabled:opacity-50 ${isHero ? 'text-yellow-500' : ''}`}
               >
-                ⭐
+                <IconStar size={17} filled={isHero} />
               </button>
               <button
                 type="button"
                 onClick={() => setScreen('artworkEdit')}
                 title="편집"
-                className="hover:opacity-80"
+                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
               >
-                ✎
+                <IconEdit size={17} />
               </button>
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
                 title="삭제"
-                className="text-red-500 disabled:opacity-50"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-red-500 hover:bg-[var(--surface-2)] disabled:opacity-50"
               >
-                {deleting ? '⏳' : '🗑'}
+                <IconTrash size={17} />
               </button>
             </>
           )}
@@ -436,19 +435,6 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
 
         <div id="comment-section-anchor" />
         <CommentSection artworkId={art.id} openPerson={openPerson} />
-
-        {related.length > 0 && (
-          <section>
-            <h2 className="mb-3 text-[20px] font-extrabold tracking-[-0.06em]">같은 사람의 사진</h2>
-            <div className="grid grid-cols-3 gap-2">
-              {related.map((item) => (
-                <button key={item.id} type="button" onClick={() => openArtwork(item.id)}>
-                  <ImageBox src={item.imageUrl} alt={item.title} className="aspect-square rounded-[16px]" />
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
 
         {sameNeighborhood.length > 0 && place && (
           <section>
@@ -475,35 +461,11 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
           </section>
         )}
 
-        {sameKeyword.length > 0 && (
-          <section>
-            <button
-              type="button"
-              onClick={() => openKeyword?.(art.daily_vision)}
-              className="mb-3 flex w-full items-baseline justify-between text-left"
-            >
-              <h2 className="text-[20px] font-extrabold tracking-[-0.06em]">#{art.daily_vision}</h2>
-              <span className="text-[11px] text-[var(--text-muted)]">전체 ›</span>
-            </button>
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4">
-              {sameKeyword.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => openArtwork(item.id)}
-                  className="shrink-0"
-                >
-                  <ImageBox src={item.imageUrl} alt={item.title} className="h-[140px] w-[140px] rounded-[14px]" />
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
       </div>
 
       {zoomOpen && (
         <PhotoZoomModal
-          photos={userPhotos}
+          photos={dayPhotos}
           initialIndex={zoomIndex}
           autoplay={zoomAutoplay}
           onClose={() => { setZoomOpen(false); setZoomAutoplay(false); }}

@@ -30,8 +30,8 @@ export function getMonthDays(artworks, year, month) {
 }
 
 export function placeLabel(place) {
-  if (!place) return '장소 미상';
-  return place.neighborhood || place.name || '이름 없는 공간';
+  if (!place) return null;
+  return place.neighborhood || place.name || null;
 }
 
 export function profileLabel(profile) {

@@ -84,7 +84,7 @@ export function PostListRow({ artwork, onOpen }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-[16px] font-extrabold leading-tight tracking-[-0.05em]">
           {hot && <span className="mr-1 text-yellow-500">⭐</span>}
-          {artwork.title || '제목 없음'}
+          {artwork.title}
           {commentCount > 0 && (
             <span className="ml-1 align-middle text-[13px] font-bold text-[var(--ink)]">[{commentCount}]</span>
           )}
@@ -120,7 +120,7 @@ export function PhotoTile({ artwork, onOpen }) {
         )}
       </div>
       <div className="p-3">
-        <p className="line-clamp-2 text-sm font-semibold tracking-[-0.04em]">{artwork.title || '제목 없음'}</p>
+        <p className="line-clamp-2 text-sm font-semibold tracking-[-0.04em]">{artwork.title}</p>
         {artwork.daily_vision && <p className="mt-1 text-[11px] text-[var(--text-faint)]">#{artwork.daily_vision}</p>}
       </div>
     </button>

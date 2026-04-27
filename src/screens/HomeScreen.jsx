@@ -100,6 +100,7 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
   } = useData();
   const { unreadCount } = useNotifications();
   const [feedFilter, setFeedFilter] = useState('전체');
+  const [feedMode, setFeedMode] = useState('추천'); // 추천 / 실시간
 
   const followingIds = useMemo(
     () => new Set(getFollowing(userId).map((f) => f.followee_id)),
@@ -137,25 +138,28 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
     [places, getPlaceArtworks, visibleArtworks]
   );
 
-  // 단일 알고리즘 피드 (최신성 + 인기 + 친화도 가중)
+  // 추천 = 알고리즘 정렬 (인기/관심사 우대) / 실시간 = 최신순
   const fullFeed = useMemo(() => {
     const candidates = visibleArtworks.filter((a) => a.location_mode !== '숨김');
+    if (feedMode === '실시간') {
+      return [...candidates].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
     const now = Date.now();
     const scored = candidates.map((art) => {
       const ageHours = (now - new Date(art.created_at).getTime()) / 3600000;
-      const recencyScore = 1 / (1 + ageHours / 24); // 1일 단위 감쇠
+      const recencyScore = 1 / (1 + ageHours / 24);
       const hype = getHypeCount(art.id);
       const hypeScore = Math.log1p(hype) * 0.6;
       const followBonus = followingIds.has(art.user_id) ? 0.4 : 0;
       return { art, score: recencyScore + hypeScore + followBonus };
     });
     return scored.sort((a, b) => b.score - a.score).map((s) => s.art);
-  }, [visibleArtworks, getHypeCount, followingIds]);
+  }, [visibleArtworks, getHypeCount, followingIds, feedMode]);
 
   const PAGE = 20;
   const [displayCount, setDisplayCount] = useState(PAGE);
   // 피드 변경(필터 등) 시 페이지 리셋
-  useEffect(() => { setDisplayCount(PAGE); }, [feedFilter]);
+  useEffect(() => { setDisplayCount(PAGE); }, [feedFilter, feedMode]);
   const feedList = fullFeed.slice(0, displayCount);
   const sentinelRef = useRef(null);
   useEffect(() => {
@@ -199,14 +203,32 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
         </div>
       </div>
 
+      {/* 추천 / 실시간 탭 */}
+      <div className="mb-3 flex border-b border-[var(--border)]">
+        {['추천', '실시간'].map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setFeedMode(m)}
+            className={`flex-1 border-b-2 px-3 py-2 text-[14px] font-bold transition ${
+              feedMode === m
+                ? 'border-[var(--ink)] text-[var(--text)]'
+                : 'border-transparent text-[var(--text-muted)]'
+            }`}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
+
       {hasFollowing && (
-        <div className="mb-4 flex gap-2">
+        <div className="mb-3 flex gap-2">
           {['전체', '팔로잉'].map((item) => (
             <button
               key={item}
               type="button"
               onClick={() => setFeedFilter(item)}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold ${
+              className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
                 feedFilter === item
                   ? 'bg-[var(--ink)] text-white'
                   : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'
@@ -248,7 +270,7 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
                 <div className="min-w-0 flex-1">
                   <p className="text-[9px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">오늘의 한 컷</p>
                   <h2 className="mt-0.5 line-clamp-2 text-[18px] font-extrabold leading-tight tracking-[-0.06em]">
-                    {featured.title || '제목 없는 사진'}
+                    {featured.title}
                   </h2>
                   <p className="mt-1 truncate text-[11px] text-[var(--text-muted)]">
                     {profileLabel(getProfile(featured.user_id))} · 🔥 {getHypeCount(featured.id)}
@@ -284,37 +306,6 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
                   · 끝 ·
                 </div>
               )}
-            </section>
-          )}
-
-          {placesWithArt.length > 0 && (
-            <section className="space-y-4">
-              <div>
-                <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">동네별 전시</p>
-                <h2 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.075em]">근방 네컷</h2>
-              </div>
-              {placesWithArt.map(({ place, photos }) => (
-                <article key={place.id} className="rounded-[28px] bg-[var(--surface)] p-3 shadow-[0_0_0_1px_var(--border)]">
-                  <button
-                    type="button"
-                    onClick={() => openPlace(place.id)}
-                    className="mb-3 flex w-full items-end justify-between gap-3 px-1 text-left"
-                  >
-                    <div>
-                      <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
-                        {placeLabel(place)}
-                      </p>
-                      <h3 className="mt-0.5 text-[20px] font-extrabold tracking-[-0.075em]">
-                        {place.name || '이름 없는 공간'}
-                      </h3>
-                    </div>
-                    <span className="rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-[11px] text-[var(--text-muted)]">
-                      {photos.length}컷
-                    </span>
-                  </button>
-                  <FourPhotoWall photos={photos} onOpen={openArtwork} />
-                </article>
-              ))}
             </section>
           )}
 

@@ -22,6 +22,7 @@ import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SettingsSheet from '../components/SettingsSheet';
+import { IconSaved, IconCollections, IconActivity, IconEdit, IconSettings, IconShare, IconCalendar, IconLock } from '../components/icons/AppIcons';
 import LocationPickerModal from '../components/LocationPickerModal';
 import PhotoZoomModal from '../components/PhotoZoomModal';
 import {
@@ -220,46 +221,46 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
         onBack={isMe ? undefined : () => setScreen('home')}
         right={
           isMe ? (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5 text-[var(--text-muted)]">
               <button
                 type="button"
                 onClick={() => setScreen('saved')}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[15px] hover:bg-[var(--surface-2)]"
+                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
                 title="저장한 사진"
               >
-                🔖
+                <IconSaved size={17} />
               </button>
               <button
                 type="button"
                 onClick={() => setScreen('collections')}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[15px] hover:bg-[var(--surface-2)]"
+                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
                 title="컬렉션"
               >
-                📚
+                <IconCollections size={17} />
               </button>
               <button
                 type="button"
                 onClick={() => setScreen('activity')}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[15px] hover:bg-[var(--surface-2)]"
+                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
                 title="활동"
               >
-                ⚡
+                <IconActivity size={17} />
               </button>
               <button
                 type="button"
                 onClick={() => setScreen('profileEdit')}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[14px] hover:bg-[var(--surface-2)]"
+                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
                 title="프로필 편집"
               >
-                ✎
+                <IconEdit size={17} />
               </button>
               <button
                 type="button"
                 onClick={() => setSettingsOpen(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[15px] hover:bg-[var(--surface-2)]"
+                className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
                 title="설정"
               >
-                ⚙️
+                <IconSettings size={17} />
               </button>
             </div>
           ) : null
@@ -454,19 +455,19 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
           extraItems={[
             wall.length >= 1 && {
               label: '4컷 카드 만들기',
-              icon: '📤',
+              iconNode: <IconShare size={18} />,
               onClick: () => { setSettingsOpen(false); handleExport4Cut(); },
               busy: exporting,
             },
             works.length > 0 && {
               label: '이번 주 회고',
-              icon: '🗓',
+              iconNode: <IconCalendar size={18} />,
               onClick: () => { setSettingsOpen(false); handleWeeklyRecap(); },
               busy: recapBusy,
             },
             works.length > 0 && {
               label: '공개 일괄 변경',
-              icon: '🔒',
+              iconNode: <IconLock size={18} />,
               onClick: () => { setSettingsOpen(false); setScreen('bulkPrivacy'); },
             },
           ].filter(Boolean)}

@@ -140,25 +140,26 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
         kicker={`ROLL · ${monthShort} ${now.getFullYear()}`}
       />
       <div className="space-y-5">
-        {/* 일주일 뷰 — 가운데 오늘 선명, 위/아래 강한 페이드 = 액자 느낌 */}
+        {/* 일주일 뷰 — 블록별 거리 기반 투명도 (객체지향) */}
         <section>
           <div
             ref={weekScrollerRef}
             className="relative h-[260px] overflow-x-hidden overflow-y-auto"
-            style={{
-              maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 12%, black 38%, black 62%, rgba(0,0,0,0.15) 88%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 12%, black 38%, black 62%, rgba(0,0,0,0.15) 88%, transparent 100%)',
-              scrollbarWidth: 'none',
-            }}
+            style={{ scrollbarWidth: 'none' }}
           >
             <div className="flex flex-col gap-1 py-[100px]">
-              {weekDays.map((wd) => {
+              {weekDays.map((wd, i) => {
                 const isToday = wd.date.toDateString() === todayStr;
+                // 오늘과의 거리 (인덱스): 가까울수록 진하게
+                const todayIdx = weekDays.findIndex((w) => w.date.toDateString() === todayStr);
+                const distance = Math.abs(i - (todayIdx >= 0 ? todayIdx : 7));
+                const blockOpacity = isToday ? 1 : Math.max(0.18, 1 - distance * 0.16);
                 return (
                   <div
                     key={wd.date.toISOString()}
                     data-today={isToday}
-                    className={`flex w-full min-w-0 shrink-0 items-center gap-1.5 rounded-[8px] px-1.5 py-1 ${
+                    style={{ opacity: blockOpacity }}
+                    className={`flex w-full min-w-0 shrink-0 items-center gap-1.5 rounded-[8px] px-1.5 py-1 transition-opacity ${
                       isToday ? 'bg-[var(--ink)] text-white shadow-[0_6px_18px_rgba(0,0,0,0.18)]' : 'bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]'
                     }`}
                   >

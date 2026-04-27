@@ -236,6 +236,11 @@ export default function RecordScreen({ setScreen, openArtwork }) {
 
   const handleSaveAll = async () => {
     if (items.length === 0 || !userId) return;
+    const missingTitle = items.find((it) => !it.title?.trim());
+    if (missingTitle) {
+      alert('각 사진에 제목을 한 글자 이상 적어주세요.');
+      return;
+    }
     if (items.length > dailyRemaining) {
       alert(`시선집은 하루 4장이 한도예요. 오늘 ${todayCount}장 올렸고 ${dailyRemaining}장만 더 올릴 수 있어요.`);
       return;
@@ -308,32 +313,26 @@ export default function RecordScreen({ setScreen, openArtwork }) {
         kicker="새 장면"
       />
       <div className="space-y-4">
-        {/* 오늘의 필름 — 이미 올린 사진 미리보기 + 삭제/편집 */}
-        {todayWorks.length > 0 && (
-          <section>
-            <p className="mb-2 px-1 text-[11px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
-              오늘의 필름 · {todayCount}/4
-            </p>
-            <div className="grid grid-cols-4 gap-1.5">
-              {[0,1,2,3].map((slot) => {
-                const art = todayWorks[slot];
-                if (!art) {
-                  return (
-                    <div
-                      key={slot}
-                      className="flex aspect-square items-center justify-center rounded-[10px] border border-dashed border-[var(--border)] bg-[var(--bg)] text-[10px] text-[var(--text-faint)]"
-                    >
-                      {slot + 1}
-                    </div>
-                  );
-                }
-                return (
-                  <div key={art.id} className="group relative aspect-square overflow-hidden rounded-[10px]">
+        {/* 4-slot 헤더 — 오늘 올린 사진 + 빈 슬롯에는 + 추가 버튼 */}
+        {items.length === 0 && (
+          dailyRemaining === 0 ? (
+            <section className="flex flex-col items-center justify-center rounded-[24px] bg-[var(--surface)] p-6 text-center shadow-[0_0_0_1px_var(--border)]">
+              <div className="text-[var(--ink)]">
+                <MascotSleepyFour size={240} />
+              </div>
+              <p className="mt-3 text-[16px] font-extrabold tracking-[-0.05em] text-[var(--text)]">
+                오늘 네 장 다 썼어요
+              </p>
+              <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-muted)]">
+                필름은 잠들었어요. 내일 다시 만나요.
+              </p>
+              <div className="mt-4 grid w-full grid-cols-4 gap-1.5">
+                {todayWorks.map((art) => (
+                  <div key={art.id} className="relative aspect-square overflow-hidden rounded-[10px]">
                     <button
                       type="button"
                       onClick={() => openArtwork?.(art.id)}
                       className="block h-full w-full"
-                      title="상세 보기 (편집 가능)"
                     >
                       <img src={art.imageUrl} alt={art.title} className="h-full w-full object-cover" loading="lazy" />
                     </button>
@@ -347,28 +346,57 @@ export default function RecordScreen({ setScreen, openArtwork }) {
                       {deletingId === art.id ? '…' : '✕'}
                     </button>
                   </div>
-                );
-              })}
-            </div>
-          </section>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section>
+              <p className="mb-2 px-1 text-[11px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
+                오늘의 필름 · {todayCount}/4
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {[0,1,2,3].map((slot) => {
+                  const art = todayWorks[slot];
+                  if (art) {
+                    return (
+                      <div key={art.id} className="relative aspect-square overflow-hidden rounded-[14px]">
+                        <button
+                          type="button"
+                          onClick={() => openArtwork?.(art.id)}
+                          className="block h-full w-full"
+                        >
+                          <img src={art.imageUrl} alt={art.title} className="h-full w-full object-cover" loading="lazy" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleDeleteToday(art); }}
+                          disabled={deletingId === art.id}
+                          className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/65 text-[12px] text-white backdrop-blur-sm disabled:opacity-50"
+                          title="삭제"
+                        >
+                          {deletingId === art.id ? '…' : '✕'}
+                        </button>
+                      </div>
+                    );
+                  }
+                  return (
+                    <label
+                      key={slot}
+                      className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-[14px] border-2 border-dashed border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--ink)] hover:text-[var(--text)]"
+                    >
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFiles} />
+                      <Icon name="plus" size={24} />
+                      <span className="mt-1 text-[11px] font-semibold">추가</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+          )
         )}
-
-        {dailyRemaining === 0 && (
-          <div className="rounded-[20px] bg-[var(--surface)] p-5 text-center shadow-[0_0_0_1px_var(--border)]">
-            <div className="mx-auto text-[var(--ink)]">
-              <MascotSleepyFour size={220} />
-            </div>
-            <p className="mt-2 text-[15px] font-extrabold tracking-[-0.05em] text-[var(--text)]">
-              오늘 네 장 다 썼어요
-            </p>
-            <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-muted)]">
-              필름은 잠들었어요. 내일 다시 만나요.
-            </p>
-          </div>
-        )}
-        {items.length === 0 && dailyRemaining > 0 ? (
-          <label className={`block ${dailyRemaining === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}>
-            <input type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} disabled={dailyRemaining === 0} />
+        {items.length === 0 && false && dailyRemaining > 0 ? (
+          <label className="block cursor-pointer">
+            <input type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} />
             <div className="flex h-[430px] flex-col items-center justify-center rounded-[28px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]">
               <Icon name="camera" size={34} />
               <span className="mt-3 text-sm">사진 고르기 (오늘 {dailyRemaining}장 가능)</span>
@@ -521,7 +549,9 @@ function RecordItemCard({ item, onRemove, onTitleChange, onUseMyLocation, onPick
         <input
           value={item.title}
           onChange={(event) => onTitleChange(event.target.value)}
-          placeholder="제목 (선택)"
+          placeholder="제목 (필수)"
+          required
+          maxLength={40}
           className="w-full bg-transparent text-xs font-semibold outline-none placeholder:text-[var(--placeholder)]"
         />
         {showLocationFallback && (
