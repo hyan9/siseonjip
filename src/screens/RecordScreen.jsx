@@ -51,7 +51,7 @@ import {
   toggleBlock,
 } from '../lib/db';
 import { readPhotoMeta } from '../lib/exif';
-import { MascotSleepyFour } from '../components/Mascot';
+import { CatSleepyFour as MascotSleepyFour } from '../components/Mascot';
 import { reverseGeocode, getCurrentPosition, distanceMeters, searchPlaces } from '../lib/geocoding';
 import {
   formatTime,

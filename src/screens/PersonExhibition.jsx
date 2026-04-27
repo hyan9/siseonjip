@@ -232,45 +232,53 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
         }
       />
       <div className="space-y-4">
-        {featured && (
-          <button
-            type="button"
-            onClick={() => openArtwork(featured.id)}
-            className="relative -mx-4 -mt-2 block w-[calc(100%+2rem)] overflow-hidden text-left"
-          >
-            <ImageBox src={featured.imageUrl} alt={featured.title} className="h-[230px] w-full" priority />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-              <p className="text-[10px] font-semibold tracking-[0.18em] text-white/80">{featuredLabel}</p>
-              <p className="mt-1 text-[20px] font-extrabold leading-tight tracking-[-0.06em]">
-                {featured.title || '제목 없는 사진'}
-              </p>
-              <p className="mt-1 text-[11px] italic leading-snug text-white/70">
-                {featuredSub}
-              </p>
-            </div>
-          </button>
-        )}
-        {!featured && isMe && works.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setScreen('twentyFive')}
-            className="-mx-4 -mt-2 flex w-[calc(100%+2rem)] items-center justify-center gap-2 border-y border-dashed border-[var(--border)] bg-[var(--surface-2)] py-5 text-center text-sm text-[var(--text-muted)]"
-          >
-            🌟 25번째 사진을 고르세요 — 월터의 상상은 현실이 된다
-          </button>
-        )}
-
-        <section className="rounded-[24px] bg-[var(--surface)] p-5 shadow-[0_0_0_1px_var(--border)]">
-          <p className="text-[10px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
-            {profile.nickname}의 개인전
-          </p>
-          <h2 className="mt-1.5 text-[26px] font-extrabold leading-[1.15] tracking-[-0.075em]">
-            {profile.exhibition_title || (
-              <span className="text-[var(--text-faint)]">제목 미정</span>
+        <section className="rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
+          <div className="flex gap-3">
+            {/* 25번째 사진 썸네일 (왼쪽) — 작게 합쳐짐 */}
+            {featured ? (
+              <button
+                type="button"
+                onClick={() => openArtwork(featured.id)}
+                className="relative h-[100px] w-[100px] shrink-0 overflow-hidden rounded-[14px]"
+              >
+                <ImageBox src={featured.imageUrl} alt={featured.title} className="h-full w-full" priority />
+                <span className="absolute left-1 top-1 rounded-full bg-black/65 px-1.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-sm">
+                  🌟
+                </span>
+              </button>
+            ) : (
+              isMe && works.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setScreen('twentyFive')}
+                  className="flex h-[100px] w-[100px] shrink-0 flex-col items-center justify-center rounded-[14px] border border-dashed border-[var(--border)] bg-[var(--bg)] text-center text-[10px] text-[var(--text-muted)]"
+                >
+                  <span className="text-2xl">🌟</span>
+                  <span className="mt-1 px-1 leading-tight">25번째 사진 고르기</span>
+                </button>
+              )
             )}
-          </h2>
-          {profile.note && <p className="mt-2.5 text-[14px] leading-[1.7] text-[var(--text-body)]">{profile.note}</p>}
+
+            {/* 전시 제목 + 설명 (오른쪽) */}
+            <div className="min-w-0 flex-1">
+              <h2 className="line-clamp-2 text-[20px] font-extrabold leading-[1.15] tracking-[-0.07em]">
+                {profile.exhibition_title || (
+                  <span className="text-[var(--text-faint)]">제목 미정</span>
+                )}
+              </h2>
+              {featured && (
+                <p className="mt-1 line-clamp-2 text-[10px] italic leading-snug text-[var(--text-muted)]">
+                  {featuredSub}
+                </p>
+              )}
+              {profile.note && (
+                <p className="mt-2 line-clamp-3 text-[12px] leading-[1.6] text-[var(--text-body)]">
+                  {profile.note}
+                </p>
+              )}
+            </div>
+          </div>
+
           {profile.words?.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {profile.words.map((word) => (

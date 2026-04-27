@@ -18,6 +18,7 @@ import MapView from '../components/MapView';
 import HypeButton from '../components/HypeButton';
 import ShareButton from '../components/ShareButton';
 import { FourPhotoWall, PhotoTile, PersonRow, PlaceRow, PostListRow } from '../components/Cards';
+import { CatPhotographer } from '../components/Mascot';
 import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
 import LocationPickerModal from '../components/LocationPickerModal';
@@ -236,19 +237,22 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
               <button
                 type="button"
                 onClick={() => openArtwork(featured.id)}
-                className="block w-full overflow-hidden rounded-[20px] bg-[var(--ink)] text-left"
+                className="flex w-full items-center gap-3 overflow-hidden rounded-[18px] bg-[var(--surface)] p-2 text-left shadow-[0_0_0_1px_var(--border)]"
               >
-                <div className="relative">
-                  <ImageBox src={featured.imageUrl} alt={featured.title} className="h-[180px]" />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-3 text-white">
-                    <p className="text-[9px] font-semibold tracking-[0.18em] text-white/70">오늘의 한 컷</p>
-                    <h2 className="mt-0.5 truncate text-[18px] font-extrabold tracking-[-0.06em]">
-                      {featured.title || '제목 없는 사진'}
-                    </h2>
-                    <p className="mt-0.5 truncate text-[11px] text-white/80">
-                      {profileLabel(getProfile(featured.user_id))} · 🔥 {getHypeCount(featured.id)}
-                    </p>
+                <div className="relative shrink-0">
+                  <ImageBox src={featured.imageUrl} alt={featured.title} className="h-[88px] w-[88px] rounded-[12px]" />
+                  <div className="absolute -bottom-1 -right-1 rounded-full bg-[var(--surface)] p-0.5 text-[var(--ink)] shadow">
+                    <CatPhotographer size={28} />
                   </div>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[9px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">오늘의 한 컷</p>
+                  <h2 className="mt-0.5 line-clamp-2 text-[18px] font-extrabold leading-tight tracking-[-0.06em]">
+                    {featured.title || '제목 없는 사진'}
+                  </h2>
+                  <p className="mt-1 truncate text-[11px] text-[var(--text-muted)]">
+                    {profileLabel(getProfile(featured.user_id))} · 🔥 {getHypeCount(featured.id)}
+                  </p>
                 </div>
               </button>
             </section>

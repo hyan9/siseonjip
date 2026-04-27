@@ -2,6 +2,7 @@
 import { useNotifications } from '../lib/notifications-context';
 import { useTheme } from '../lib/theme-context';
 import Icon from './Icon';
+import { CatPhotographer } from './Mascot';
 
 export function Shell({ children, screen, setScreen, showNav = true }) {
   return (
@@ -134,8 +135,11 @@ export function EmptyState({ title, hint, onAction, actionLabel }) {
 
 export function Splash({ message = '불러오는 중…' }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--bg)] p-6 text-center text-sm text-[var(--text-muted)]">
-      {message}
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[var(--bg)] p-6 text-center">
+      <div className="text-[var(--ink)]">
+        <CatPhotographer size={96} animate />
+      </div>
+      <p className="text-sm text-[var(--text-muted)]">{message}</p>
     </div>
   );
 }

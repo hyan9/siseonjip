@@ -157,15 +157,15 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
                   <div
                     key={wd.date.toISOString()}
                     data-today={isToday}
-                    className={`flex shrink-0 gap-2.5 rounded-[12px] px-3 py-2 transition ${
+                    className={`flex shrink-0 items-center gap-2 rounded-[10px] px-2 py-1.5 transition ${
                       isToday ? 'bg-[var(--ink)] text-white shadow-[0_8px_20px_rgba(0,0,0,0.18)]' : 'bg-[var(--surface)] shadow-[0_0_0_1px_var(--border)]'
                     }`}
                   >
-                    <div className="w-[42px] shrink-0 self-center">
-                      <p className={`text-[8px] font-semibold tracking-[0.14em] ${isToday ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
-                        {['SUN','MON','TUE','WED','THU','FRI','SAT'][wd.date.getDay()]}
+                    <div className="w-[34px] shrink-0">
+                      <p className={`text-[8px] font-semibold tracking-[0.12em] ${isToday ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
+                        {['일','월','화','수','목','금','토'][wd.date.getDay()]}
                       </p>
-                      <p className="text-[18px] font-extrabold leading-tight tracking-[-0.05em]">
+                      <p className="text-[16px] font-extrabold leading-tight tracking-[-0.05em]">
                         {String(wd.date.getDate()).padStart(2, '0')}
                       </p>
                     </div>
@@ -178,7 +178,7 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
                             type="button"
                             onClick={() => art && openArtwork(art.id)}
                             disabled={!art}
-                            className={`relative aspect-square overflow-hidden rounded-[6px] ${
+                            className={`relative aspect-square overflow-hidden rounded-[5px] ${
                               art
                                 ? ''
                                 : isToday
