@@ -30,9 +30,14 @@ export function getMonthDays(artworks, year, month) {
   });
 }
 
+// 장소 이름 — 없으면 카든냥 톤으로 ("미지의 곳" / 좌표 있으면 "이름 없는 ◯◯")
 export function placeLabel(place) {
-  if (!place) return null;
-  return place.neighborhood || place.name || null;
+  if (!place) return '미지의 곳';
+  const name = place.neighborhood || place.name;
+  if (name) return name;
+  // 좌표는 있는데 이름이 없는 경우 — "아직 알려지지 않은 곳"
+  if (place.lat != null && place.lng != null) return '아직 알려지지 않은 곳';
+  return '미지의 곳';
 }
 
 export function profileLabel(profile) {

@@ -36,6 +36,7 @@ const CollectionsScreen = lazy(() => import('./screens/CollectionsScreen'));
 const CollectionDetailScreen = lazy(() => import('./screens/CollectionDetailScreen'));
 const MessagesScreen = lazy(() => import('./screens/MessagesScreen'));
 const ConversationScreen = lazy(() => import('./screens/ConversationScreen'));
+const GuideScreen = lazy(() => import('./screens/GuideScreen'));
 
 function MainApp() {
   const [screen, setScreen] = useState('home');
@@ -81,6 +82,7 @@ function MainApp() {
   if (screen === 'collectionDetail') content = <CollectionDetailScreen collectionId={selectedCollectionId} setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'messages') content = <MessagesScreen setScreen={setScreen} openConversation={openConversation} openPerson={openPerson} />;
   if (screen === 'conversation') content = <ConversationScreen otherId={selectedConvOtherId} setScreen={setScreen} openPerson={openPerson} />;
+  if (screen === 'guide') content = <GuideScreen setScreen={setScreen} />;
 
   return (
     <>

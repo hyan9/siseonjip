@@ -130,6 +130,45 @@
   --hero-to: #000000;
 }
 
+/* 점박이 — 흰 바탕 + 검정 점 패턴 + 분홍 액센트 (코끝 핑크) */
+[data-theme="spotted"] {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #ededed;
+  --surface-3: #d8d8d8;
+  --image-bg: #c8c8c8;
+
+  --ink: #141414;
+  --ink-text: #ffffff;
+
+  --text: #141414;
+  --text-muted: #5e5e5e;
+  --text-faint: #969696;
+  --text-body: #2e2e2e;
+  --text-quote: #1f1f1f;
+  --text-meta: #737373;
+  --placeholder: #a8a8a8;
+
+  --border: #dddddd;
+  --border-strong: #c0c0c0;
+  --border-dashed: #b0b0b0;
+
+  --accent: #e23a72;          /* 핑크 — 점박이 코끝 */
+  --accent-soft: #fbd0de;
+
+  --hero-from: #1a1a1a;
+  --hero-via: #0a0a0a;
+  --hero-to: #000000;
+}
+
+/* 점박이 패턴 — 검정 도트가 규칙적으로. body에만 적용 (카드/이미지는 깨끗) */
+html[data-theme="spotted"] body {
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, rgba(20, 20, 20, 0.16) 1.5px, transparent 1.6px);
+  background-size: 22px 22px;
+  background-position: 0 0;
+}
+
 /* 고등어 — 은빛 줄무늬 + 차콜 */
 [data-theme="mackerel"] {
   --bg: #e7e9ec;

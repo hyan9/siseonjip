@@ -83,6 +83,15 @@ const BOT_ARTWORK_BLUEPRINTS = [
   { user_id: 'bot:kettle', title: '잠시 멈춘 손',             daily_vision: '카페',  url: 'https://images.unsplash.com/photo-1442975631115-c4f7b05b8a2c?auto=format&fit=crop&w=900&q=80', d: 6 },
 ];
 
+// 각 봇의 첫 작품을 그 봇의 25번째 사진(=대표작 / 가장 아름다운 한 장)으로 표시.
+// "25번째"는 영화 월터의 상상은 현실이 된다 메타포 — 세상에서 가장 아름다운 사진.
+const BOT_TWENTY_FIVE_BY_USER = new Map();
+BOT_ARTWORK_BLUEPRINTS.forEach((a, i) => {
+  if (!BOT_TWENTY_FIVE_BY_USER.has(a.user_id)) {
+    BOT_TWENTY_FIVE_BY_USER.set(a.user_id, i);
+  }
+});
+
 export const BOT_ARTWORKS = BOT_ARTWORK_BLUEPRINTS.map((a, i) => ({
   id: `bot-art:${i}`,
   user_id: a.user_id,
@@ -95,7 +104,7 @@ export const BOT_ARTWORKS = BOT_ARTWORK_BLUEPRINTS.map((a, i) => ({
   place_id: null,
   lat: null,
   lng: null,
-  is_twenty_five: false,
+  is_twenty_five: BOT_TWENTY_FIVE_BY_USER.get(a.user_id) === i,
   view_count: 0,
   created_at: dayAgo(a.d),
 }));

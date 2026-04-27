@@ -171,7 +171,7 @@ export async function upsertPlace({ lat, lng, neighborhood, name, places }) {
       lat,
       lng,
       neighborhood: neighborhood ?? null,
-      name: name ?? neighborhood ?? '이름 없는 공간',
+      name: name ?? neighborhood ?? '아직 알려지지 않은 곳',
     })
     .select()
     .single();

@@ -42,6 +42,13 @@ export const THEMES = [
     swatch: ['#e7e9ec', '#1f2429', '#2eb6c6'],
     color: '#e7e9ec',
   },
+  {
+    id: 'spotted',
+    label: '점박이',
+    hint: '흰 바탕에 규칙적인 검정 점들',
+    swatch: ['#fafafa', '#141414', '#e23a72'],
+    color: '#fafafa',
+  },
 ];
 
 const VALID_IDS = new Set(THEMES.map((t) => t.id));

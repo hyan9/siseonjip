@@ -45,6 +45,7 @@ export function TopBar({ screen, setScreen }) {
     { id: 'activity', label: '내 활동', icon: 'activity' },
     { id: 'messages', label: '메시지', icon: 'message' },
     { id: 'profileEdit', label: '프로필 편집', icon: 'edit' },
+    { id: 'guide', label: '카든냥이란?', icon: 'sparkle' },
   ];
 
   return (

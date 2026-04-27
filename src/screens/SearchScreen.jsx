@@ -6,6 +6,7 @@ import {
   EmptyState,
 } from '../components/ui';
 import { PersonRow, PlaceRow, PostListRow } from '../components/Cards';
+import { IconHype } from '../components/icons/AppIcons';
 
 
 import {
@@ -83,57 +84,81 @@ export default function SearchScreen({ openArtwork, openPerson, openPlace }) {
   return (
     <>
       <Header title="탐색" subtitle="사진·사람·위치를 따라갑니다." kicker="찾아보기" />
-      <div className="space-y-4">
+      <div className="space-y-3">
         <SearchBar query={query} setQuery={setQuery} />
 
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        {/* 카테고리 — 사진/사람/위치 */}
+        <div className="flex gap-2">
           {['사진', '사람', '위치'].map((item) => (
             <button
               key={item}
               type="button"
               onClick={() => setTab(item)}
-              className={`rounded-full px-4 py-2 text-sm ${tab === item ? 'bg-[var(--ink)] text-white' : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'}`}
+              className={`rounded-full px-4 py-1.5 text-[13px] font-semibold ${tab === item ? 'bg-[var(--ink)] text-white' : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'}`}
             >
               {item}
             </button>
           ))}
         </div>
 
-        {tab !== '위치' && (
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-[var(--text-faint)]">정렬</span>
-            {['최신', '인기'].map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setSort(item)}
-                className={`rounded-full px-3 py-1 ${sort === item ? 'bg-[var(--surface-2)] font-semibold text-[var(--text)]' : 'text-[var(--text-muted)]'}`}
-              >
-                {item === '인기' ? '🔥 인기' : item}
-              </button>
-            ))}
+        {/* 정렬 + 키워드 칩 — 한 줄 안에 묶고 시각적 분리 */}
+        {tab === '사진' && (
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-faint)]">정렬</span>
+              <div className="flex gap-1">
+                {['최신', '인기'].map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setSort(item)}
+                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold transition ${sort === item ? 'bg-[var(--surface-2)] text-[var(--text)]' : 'text-[var(--text-muted)] hover:text-[var(--text)]'}`}
+                  >
+                    {item === '인기' && <IconHype size={11} filled />}
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {allKeywords.length > 0 && (
+              <div className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1" style={{ scrollbarWidth: 'none' }}>
+                <button
+                  type="button"
+                  onClick={() => setKeywordFilter(null)}
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${!keywordFilter ? 'bg-[var(--ink)] text-white' : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'}`}
+                >
+                  전체
+                </button>
+                {allKeywords.map((word) => (
+                  <button
+                    key={word}
+                    type="button"
+                    onClick={() => setKeywordFilter(word === keywordFilter ? null : word)}
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${keywordFilter === word ? 'bg-[var(--ink)] text-white' : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'}`}
+                  >
+                    #{word}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
-
-        {tab === '사진' && allKeywords.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <button
-              type="button"
-              onClick={() => setKeywordFilter(null)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs ${!keywordFilter ? 'bg-[var(--ink)] text-white' : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'}`}
-            >
-              전체
-            </button>
-            {allKeywords.map((word) => (
-              <button
-                key={word}
-                type="button"
-                onClick={() => setKeywordFilter(word === keywordFilter ? null : word)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs ${keywordFilter === word ? 'bg-[var(--ink)] text-white' : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]'}`}
-              >
-                #{word}
-              </button>
-            ))}
+        {tab === '사람' && (
+          <div className="flex items-center gap-3 pt-1">
+            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-faint)]">정렬</span>
+            <div className="flex gap-1">
+              {['최신', '인기'].map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setSort(item)}
+                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold transition ${sort === item ? 'bg-[var(--surface-2)] text-[var(--text)]' : 'text-[var(--text-muted)] hover:text-[var(--text)]'}`}
+                >
+                  {item === '인기' && <IconHype size={11} filled />}
+                  {item}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -141,7 +166,7 @@ export default function SearchScreen({ openArtwork, openPerson, openPlace }) {
           filteredArts.length === 0
             ? <EmptyState title="검색 결과 없음" hint="다른 키워드를 시도해보세요." />
             : (
-              <div className="rounded-[20px] bg-[var(--surface)] px-4 shadow-[0_0_0_1px_var(--border)]">
+              <div className="-mx-3 divide-y divide-[var(--border)] border-y border-[var(--border)] bg-[var(--surface)]">
                 {filteredArts.map((art) => <PostListRow key={art.id} artwork={art} onOpen={openArtwork} />)}
               </div>
             )

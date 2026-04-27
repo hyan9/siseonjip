@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useTheme } from '../lib/theme-context';
 import { IconMessage, IconLogout, IconShare } from './icons/AppIcons';
+import { InstallButton } from './InstallPrompt';
 
 async function inviteFriend() {
   const url = (typeof window !== 'undefined' && window.location.origin) || 'https://kadennyang.app';
@@ -120,6 +121,10 @@ export default function SettingsSheet({ onClose, onMessages, onLogout, extraItem
             </span>
             <span className="text-[11px] text-[var(--text-muted)]">링크 공유</span>
           </button>
+
+          <hr className="my-1 border-[var(--border)]" />
+
+          <InstallButton />
 
           {extraItems.length > 0 && <hr className="my-1 border-[var(--border)]" />}
           {extraItems.map((item) => (

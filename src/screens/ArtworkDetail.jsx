@@ -217,10 +217,8 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
                   className="hover:underline"
                 >
                   📍 {art.location_mode === '개인전만' || art.location_mode === '숨김'
-                    ? '장소 비공개'
-                    : place
-                    ? placeLabel(place)
-                    : '장소 미상'}
+                    ? '비밀의 곳'
+                    : placeLabel(place)}
                 </button>
               </div>
             </div>
