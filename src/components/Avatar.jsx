@@ -4,8 +4,14 @@
 import { useData } from '../lib/data-context';
 
 export default function Avatar({ profile, size = 32, className = '', imageUrl, fallback = false }) {
-  const data = useData();
-  const works = !fallback && profile?.id ? data.getUserArtworks?.(profile.id) ?? [] : [];
+  // useData는 DataProvider 밖에서 호출되면 throw — Avatar는 여러 곳에서 쓰이므로 try로 감쌈
+  let data = null;
+  try { data = useData(); } catch { /* DataProvider 밖 사용 — fallback으로 처리 */ }
+
+  const works = !fallback && profile?.id && data?.getUserArtworks
+    ? data.getUserArtworks(profile.id)
+    : [];
+
   // imageUrl이 직접 주어지면 우선, 아니면 25번째, 아니면 첫 작품
   const photo =
     imageUrl ??

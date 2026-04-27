@@ -197,28 +197,54 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
       ) : feedMode === '추천' ? (
         // === 추천: 오늘의 주제 + 오늘의 한 컷 + 카드형 피드 + 작가 추천 ===
         <div className="space-y-5 pt-3">
-          {/* 오늘의 주제 — 일일 키워드 사진전 */}
+          {/* 오늘의 주제 — 일일 사진전 (한 줄 미니멀 카드) */}
           {(() => {
             const today = getTodayKeyword();
-            const todaysCount = artworks.filter((a) => a.daily_vision === today).length;
+            const todaysList = artworks.filter((a) => a.daily_vision === today);
+            const todaysCount = todaysList.length;
+            const previewPhotos = todaysList.slice(0, 3);
             return (
               <button
                 type="button"
                 onClick={() => openKeyword?.(today)}
-                className="block w-full overflow-hidden rounded-[20px] bg-gradient-to-br from-[var(--accent)] to-[var(--ink)] p-4 text-left text-white shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
+                className="flex w-full items-center gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-left transition hover:bg-[var(--surface-2)]"
               >
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">
-                  오늘의 주제 · {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
-                </p>
-                <h2 className="mt-1 text-[26px] font-extrabold leading-tight tracking-[-0.07em]">
-                  #{today}
-                </h2>
-                <p className="mt-2 text-[12px] leading-5 text-white/80">
-                  카든냥이 오늘 골라준 단어. 이 단어로 셔터를 눌러 일일 사진전에 참여하세요.
-                </p>
-                <p className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-white/90">
-                  지금까지 {todaysCount}장 →
-                </p>
+                {/* 좌측 — 작은 별 모양 인디케이터 */}
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/15 text-[var(--accent)]">
+                  <span className="text-[16px]">✦</span>
+                </div>
+                {/* 본문 */}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-bold tracking-[0.14em] text-[var(--text-muted)]">
+                    오늘의 주제
+                  </p>
+                  <p className="mt-0.5 truncate text-[15px] font-extrabold tracking-[-0.05em] text-[var(--text)]">
+                    #{today}
+                    <span className="ml-2 text-[11px] font-semibold text-[var(--text-faint)]">
+                      {todaysCount}장
+                    </span>
+                  </p>
+                </div>
+                {/* 우측 — 참여한 사진 미니 썸네일 (있으면) */}
+                {previewPhotos.length > 0 && (
+                  <div className="flex shrink-0 -space-x-1.5">
+                    {previewPhotos.map((art) => (
+                      <span
+                        key={art.id}
+                        className="h-7 w-7 overflow-hidden rounded-full border-2 border-[var(--surface)]"
+                        style={{ background: 'var(--image-bg)' }}
+                      >
+                        <img
+                          src={art.imageUrl}
+                          alt=""
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <span className="shrink-0 text-[var(--text-faint)]">›</span>
               </button>
             );
           })()}

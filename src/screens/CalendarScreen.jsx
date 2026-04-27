@@ -312,28 +312,6 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
         </section>
         )}
 
-        {/* 날짜별 보기 — 월별 탭에 같이 (작품이 있을 때만) */}
-        {filmView === 'month' && activeDays.length > 0 && (
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-[22px] font-extrabold tracking-[-0.07em]">날짜별 보기</h2>
-              <button type="button" onClick={() => setScreen('twentyFive')} className="text-xs text-[var(--text-muted)]">
-                25번째 사진 고르기
-              </button>
-            </div>
-            {activeDays.map((day) => (
-              <FilmDayGrid
-                key={day.day}
-                year={year}
-                month={month}
-                day={day.day}
-                artworkIds={day.artworkIds}
-                works={myWorks}
-                onOpenDay={openDayZoom}
-              />
-            ))}
-          </section>
-        )}
 
         {myWorks.length === 0 && (
           <EmptyState title="아직 필름이 비어있어요" hint="첫 사진을 올려보세요." onAction={() => setScreen('record')} actionLabel="사진 올리기" />

@@ -55,16 +55,12 @@ export function FourPhotoWall({ photos, onOpen, mini = false, compact = false })
     );
   }
 
+  // 4장 — 균등 2×2
   return (
-    <div className={`grid grid-cols-2 gap-1.5 overflow-hidden ${heightClass}`}>
-      <div className="grid min-h-0 grid-rows-2 gap-1.5">
-        <ExhibitionSlot artwork={list[0]} onOpen={onOpen} />
-        <ExhibitionSlot artwork={list[1]} onOpen={onOpen} />
-      </div>
-      <div className="grid min-h-0 grid-rows-2 gap-1.5">
-        <ExhibitionSlot artwork={list[2]} onOpen={onOpen} />
-        <ExhibitionSlot artwork={list[3]} onOpen={onOpen} />
-      </div>
+    <div className={`grid grid-cols-2 grid-rows-2 gap-1.5 overflow-hidden ${heightClass}`}>
+      {list.slice(0, 4).map((art) => (
+        <ExhibitionSlot key={art.id} artwork={art} onOpen={onOpen} />
+      ))}
     </div>
   );
 }
