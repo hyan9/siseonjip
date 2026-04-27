@@ -73,7 +73,7 @@ export async function generateFourCutCard({ photos, profile, theme = 'light' }) 
   // 헤더
   ctx.fillStyle = palette.sub;
   ctx.font = '700 28px system-ui, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
-  ctx.fillText('시선집', 64, 96);
+  ctx.fillText('카든냥', 64, 96);
 
   ctx.fillStyle = palette.text;
   ctx.font = '900 64px system-ui, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
@@ -132,7 +132,7 @@ export async function generateFourCutCard({ photos, profile, theme = 'light' }) 
   const dateLabel = new Date().toLocaleDateString('ko-KR', {
     year: 'numeric', month: 'long', day: 'numeric',
   });
-  ctx.fillText(`${dateLabel} · 시선집에서 보기`, 64, footerY + 44);
+  ctx.fillText(`${dateLabel} · 카든냥에서 보기`, 64, footerY + 44);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
@@ -194,7 +194,7 @@ export async function generateSinglePhotoCard({ photo, profile, theme = 'light' 
   // 헤더
   ctx.fillStyle = palette.sub;
   ctx.font = '700 26px system-ui, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
-  ctx.fillText('시선집', 64, 100);
+  ctx.fillText('카든냥', 64, 100);
 
   // 제목 (사진 아래)
   ctx.fillStyle = palette.text;
@@ -225,7 +225,7 @@ export async function shareSinglePhotoCard({ photo, profile, theme }) {
   const blob = await generateSinglePhotoCard({ photo, profile, theme });
   const file = new File([blob], `siseonjip-${photo?.title || 'photo'}.png`, { type: 'image/png' });
   if (navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ files: [file], title: '시선집', text: photo?.title || '' });
+    await navigator.share({ files: [file], title: '카든냥', text: photo?.title || '' });
     return 'shared';
   }
   const url = URL.createObjectURL(blob);
@@ -256,7 +256,7 @@ export async function generateWeeklyRecapCard({ photos, profile, theme = 'light'
   // 헤더
   ctx.fillStyle = palette.accent;
   ctx.font = '800 24px system-ui, sans-serif';
-  ctx.fillText('이번 주 시선집', 64, 96);
+  ctx.fillText('이번 주 카든냥', 64, 96);
 
   ctx.fillStyle = palette.text;
   ctx.font = '900 64px system-ui, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
@@ -318,7 +318,7 @@ export async function generateWeeklyRecapCard({ photos, profile, theme = 'light'
   // 푸터
   ctx.fillStyle = palette.sub;
   ctx.font = '500 22px system-ui, sans-serif';
-  ctx.fillText(`사진 ${photos.length}장 · 시선집에서 보기`, 64, H - 60);
+  ctx.fillText(`사진 ${photos.length}장 · 카든냥에서 보기`, 64, H - 60);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('이미지 생성 실패'))), 'image/png', 0.95);
@@ -329,7 +329,7 @@ export async function shareWeeklyRecapCard({ photos, profile, theme, weekRange }
   const blob = await generateWeeklyRecapCard({ photos, profile, theme, weekRange });
   const file = new File([blob], `siseonjip-weekly-${profile?.nickname || 'me'}.png`, { type: 'image/png' });
   if (navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ files: [file], title: '이번 주 시선집' });
+    await navigator.share({ files: [file], title: '이번 주 카든냥' });
     return 'shared';
   }
   const url = URL.createObjectURL(blob);
@@ -349,7 +349,7 @@ export async function shareFourCutCard({ photos, profile, theme }) {
   if (navigator.canShare?.({ files: [file] })) {
     await navigator.share({
       files: [file],
-      title: '시선집 4컷',
+      title: '카든냥 4컷',
       text: `${profile?.nickname || ''}의 오늘의 4컷`,
     });
     return 'shared';

@@ -119,7 +119,7 @@ function SetupNeededScreen() {
   return (
     <div className="min-h-screen bg-[var(--bg)] p-6">
       <div className="mx-auto max-w-[430px] space-y-4 rounded-[24px] bg-[var(--surface)] p-6 shadow-[0_0_0_1px_var(--border)]">
-        <p className="text-[11px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">시선집</p>
+        <p className="text-[11px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">카든냥</p>
         <h1 className="text-[26px] font-extrabold leading-tight tracking-[-0.07em]">
           먼저 Supabase를<br />연결해야 해요
         </h1>

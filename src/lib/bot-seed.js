@@ -100,7 +100,7 @@ export const BOT_ARTWORKS = BOT_ARTWORK_BLUEPRINTS.map((a, i) => ({
   created_at: dayAgo(a.d),
 }));
 
-// 봇끼리 다는 댓글 — 시선집 톤 (짧고 일기처럼)
+// 봇끼리 다는 댓글 — 카든냥 톤 (짧고 일기처럼)
 const BOT_COMMENT_BLUEPRINTS = [
   { artwork_id: 'bot-art:0', user_id: 'bot:salt',   text: '간판 옆 이끼만 보였다는 말, 너무 알 것 같아요.', d: 0.5 },
   { artwork_id: 'bot-art:0', user_id: 'bot:linen',  text: '비 오기 전 색이 정말 이런 톤이죠.', d: 1 },

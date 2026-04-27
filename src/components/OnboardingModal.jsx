@@ -48,7 +48,7 @@ export default function OnboardingModal() {
             <CatPhotographer size={48} />
           </div>
           <div>
-            <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">시선집</p>
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">카든냥</p>
             <h2 className="mt-0.5 text-[18px] font-extrabold tracking-[-0.06em]">
               어떻게 불러드릴까요?
             </h2>

@@ -14,7 +14,7 @@ export function Shell({ children, screen, setScreen, showNav = true }) {
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
       <div className="relative mx-auto flex min-h-screen max-w-[430px] flex-col bg-[var(--bg)]">
         {!noChrome && <TopBar screen={screen} setScreen={setScreen} />}
-        {/* 가운데만 스크롤. 리스트(시선집, 알림 등)는 -mx-3으로 풀폭 */}
+        {/* 가운데만 스크롤. 리스트(카든냥, 알림 등)는 -mx-3으로 풀폭 */}
         <main className="flex-1 px-3 pb-2">{children}</main>
         {showNav && !noChrome && <BottomNav screen={screen} setScreen={setScreen} />}
       </div>
@@ -53,12 +53,12 @@ export function TopBar({ screen, setScreen }) {
         type="button"
         onClick={() => setScreen('home')}
         className="flex items-center gap-1.5 text-[15px] font-extrabold tracking-[-0.07em]"
-        aria-label="시선집 홈"
+        aria-label="카든냥 홈"
       >
         <span className="text-[var(--ink)]">
           <CatPhotographer size={20} />
         </span>
-        시선집
+        카든냥
       </button>
       <div className="flex items-center gap-1 text-[var(--text-muted)]" ref={menuRef}>
         <button

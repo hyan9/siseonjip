@@ -1,5 +1,5 @@
 // 닉네임 첫 글자 + user_id 해시 기반 그라데이션 색
-// 시선집 전반 통일 톤
+// 카든냥 전반 통일 톤
 export default function Avatar({ profile, size = 32, className = '' }) {
   const name = profile?.nickname || '?';
   const initial = (name[0] || '?').toUpperCase();

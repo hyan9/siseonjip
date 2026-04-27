@@ -1,6 +1,6 @@
 import Icon from './Icon';
 
-export default function ShareButton({ label = '', title = '시선집', text = '이 전시를 같이 볼래요?' }) {
+export default function ShareButton({ label = '', title = '카든냥', text = '이 전시를 같이 볼래요?' }) {
   const handleShare = async () => {
     const url = window.location.href;
     const shareData = { title, text, url };

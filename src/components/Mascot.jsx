@@ -1,4 +1,4 @@
-// 시선집 마스코트 — 사진 찍는 고양이 (시선집 자아)
+// 카든냥 마스코트 — 사진 찍는 고양이 (카든냥 자아)
 // currentColor 기반이라 light/dark 자동 반응
 
 const SPIN_KEYFRAMES = `

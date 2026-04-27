@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 /* ============================================================
-   Theme variables
+   카든냥 테마 변수 — 고양이 5종 모티브
+   기본: 도화지(paper) / 야간(night) / 식빵(bread) / 치즈(cheese) / 고등어(mackerel)
    ============================================================ */
 
-:root {
-  /* "Mist & Stone" — 따뜻한 종이를 버리고 차가운 인쇄 종이 톤으로 갈아엎음.
-     bg는 옅은 mist white, surface는 거의 순백, ink는 짙은 charcoal.
-     액센트는 테라코타 그대로 살려서 사진 위 인덱스가 도드라지도록. */
+/* 기본값 = 도화지 */
+:root,
+[data-theme="paper"] {
   --bg: #f1f2ee;
   --surface: #ffffff;
   --surface-2: #e7e8e3;
   --surface-3: #d4d6d0;
-  --image-bg: #b8bbb4; /* 살짝 진하게 — 사진이 묻히지 않게 */
+  --image-bg: #b8bbb4;
 
   --ink: #1a1d1f;
   --ink-text: #ffffff;
@@ -29,7 +29,6 @@
   --border-strong: #c8cac4;
   --border-dashed: #b9bcb6;
 
-  /* 액센트 — 따뜻한 테라코타 (사진 위에 떠도 무겁지 않음) */
   --accent: #d97757;
   --accent-soft: #f4dcd1;
 
@@ -38,13 +37,13 @@
   --hero-to: #000000;
 }
 
-[data-theme="dark"] {
-  /* "Charcoal Studio" — 종이 결을 버리고 짙은 청색-회색 톤. 사진 발색에 더 충실. */
+/* 야간 — 깊은 새벽 */
+[data-theme="night"] {
   --bg: #0e1014;
   --surface: #161a20;
   --surface-2: #1f242b;
   --surface-3: #2a3038;
-  --image-bg: #06080b; /* 다크에서는 거의 검정 — 사진 발색을 살림 */
+  --image-bg: #06080b;
 
   --ink: #050608;
   --ink-text: #ffffff;
@@ -69,6 +68,99 @@
   --hero-to: #000000;
 }
 
+/* 식빵 — 따뜻한 밀크 + 크러스트 갈색 */
+[data-theme="bread"] {
+  --bg: #f4ecd9;
+  --surface: #fcf6e8;
+  --surface-2: #e8d8b6;
+  --surface-3: #d6c094;
+  --image-bg: #c4ad7a;
+
+  --ink: #3a2a16;
+  --ink-text: #fffaf0;
+
+  --text: #3a2a16;
+  --text-muted: #806c4d;
+  --text-faint: #a89272;
+  --text-body: #54402a;
+  --text-quote: #43321f;
+  --text-meta: #94805f;
+  --placeholder: #b39e7d;
+
+  --border: #e3d2af;
+  --border-strong: #cfba8b;
+  --border-dashed: #c0a877;
+
+  --accent: #c75d3a;          /* 잘 익은 크러스트 끝 */
+  --accent-soft: #f3d0bb;
+
+  --hero-from: #3a2814;
+  --hero-via: #1c130a;
+  --hero-to: #000000;
+}
+
+/* 치즈 — 체다 + 노른자 + 햇살 */
+[data-theme="cheese"] {
+  --bg: #fbeebf;
+  --surface: #fff7d8;
+  --surface-2: #f4d68f;
+  --surface-3: #e8be5d;
+  --image-bg: #d8a83e;
+
+  --ink: #4d2c10;
+  --ink-text: #fffaf0;
+
+  --text: #4d2c10;
+  --text-muted: #815a2c;
+  --text-faint: #a48050;
+  --text-body: #5d3815;
+  --text-quote: #4a290e;
+  --text-meta: #93702f;
+  --placeholder: #b69464;
+
+  --border: #f0d894;
+  --border-strong: #d9b65b;
+  --border-dashed: #c69f3f;
+
+  --accent: #e0561d;           /* 진한 오렌지 — 치즈 + 토마토 */
+  --accent-soft: #f7d2b3;
+
+  --hero-from: #5a3318;
+  --hero-via: #2d1a0c;
+  --hero-to: #000000;
+}
+
+/* 고등어 — 은빛 줄무늬 + 차콜 */
+[data-theme="mackerel"] {
+  --bg: #e7e9ec;
+  --surface: #f5f6f8;
+  --surface-2: #cdd1d6;
+  --surface-3: #abb1ba;
+  --image-bg: #98a0aa;
+
+  --ink: #1f2429;
+  --ink-text: #ffffff;
+
+  --text: #1f2429;
+  --text-muted: #5e6770;
+  --text-faint: #8a939c;
+  --text-body: #3a4148;
+  --text-quote: #2c3239;
+  --text-meta: #6c757d;
+  --placeholder: #9ba2aa;
+
+  --border: #c4cad1;
+  --border-strong: #aab1ba;
+  --border-dashed: #98a0aa;
+
+  --accent: #2eb6c6;          /* 청록 — 시원한 액센트 */
+  --accent-soft: #c2e8ee;
+
+  --hero-from: #2c343d;
+  --hero-via: #15191e;
+  --hero-to: #000000;
+}
+
 html, body, #root {
   margin: 0;
   padding: 0;
@@ -81,20 +173,23 @@ html, body, #root {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Leaflet 기본 attribution 가독성을 다크 모드에서도 유지 */
-[data-theme="dark"] .leaflet-container {
+/* Leaflet — 어두운 테마(야간/고등어)에서 가독성 */
+[data-theme="night"] .leaflet-container,
+[data-theme="mackerel"] .leaflet-container {
   background: #1a1820;
 }
 
-[data-theme="dark"] .leaflet-control-attribution {
+[data-theme="night"] .leaflet-control-attribution,
+[data-theme="mackerel"] .leaflet-control-attribution {
   background: rgba(0, 0, 0, 0.6);
   color: #c0bdb6;
 }
 
-[data-theme="dark"] .leaflet-control-attribution a {
+[data-theme="night"] .leaflet-control-attribution a,
+[data-theme="mackerel"] .leaflet-control-attribution a {
   color: #f3f1ec;
 }
 
-[data-theme="dark"] .leaflet-tile {
+[data-theme="night"] .leaflet-tile {
   filter: brightness(0.85) contrast(1.05);
 }

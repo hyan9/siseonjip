@@ -273,7 +273,7 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
                 카메라 보기
               </button>
             )}
-            <div className="absolute right-3 top-3"><ShareButton title={art.title || '시선집'} /></div>
+            <div className="absolute right-3 top-3"><ShareButton title={art.title || '카든냥'} /></div>
             {/* 사진 좌우에 작은 이전/다음 화살표 (제목 없음, 방향만) */}
             {feedNav.prev && (
               <button

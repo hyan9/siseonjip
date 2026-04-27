@@ -139,7 +139,7 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
           <p className="text-[10px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
             {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
           </p>
-          <h1 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.07em]">오늘의 시선들</h1>
+          <h1 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.07em]">오늘의 셔터들</h1>
         </div>
       )}
 
@@ -164,7 +164,7 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
 
       {artworks.length === 0 ? (
         <EmptyState
-          title="아직 시선집이 비어있어요"
+          title="아직 카든냥이 비어있어요"
           hint={'사용법은 간단해요:\n1. 아래 + 버튼으로 사진 올리기\n2. 사진의 EXIF GPS 또는 "내 위치"로 자동 동네 매칭\n3. 같은 동네의 사진은 자동으로 한 전시에 묶여요\n\n둘러보고 싶으면 [내 전시] 탭에서 샘플 사진 5장 추가도 가능합니다.'}
           onAction={() => setScreen('record')}
           actionLabel="첫 사진 올리기"
@@ -267,10 +267,10 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
           )}
         </div>
       ) : (
-        // === 실시간: 시선집 list — edge-to-edge 풀 폭 (디시·디젤매니아 형태) ===
+        // === 실시간: 카든냥 list — edge-to-edge 풀 폭 (디시·디젤매니아 형태) ===
         <section className="-mx-3 mt-2">
           <div className="flex items-baseline gap-2 border-b border-[var(--border)] px-3 py-2">
-            <h2 className="text-[14px] font-extrabold tracking-[-0.05em]">시선집</h2>
+            <h2 className="text-[14px] font-extrabold tracking-[-0.05em]">카든냥</h2>
             <span className="text-[10px] text-[var(--text-faint)]">
               {feedList.length}/{fullFeed.length} · 최신순
             </span>

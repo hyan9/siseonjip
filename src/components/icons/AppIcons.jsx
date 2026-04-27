@@ -1,4 +1,4 @@
-// 시선집 톤 stroke 아이콘 — currentColor + 1.6 strokeWidth
+// 카든냥 톤 stroke 아이콘 — currentColor + 1.6 strokeWidth
 // 우상단 툴바, SettingsSheet 등에서 일관 톤 유지
 
 const sw = 1.6;
@@ -171,7 +171,7 @@ export function IconLock({ size = 18 }) {
   );
 }
 
-// Hype — 시선집 톤에 맞춘 자체 디자인 화염 (저챙도)
+// Hype — 카든냥 톤에 맞춘 자체 디자인 화염 (저챙도)
 export function IconHype({ size = 18, filled = false }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" {...base} fill={filled ? 'currentColor' : 'none'}>

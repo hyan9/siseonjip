@@ -1,11 +1,11 @@
-// 시선집 E2E — 익명 체험 흐름
+// 카든냥 E2E — 익명 체험 흐름
 // 사전 조건: dev 서버 실행 중 (http://localhost:5173), Supabase 익명 로그인 활성화.
 // 실행: npx playwright test tests/e2e/guest-demo.spec.js
 
 import { test, expect } from '@playwright/test';
 
 test.describe('익명 체험 시작 흐름', () => {
-  test('체험하기 → 봇 작품이 시선집 list에 보임 → 캘린더 25칸 인디케이터', async ({ page }) => {
+  test('체험하기 → 봇 작품이 카든냥 list에 보임 → 캘린더 25칸 인디케이터', async ({ page }) => {
     await page.goto('/');
 
     // 1) 로그인 화면 — "체험하기" 버튼이 가장 위에 큼지막하게
@@ -13,8 +13,8 @@ test.describe('익명 체험 시작 흐름', () => {
     await expect(guestBtn).toBeVisible();
     await guestBtn.click();
 
-    // 2) 메인 진입 — TopBar에 "시선집" 노출
-    await expect(page.getByRole('button', { name: '시선집 홈' })).toBeVisible();
+    // 2) 메인 진입 — TopBar에 "카든냥" 노출
+    await expect(page.getByRole('button', { name: '카든냥 홈' })).toBeVisible();
 
     // 3) 추천 탭이 기본 선택, 오늘의 한 컷 카드 노출
     await expect(page.getByText('오늘의 한 컷')).toBeVisible({ timeout: 10000 });

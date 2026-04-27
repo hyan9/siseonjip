@@ -5,7 +5,7 @@ test.describe('캘린더 / 25번째', () => {
   test('체험 시작 후 캘린더 진입 → 25칸 인디케이터', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /체험하기/ }).click();
-    await expect(page.getByRole('button', { name: '시선집 홈' })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: '카든냥 홈' })).toBeVisible({ timeout: 15000 });
 
     // BottomNav '필름'
     await page.getByRole('button', { name: /필름/ }).click();

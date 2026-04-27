@@ -6,7 +6,7 @@ test.describe('봇 가드', () => {
     await page.goto('/');
     await page.getByRole('button', { name: /체험하기/ }).click();
     // 메인 진입까지 대기
-    await expect(page.getByRole('button', { name: '시선집 홈' })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: '카든냥 홈' })).toBeVisible({ timeout: 15000 });
   });
 
   test('봇 작품에서 hype 누르면 alert + DB 호출 차단', async ({ page }) => {

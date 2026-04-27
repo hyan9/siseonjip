@@ -12,7 +12,7 @@ export function formatTime(iso) {
 }
 
 export function dateOf(art) {
-  // 시선집은 "올린 날" 기준 (EXIF taken_at은 옛 날짜를 갖고 있어 캘린더가 어긋남)
+  // 카든냥은 "올린 날" 기준 (EXIF taken_at은 옛 날짜를 갖고 있어 캘린더가 어긋남)
   return new Date(art.created_at);
 }
 

@@ -189,7 +189,7 @@ export default function RecordScreen({ setScreen, openArtwork }) {
       return;
     }
     if (items.length > dailyRemaining) {
-      alert(`시선집은 하루 4장이 한도예요. 오늘 ${todayCount}장 올렸고 ${dailyRemaining}장만 더 올릴 수 있어요.`);
+      alert(`카든냥은 하루 4장이 한도예요. 오늘 ${todayCount}장 올렸고 ${dailyRemaining}장만 더 올릴 수 있어요.`);
       return;
     }
     setBusy(true);
@@ -256,7 +256,7 @@ export default function RecordScreen({ setScreen, openArtwork }) {
     <>
       <Header
         title="기록"
-        subtitle={`시선집은 하루 4장 — 오늘 ${todayCount}/4`}
+        subtitle={`카든냥은 하루 4장 — 오늘 ${todayCount}/4`}
         kicker="새 장면"
       />
       <div className="space-y-4">

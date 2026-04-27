@@ -66,14 +66,14 @@ export default function LoginScreen() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,200,140,0.18),transparent_60%)]" />
           <div className="relative flex h-full min-h-[560px] flex-col justify-between p-6">
             <div className="flex items-center justify-between text-[12px] font-semibold tracking-[0.16em]">
-              <span>시선집</span>
-              <span>입장</span>
+              <span>카든냥</span>
+              <span>카메라 든 냥이</span>
             </div>
             <div>
               <h1 className="text-[48px] font-extrabold leading-[0.92] tracking-[-0.1em]">
-                보게 되는<br />것들
+                냥이가<br />본 오늘
               </h1>
-              <p className="mt-4 text-[15px] leading-7 text-white/80">하루의 사진이 전시가 되는 곳.</p>
+              <p className="mt-4 text-[15px] leading-7 text-white/80">하루 네 장.<br />그중 가장 오래 남은 25번째 한 장.</p>
 
               {sent ? (
                 <div className="mt-8 rounded-[20px] bg-white/10 p-5 text-sm leading-6">
