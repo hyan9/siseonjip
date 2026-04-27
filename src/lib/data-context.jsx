@@ -8,6 +8,7 @@ import {
   fetchCurateSlots,
   fetchFollows,
   fetchCommentReactions,
+  fetchSaves,
   publicPhotoUrl,
 } from './db';
 import { useAuth } from './auth-context';
@@ -24,13 +25,16 @@ export function DataProvider({ children }) {
   const [curateSlots, setCurateSlots] = useState([]);
   const [follows, setFollows] = useState([]);
   const [commentReactions, setCommentReactions] = useState([]);
+  const [saves, setSaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const userIdRef = session?.user?.id ?? null;
 
   const refresh = useCallback(async () => {
     try {
       setError(null);
-      const [p, pl, a, c, h, cs, f, cr] = await Promise.all([
+      const [p, pl, a, c, h, cs, f, cr, sv] = await Promise.all([
         fetchProfiles(),
         fetchPlaces(),
         fetchArtworks(),
@@ -39,6 +43,7 @@ export function DataProvider({ children }) {
         fetchCurateSlots(),
         fetchFollows().catch(() => []),
         fetchCommentReactions().catch(() => []),
+        userIdRef ? fetchSaves(userIdRef).catch(() => []) : Promise.resolve([]),
       ]);
       setProfiles(p);
       setPlaces(pl);
@@ -48,13 +53,14 @@ export function DataProvider({ children }) {
       setCurateSlots(cs);
       setFollows(f);
       setCommentReactions(cr);
+      setSaves(sv);
     } catch (err) {
       console.error('[data] refresh 실패', err);
       setError(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userIdRef]);
 
   useEffect(() => {
     refresh();
@@ -177,6 +183,43 @@ export function DataProvider({ children }) {
         .slice(0, limit);
     };
 
+    const isSavedByMe = (artworkId) =>
+      userId != null && saves.some((s) => s.artwork_id === artworkId && s.user_id === userId);
+
+    const getSavedArtworks = () => {
+      const ids = saves
+        .slice()
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .map((s) => s.artwork_id);
+      return ids.map((id) => getArtwork(id)).filter(Boolean);
+    };
+
+    const getMyActivity = (limit = 50) => {
+      if (!userId) return [];
+      const myHypes = hypes
+        .filter((h) => h.user_id === userId)
+        .map((h) => ({ kind: 'hype', artwork_id: h.artwork_id, created_at: h.created_at }));
+      const myComments = comments
+        .filter((c) => c.user_id === userId)
+        .map((c) => ({ kind: c.parent_id ? 'reply' : 'comment', artwork_id: c.artwork_id, comment_id: c.id, text: c.text, created_at: c.created_at }));
+      const mySaves = saves
+        .filter((s) => s.user_id === userId)
+        .map((s) => ({ kind: 'save', artwork_id: s.artwork_id, created_at: s.created_at }));
+      const myFollows = follows
+        .filter((f) => f.follower_id === userId)
+        .map((f) => ({ kind: 'follow', followee_id: f.followee_id, created_at: f.created_at }));
+      const myReactions = commentReactions
+        .filter((r) => r.user_id === userId)
+        .map((r) => {
+          const c = comments.find((cc) => cc.id === r.comment_id);
+          return { kind: 'comment_reaction', comment_id: r.comment_id, artwork_id: c?.artwork_id, created_at: r.created_at };
+        });
+
+      return [...myHypes, ...myComments, ...mySaves, ...myFollows, ...myReactions]
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, limit);
+    };
+
     const getStats = (uid) => {
       const userArts = getUserArtworks(uid);
       let totalHype = 0;
@@ -235,8 +278,12 @@ export function DataProvider({ children }) {
       getStats,
       getRecommendedArtworks,
       getRecommendedCreators,
+      saves,
+      isSavedByMe,
+      getSavedArtworks,
+      getMyActivity,
     };
-  }, [profiles, places, artworks, comments, hypes, curateSlots, follows, commentReactions, session?.user?.id, loading, error, refresh]);
+  }, [profiles, places, artworks, comments, hypes, curateSlots, follows, commentReactions, saves, session?.user?.id, loading, error, refresh]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

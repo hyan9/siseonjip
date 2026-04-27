@@ -412,6 +412,41 @@ export async function updateArtwork(artworkId, userId, fields) {
   return data;
 }
 
+// ============================================================
+// Saves (북마크)
+// ============================================================
+
+export async function fetchSaves(userId) {
+  if (!userId) return [];
+  const { data, error } = await supabase
+    .from('saves')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.warn('[db] saves fetch 실패 (마이그레이션 005 필요?)', error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function toggleSave(artworkId, userId, currentlySaved) {
+  if (currentlySaved) {
+    const { error } = await supabase
+      .from('saves')
+      .delete()
+      .eq('artwork_id', artworkId)
+      .eq('user_id', userId);
+    if (error) throw error;
+    return false;
+  }
+  const { error } = await supabase
+    .from('saves')
+    .insert({ artwork_id: artworkId, user_id: userId });
+  if (error) throw error;
+  return true;
+}
+
 export async function bulkUpdateArtworkLocationMode(artworkIds, userId, locationMode) {
   if (artworkIds.length === 0) return [];
   const update = { location_mode: locationMode };

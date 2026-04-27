@@ -32,6 +32,16 @@ function FitBounds({ points }) {
   return null;
 }
 
+function FlyTo({ target }) {
+  const map = useMap();
+  useEffect(() => {
+    if (target) {
+      map.flyTo([target.lat, target.lng], target.zoom ?? 15, { duration: 0.8 });
+    }
+  }, [target, map]);
+  return null;
+}
+
 const createClusterIcon = (cluster) => {
   const count = cluster.getChildCount();
   const size = count < 10 ? 36 : count < 50 ? 44 : 52;
@@ -63,6 +73,8 @@ export default function MapView({
   height = 390,
   cluster = true,
   onMarkerClick,
+  flyTarget,
+  fitBounds = true,
 }) {
   const fallbackCenter = center
     ? [center.lat, center.lng]
@@ -108,7 +120,8 @@ export default function MapView({
         ) : (
           renderMarkers()
         )}
-        {points.length > 0 && <FitBounds points={points} />}
+        {fitBounds && points.length > 0 && !flyTarget && <FitBounds points={points} />}
+        <FlyTo target={flyTarget} />
       </MapContainer>
     </div>
   );

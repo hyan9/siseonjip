@@ -57,6 +57,53 @@ export async function reverseGeocode(lat, lng) {
   }
 }
 
+// 동네/주소 → 좌표 (forward geocoding)
+const searchCache = new Map();
+
+export async function searchPlaces(query) {
+  const q = query.trim();
+  if (q.length < 2) return [];
+
+  if (searchCache.has(q)) return searchCache.get(q);
+
+  const params = new URLSearchParams({
+    format: 'jsonv2',
+    q,
+    'accept-language': 'ko,en',
+    limit: '8',
+    addressdetails: '1',
+  });
+
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) throw new Error(`Nominatim ${response.status}`);
+    const data = await response.json();
+    const results = (data || []).map((item) => ({
+      id: `${item.osm_type}-${item.osm_id}`,
+      name: item.display_name,
+      shortName:
+        item.address?.suburb ||
+        item.address?.neighbourhood ||
+        item.address?.city_district ||
+        item.address?.town ||
+        item.address?.village ||
+        item.address?.city ||
+        item.name ||
+        item.display_name?.split(',')[0],
+      lat: parseFloat(item.lat),
+      lng: parseFloat(item.lon),
+      type: item.type,
+    }));
+    searchCache.set(q, results);
+    return results;
+  } catch (error) {
+    console.warn('[geocoding] 검색 실패', error);
+    return [];
+  }
+}
+
 // 두 좌표 사이 거리 (m). Haversine.
 export function distanceMeters(lat1, lng1, lat2, lng2) {
   const R = 6371000;

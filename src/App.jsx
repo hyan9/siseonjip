@@ -31,10 +31,13 @@ import {
   deleteComment,
   bulkUpdateArtworkLocationMode,
   setHeroArtwork,
+  toggleSave,
 } from './lib/db';
+import { searchPlaces } from './lib/geocoding';
 
 import Icon from './components/Icon';
 import MapView from './components/MapView';
+import { downloadFourCutCard, shareFourCutCard } from './lib/share-card';
 
 /* ========================================================================
    유틸
@@ -1325,11 +1328,12 @@ function RecordItemCard({ item, onRemove, onTitleChange, onUseMyLocation, locati
    ====================================================================== */
 
 function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerson, openKeyword }) {
-  const { userId, getArtwork, getProfile, getPlace, getUserArtworks, refresh } = useData();
+  const { userId, getArtwork, getProfile, getPlace, getUserArtworks, isSavedByMe, refresh } = useData();
   const art = getArtwork(artworkId);
   const [deleting, setDeleting] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
   const [busyHero, setBusyHero] = useState(false);
+  const [busySave, setBusySave] = useState(false);
 
   if (!art) return <EmptyState title="사진을 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
@@ -1362,6 +1366,20 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerso
       alert('히어로 설정 실패: ' + err.message);
     } finally {
       setBusyHero(false);
+    }
+  };
+
+  const saved = isSavedByMe(art.id);
+  const handleSave = async () => {
+    if (!userId) return;
+    setBusySave(true);
+    try {
+      await toggleSave(art.id, userId, saved);
+      await refresh();
+    } catch (err) {
+      alert('저장 실패: ' + err.message);
+    } finally {
+      setBusySave(false);
     }
   };
 
@@ -1428,6 +1446,20 @@ function ArtworkDetail({ artworkId, setScreen, openArtwork, openPlace, openPerso
           )}
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <HypeButton artwork={art} />
+            {userId && !isMine && (
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={busySave}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
+                  saved
+                    ? 'border border-[var(--ink)] bg-[var(--ink)] text-white'
+                    : 'border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)]'
+                }`}
+              >
+                {saved ? '🔖 저장됨' : '🔖 저장'}
+              </button>
+            )}
             {isMine && (
               <>
                 <button
@@ -1664,6 +1696,112 @@ function CommentItem({ comment, onReply, isReply = false, openPerson }) {
         </div>
       )}
     </article>
+  );
+}
+
+/* ========================================================================
+   Saved (북마크 모음)
+   ====================================================================== */
+
+function SavedScreen({ setScreen, openArtwork }) {
+  const { userId, getSavedArtworks } = useData();
+  const photos = getSavedArtworks();
+
+  if (!userId) return <Splash />;
+
+  return (
+    <>
+      <Header
+        title="저장한 사진"
+        subtitle="다시 보고 싶은 사진들을 모아둡니다."
+        kicker="🔖 북마크"
+        onBack={() => setScreen('profile')}
+      />
+      {photos.length === 0 ? (
+        <EmptyState
+          title="아직 저장한 사진이 없어요"
+          hint="다른 사람 사진의 🔖 저장 버튼을 눌러 모아보세요."
+        />
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {photos.map((art) => (
+            <PhotoTile key={art.id} artwork={art} onOpen={openArtwork} />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ========================================================================
+   My activity feed
+   ====================================================================== */
+
+function ActivityScreen({ setScreen, openArtwork, openPerson }) {
+  const { userId, getMyActivity, getProfile, getArtwork } = useData();
+  const items = getMyActivity(80);
+
+  if (!userId) return <Splash />;
+
+  const labelFor = (item) => {
+    switch (item.kind) {
+      case 'hype': return '🔥 Hype';
+      case 'comment': return '💬 댓글';
+      case 'reply': return '↳ 답글';
+      case 'comment_reaction': return '❤ 댓글 좋아요';
+      case 'save': return '🔖 저장';
+      case 'follow': return '👋 팔로우';
+      default: return '활동';
+    }
+  };
+
+  return (
+    <>
+      <Header
+        title="내 활동"
+        subtitle="내가 남긴 흔적을 시간순으로 모아봅니다."
+        kicker="활동"
+        onBack={() => setScreen('profile')}
+      />
+
+      {items.length === 0 ? (
+        <EmptyState title="아직 활동이 없어요" hint="다른 사람 사진에 🔥/💬/🔖 남겨보세요." />
+      ) : (
+        <div className="space-y-2">
+          {items.map((item, index) => {
+            const art = item.artwork_id ? getArtwork(item.artwork_id) : null;
+            const target = item.followee_id ? getProfile(item.followee_id) : null;
+            const onClick = () => {
+              if (art) openArtwork(art.id);
+              else if (target) openPerson(target.id);
+            };
+            return (
+              <button
+                key={`${item.kind}-${item.created_at}-${index}`}
+                type="button"
+                onClick={onClick}
+                className="flex w-full items-center gap-3 rounded-[18px] bg-[var(--surface)] p-3 text-left shadow-[0_0_0_1px_var(--border)]"
+              >
+                {art ? (
+                  <ImageBox src={art.imageUrl} alt={art.title} className="h-12 w-12 shrink-0 rounded-[10px]" />
+                ) : (
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] bg-[var(--surface-2)] text-lg">
+                    {labelFor(item).slice(0, 2)}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold tracking-[-0.04em]">{labelFor(item)}</p>
+                  {art?.title && <p className="truncate text-[11px] text-[var(--text-muted)]">{art.title}</p>}
+                  {target && <p className="truncate text-[11px] text-[var(--text-muted)]">{target.nickname}</p>}
+                  {item.text && <p className="truncate text-[11px] text-[var(--text-muted)]">"{item.text}"</p>}
+                  <p className="mt-0.5 text-[10px] text-[var(--text-faint)]">{timeAgo(item.created_at)}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -2214,6 +2352,7 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
     getHypeCount,
     refresh,
   } = useData();
+  const { theme } = useTheme();
   const profile = getProfile(viewedId);
   const works = getUserArtworks(viewedId);
   const wall = getCurateForUser(viewedId);
@@ -2222,6 +2361,7 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
   const following = isFollowing(viewedId);
   const [seeding, setSeeding] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   if (!profile) return <EmptyState title="사용자를 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
 
@@ -2254,6 +2394,24 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
       alert('실패: ' + err.message);
     } finally {
       setFollowBusy(false);
+    }
+  };
+
+  const handleExport4Cut = async () => {
+    if (wall.length === 0) {
+      alert('4컷이 비어있어요. 먼저 큐레이팅 해주세요.');
+      return;
+    }
+    setExporting(true);
+    try {
+      const result = await shareFourCutCard({ photos: wall, profile, theme });
+      if (result === 'downloaded') {
+        // 별도 알림 없이 종료 (브라우저가 다운로드 표시함)
+      }
+    } catch (err) {
+      alert('카드 생성 실패: ' + err.message);
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -2345,6 +2503,30 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
               >
                 프로필 편집
               </button>
+              <button
+                type="button"
+                onClick={() => setScreen('saved')}
+                className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold"
+              >
+                🔖 저장한 사진
+              </button>
+              <button
+                type="button"
+                onClick={() => setScreen('activity')}
+                className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold"
+              >
+                내 활동
+              </button>
+              {wall.length >= 1 && (
+                <button
+                  type="button"
+                  onClick={handleExport4Cut}
+                  disabled={exporting}
+                  className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                >
+                  {exporting ? '카드 만드는 중…' : '📤 4컷 카드'}
+                </button>
+              )}
               {works.length > 0 && (
                 <button
                   type="button"
@@ -2492,6 +2674,36 @@ function SpaceScreen({ openPlace, openArtwork }) {
   const { artworks, places, getPlaceArtworks } = useData();
   const [myLocation, setMyLocation] = useState(null);
   const [locating, setLocating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [flyTarget, setFlyTarget] = useState(null);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    let cancelled = false;
+    setSearching(true);
+    const timer = setTimeout(async () => {
+      const results = await searchPlaces(q);
+      if (!cancelled) setSearchResults(results);
+      setSearching(false);
+    }, 350); // debounce
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      setSearching(false);
+    };
+  }, [searchQuery]);
+
+  const flyToResult = (result) => {
+    setFlyTarget({ lat: result.lat, lng: result.lng, zoom: 15, _ts: Date.now() });
+    setSearchResults([]);
+    setSearchQuery(result.shortName || '');
+  };
 
   const placePoints = places
     .filter((p) => p.lat != null && p.lng != null)
@@ -2523,6 +2735,7 @@ function SpaceScreen({ openPlace, openArtwork }) {
     try {
       const pos = await getCurrentPosition();
       setMyLocation({ lat: pos.lat, lng: pos.lng });
+      setFlyTarget({ lat: pos.lat, lng: pos.lng, zoom: 15, _ts: Date.now() });
     } catch (error) {
       alert('위치 정보를 가져올 수 없어요: ' + error.message);
     } finally {
@@ -2556,6 +2769,47 @@ function SpaceScreen({ openPlace, openArtwork }) {
         }
       />
       <div className="space-y-5">
+        <div className="relative">
+          <div className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+            <Icon name="search" size={17} className="text-[var(--text-muted)]" />
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="동네/주소로 검색 (예: 망원동, 이태원)"
+              className="w-full bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-faint)]"
+            />
+            {searching && <span className="text-xs text-[var(--text-muted)]">검색 중…</span>}
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(''); setSearchResults([]); }}
+                className="text-[var(--text-muted)]"
+                aria-label="지우기"
+              >
+                <Icon name="x" size={14} />
+              </button>
+            )}
+          </div>
+          {searchResults.length > 0 && (
+            <div className="absolute inset-x-0 top-full z-30 mt-2 max-h-72 overflow-y-auto rounded-[18px] bg-[var(--surface)] shadow-[0_8px_24px_rgba(0,0,0,0.12),0_0_0_1px_var(--border)]">
+              {searchResults.map((result) => (
+                <button
+                  key={result.id}
+                  type="button"
+                  onClick={() => flyToResult(result)}
+                  className="flex w-full items-start gap-2 border-b border-[var(--border)] p-3 text-left last:border-b-0"
+                >
+                  <Icon name="pin" size={14} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{result.shortName}</p>
+                    <p className="truncate text-[11px] text-[var(--text-muted)]">{result.name}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {points.length === 0 ? (
           <EmptyState
             title="아직 지도에 표시할 사진이 없어요"
@@ -2565,6 +2819,7 @@ function SpaceScreen({ openPlace, openArtwork }) {
           <MapView
             points={points}
             center={center}
+            flyTarget={flyTarget}
             onMarkerClick={(point) => {
               if (point.kind === 'place') openPlace(point.ref.id);
               else openArtwork(point.ref.id);
@@ -3021,6 +3276,8 @@ function MainApp() {
   if (screen === 'notifications') content = <NotificationsScreen setScreen={setScreen} openArtwork={openArtwork} openPerson={openPerson} />;
   if (screen === 'keyword') content = <KeywordScreen keyword={selectedKeyword} setScreen={setScreen} openArtwork={openArtwork} />;
   if (screen === 'bulkPrivacy') content = <BulkPrivacyScreen setScreen={setScreen} />;
+  if (screen === 'saved') content = <SavedScreen setScreen={setScreen} openArtwork={openArtwork} />;
+  if (screen === 'activity') content = <ActivityScreen setScreen={setScreen} openArtwork={openArtwork} openPerson={openPerson} />;
 
   return (
     <>
