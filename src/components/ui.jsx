@@ -43,7 +43,6 @@ export function TopBar({ screen, setScreen }) {
     { id: 'saved', label: '저장한 사진', icon: 'bookmark' },
     { id: 'collections', label: '컬렉션', icon: 'folder' },
     { id: 'activity', label: '내 활동', icon: 'activity' },
-    { id: 'messages', label: '메시지', icon: 'message' },
     { id: 'profileEdit', label: '프로필 편집', icon: 'edit' },
     { id: 'guide', label: '카든냥이란?', icon: 'sparkle' },
   ];
@@ -80,6 +79,14 @@ export function TopBar({ screen, setScreen }) {
           {unreadCount > 0 && (
             <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
           )}
+        </button>
+        <button
+          type="button"
+          onClick={() => setScreen('messages')}
+          className={`flex h-8 w-8 items-center justify-center rounded-full ${screen === 'messages' || screen === 'conversation' ? 'bg-[var(--surface-2)] text-[var(--text)]' : ''}`}
+          aria-label="메시지"
+        >
+          <Icon name="message" size={16} />
         </button>
         <button
           type="button"

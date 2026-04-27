@@ -32,6 +32,8 @@ export function DataProvider({ children }) {
   const [commentReactions, setCommentReactions] = useState([]);
   // 봇 작품에 단 사용자 댓글 — DB에는 저장 안 되고 브라우저 메모리에만 남음
   const [localBotComments, setLocalBotComments] = useState([]);
+  // 봇과 주고받는 메시지 — 메모리만 (실제 DB messages 테이블은 진짜 사용자끼리)
+  const [localBotMessages, setLocalBotMessages] = useState([]);
   const [saves, setSaves] = useState([]);
   const [collections, setCollections] = useState([]);
   const [collectionItems, setCollectionItems] = useState([]);
@@ -229,11 +231,12 @@ export function DataProvider({ children }) {
     const isInCollection = (collectionId, artworkId) =>
       collectionItems.some((ci) => ci.collection_id === collectionId && ci.artwork_id === artworkId);
 
-    // DM helpers
+    // DM helpers — DB messages + 봇 메시지(메모리) 합침
+    const allMessages = [...messages, ...localBotMessages];
     const getConversations = () => {
       if (!userId) return [];
       const map = new Map();
-      for (const m of messages) {
+      for (const m of allMessages) {
         const other = m.sender_id === userId ? m.recipient_id : m.sender_id;
         if (!other) continue;
         const existing = map.get(other);
@@ -256,7 +259,7 @@ export function DataProvider({ children }) {
     };
     const getThread = (otherId) => {
       if (!userId || !otherId) return [];
-      return messages
+      return allMessages
         .filter(
           (m) =>
             (m.sender_id === userId && m.recipient_id === otherId) ||
@@ -397,8 +400,49 @@ export function DataProvider({ children }) {
           },
         ]);
       },
+      // 봇과 주고받는 메모리 메시지 — DB 미터치, 브라우저 안에서만
+      addLocalBotMessage: (otherId, text) => {
+        if (!userId || !otherId) return;
+        const now = new Date().toISOString();
+        setLocalBotMessages((prev) => [
+          ...prev,
+          {
+            id: `local-msg:${Date.now()}-a`,
+            sender_id: userId,
+            recipient_id: otherId,
+            text,
+            created_at: now,
+            read_at: now,
+            is_local: true,
+          },
+        ]);
+        // 봇이 짧게 자동 답장 (1초 후)
+        setTimeout(() => {
+          const replies = [
+            '셔터 누르고 올게요.',
+            '오늘은 어디서 찍을 거예요?',
+            '저도 그 단어 좋아해요.',
+            '냥.',
+            '나중에 또.',
+            '비슷한 사진을 봤어요.',
+          ];
+          const text2 = replies[Math.floor(Math.random() * replies.length)];
+          setLocalBotMessages((prev) => [
+            ...prev,
+            {
+              id: `local-msg:${Date.now()}-b`,
+              sender_id: otherId,
+              recipient_id: userId,
+              text: text2,
+              created_at: new Date().toISOString(),
+              read_at: null,
+              is_local: true,
+            },
+          ]);
+        }, 900 + Math.random() * 600);
+      },
     };
-  }, [profiles, places, artworks, comments, hypes, curateSlots, follows, commentReactions, saves, collections, collectionItems, messages, blocks, session?.user?.id, loading, error, refresh, localBotComments]);
+  }, [profiles, places, artworks, comments, hypes, curateSlots, follows, commentReactions, saves, collections, collectionItems, messages, blocks, session?.user?.id, loading, error, refresh, localBotComments, localBotMessages]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

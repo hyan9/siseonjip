@@ -20,7 +20,7 @@ import {
 
 
 export default function ConversationScreen({ otherId, setScreen, openPerson }) {
-  const { userId, getProfile, getThread, refresh } = useData();
+  const { userId, getProfile, getThread, refresh, addLocalBotMessage } = useData();
   const other = getProfile(otherId);
   const thread = getThread(otherId);
   const [text, setText] = useState('');
@@ -44,8 +44,10 @@ export default function ConversationScreen({ otherId, setScreen, openPerson }) {
   const handleSend = async (event) => {
     event.preventDefault();
     if (!text.trim() || !userId) return;
+    // 봇과의 대화는 메모리에서만 (브라우저 닫으면 사라짐). 자동 답장도 옴.
     if (other?.is_bot) {
-      alert('데모 봇과는 메시지를 주고받을 수 없어요.');
+      addLocalBotMessage(otherId, text.trim());
+      setText('');
       return;
     }
     setBusy(true);

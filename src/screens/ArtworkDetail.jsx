@@ -7,7 +7,7 @@ import {
 } from '../components/ui';
 import Icon from '../components/Icon';
 import Avatar from '../components/Avatar';
-import { IconShare, IconCollections, IconReport, IconStar, IconEdit, IconTrash, IconBookmark } from '../components/icons/AppIcons';
+import { IconShare, IconCollections, IconReport, IconStar, IconEdit, IconTrash, IconBookmark, IconHype } from '../components/icons/AppIcons';
 import ShareButton from '../components/ShareButton';
 import CommentSection from '../components/CommentSection';
 import ReportModal from '../components/ReportModal';
@@ -209,8 +209,6 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
                   )}
                 </button>
                 <span className="text-[var(--text-faint)]">·</span>
-                <span>{formatTime(art.taken_at) || formatTime(art.created_at)}</span>
-                <span className="text-[var(--text-faint)]">·</span>
                 <button
                   type="button"
                   onClick={() => place && openPlace(place.id)}
@@ -273,7 +271,7 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
             )}
             <div className="absolute right-3 top-3"><ShareButton title={art.title || '카든냥'} /></div>
 
-            {/* 사진 우하단 — Hype 큰 floating 버튼 (위치 명확화) */}
+            {/* 사진 우하단 — Hype floating (화염) */}
             {!isMine && userId && (
               <button
                 type="button"
@@ -282,11 +280,11 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
                 aria-label="Hype"
                 className={`absolute bottom-3 right-3 z-10 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-extrabold backdrop-blur-md transition ${
                   hyped
-                    ? 'bg-yellow-400 text-black shadow-[0_4px_16px_rgba(0,0,0,0.25)]'
+                    ? 'bg-[var(--accent)] text-white shadow-[0_4px_16px_rgba(0,0,0,0.25)]'
                     : 'bg-black/55 text-white shadow-[0_4px_16px_rgba(0,0,0,0.25)]'
                 } disabled:opacity-50`}
               >
-                <IconStar size={16} filled={hyped} />
+                <IconHype size={16} filled={hyped} />
                 <span>{hypeCount}</span>
               </button>
             )}
@@ -320,33 +318,41 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
             </div>
           )}
 
-          {/* 액션 — 한 줄에 모두: 좌측은 hype/저장/조회수, 우측은 공유/편집 등 (소유 여부에 따라) */}
+          {/* 액션 — 좌(hype·저장) | 우(시간·조회수) 한 줄, 그 아래 부가 액션 */}
           <div className="flex items-center justify-between gap-2 border-t border-[var(--border)] px-3 py-2">
-            <div className="flex items-center gap-3 text-[var(--text-muted)]">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={userId && !isMine && !busyHype ? handleHypeToggle : undefined}
                 disabled={!userId || isMine || busyHype}
                 className={`flex items-center gap-1 text-[13px] font-bold transition ${
-                  hyped ? 'text-yellow-500' : ''
+                  hyped ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
                 } disabled:opacity-40`}
-                title="Hype"
+                title="Hype (화염)"
               >
-                <IconStar size={18} filled={hyped} />
+                <IconHype size={18} filled={hyped} />
                 {hypeCount}
               </button>
               <button
                 type="button"
                 onClick={userId && !isMine ? handleSave : undefined}
                 disabled={!userId || isMine}
-                className={`flex items-center transition ${saved ? 'text-[var(--ink)]' : ''} disabled:opacity-30`}
+                className={`flex items-center transition ${saved ? 'text-[var(--ink)]' : 'text-[var(--text-muted)]'} disabled:opacity-30`}
                 title={saved ? '저장됨' : '저장'}
               >
                 <IconBookmark size={18} filled={saved} />
               </button>
-              <span className="text-[10px]">조회 {art.view_count ?? 0}</span>
             </div>
-            <div className="flex items-center gap-1 text-[var(--text-muted)]">
+            {/* 우측: 시간 · 조회수 묶음 */}
+            <div className="flex items-center gap-2 text-[10px] text-[var(--text-faint)]">
+              <span>{formatTime(art.taken_at) || formatTime(art.created_at)}</span>
+              <span>·</span>
+              <span>조회 {art.view_count ?? 0}</span>
+            </div>
+          </div>
+
+          {/* 부가 액션 — 별도 줄 */}
+          <div className="flex items-center gap-1 border-t border-[var(--border)] px-3 py-1.5 text-[var(--text-muted)]">
               <button
                 type="button"
                 onClick={handleShareSingle}
@@ -371,7 +377,7 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
                   type="button"
                   onClick={() => setReportOpen(true)}
                   title="신고"
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-red-500 hover:bg-[var(--surface-2)]"
+                  className="ml-auto flex h-7 w-7 items-center justify-center rounded-full text-red-500 hover:bg-[var(--surface-2)]"
                 >
                   <IconReport size={15} />
                 </button>
@@ -383,7 +389,7 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
                     onClick={handleSetHero}
                     disabled={busyHero}
                     title={isHero ? '대표 해제' : '대표로'}
-                    className={`flex h-7 w-7 items-center justify-center rounded-full hover:bg-[var(--surface-2)] disabled:opacity-50 ${isHero ? 'text-yellow-500' : ''}`}
+                    className={`ml-auto flex h-7 w-7 items-center justify-center rounded-full hover:bg-[var(--surface-2)] disabled:opacity-50 ${isHero ? 'text-yellow-500' : ''}`}
                   >
                     <IconStar size={15} filled={isHero} />
                   </button>
@@ -407,7 +413,6 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
                 </>
               )}
             </div>
-          </div>
         </article>
 
         <div id="comment-section-anchor" />
