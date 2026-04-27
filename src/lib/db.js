@@ -101,6 +101,7 @@ export async function upsertPlace({ lat, lng, neighborhood, name, places }) {
 export async function insertArtwork({
   userId,
   storagePath,
+  imageUrl,
   title,
   note,
   dailyVision,
@@ -114,7 +115,8 @@ export async function insertArtwork({
     .from('artworks')
     .insert({
       user_id: userId,
-      storage_path: storagePath,
+      storage_path: storagePath || null,
+      image_url: imageUrl || null,
       title: title || null,
       note: note || null,
       daily_vision: dailyVision || null,
@@ -128,6 +130,91 @@ export async function insertArtwork({
     .single();
   if (error) throw error;
   return data;
+}
+
+// ============================================================
+// 데모 시딩
+// ============================================================
+
+const SEED_SAMPLES = [
+  {
+    title: '오후가 긁고 간 벽',
+    note: '카페에 앉아 있었는데 계속 저 선만 보였다.',
+    dailyVision: '벽의 금',
+    locationMode: '동네',
+    imageUrl: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=900&q=80',
+    neighborhood: '망원동', lat: 37.556, lng: 126.902,
+  },
+  {
+    title: '커피보다 먼저 도착한 빛',
+    note: '창가 자리에 앉았는데 컵보다 빛이 먼저 보였다.',
+    dailyVision: '반사',
+    locationMode: '정확한 위치',
+    imageUrl: 'https://images.unsplash.com/photo-1517705008128-361805f42e86?auto=format&fit=crop&w=900&q=80',
+    neighborhood: '망원동', lat: 37.5562, lng: 126.9024,
+  },
+  {
+    title: '행복은 꼬리 끝에서 흐려졌다',
+    note: '너무 좋아해서 사진이 따라가지 못했다.',
+    dailyVision: '흔들림',
+    locationMode: '동네',
+    imageUrl: 'https://images.unsplash.com/photo-1507149833265-60c372daea22?auto=format&fit=crop&w=900&q=80',
+    neighborhood: '합정동', lat: 37.549, lng: 126.914,
+  },
+  {
+    title: '유리에 남은 노란 소리',
+    note: '밖은 시끄러웠는데 안쪽에는 노란빛만 남았다.',
+    dailyVision: '반사',
+    locationMode: '정확한 위치',
+    imageUrl: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=900&q=80',
+    neighborhood: '을지로', lat: 37.566, lng: 126.991,
+  },
+  {
+    title: '골목 끝의 초록 점',
+    note: '길 끝에 초록색 하나가 찍혀 있어서 계속 보게 됐다.',
+    dailyVision: '초록',
+    locationMode: '동네',
+    imageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80',
+    neighborhood: '연남동', lat: 37.562, lng: 126.923,
+  },
+];
+
+export async function seedDemoArtworks(userId) {
+  const created = [];
+  for (const sample of SEED_SAMPLES) {
+    let placeId = null;
+    if (sample.lat != null) {
+      const { data: place, error: placeError } = await supabase
+        .from('places')
+        .insert({
+          lat: sample.lat,
+          lng: sample.lng,
+          neighborhood: sample.neighborhood,
+          name: sample.neighborhood,
+        })
+        .select()
+        .single();
+      if (!placeError) placeId = place?.id;
+    }
+
+    const { data, error } = await supabase
+      .from('artworks')
+      .insert({
+        user_id: userId,
+        image_url: sample.imageUrl,
+        title: sample.title,
+        note: sample.note,
+        daily_vision: sample.dailyVision,
+        location_mode: sample.locationMode,
+        place_id: placeId,
+        lat: sample.locationMode === '정확한 위치' ? sample.lat : null,
+        lng: sample.locationMode === '정확한 위치' ? sample.lng : null,
+      })
+      .select()
+      .single();
+    if (!error) created.push(data);
+  }
+  return created;
 }
 
 // ============================================================

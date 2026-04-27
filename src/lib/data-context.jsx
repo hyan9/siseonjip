@@ -57,7 +57,7 @@ export function DataProvider({ children }) {
 
     const enrichedArtworks = artworks.map((art) => ({
       ...art,
-      imageUrl: publicPhotoUrl(art.storage_path),
+      imageUrl: art.image_url || publicPhotoUrl(art.storage_path),
     }));
 
     const getProfile = (id) => profiles.find((p) => p.id === id) || null;

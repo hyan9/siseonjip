@@ -31,7 +31,8 @@ create table if not exists artworks (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
   place_id uuid references places(id) on delete set null,
-  storage_path text not null,
+  storage_path text,                       -- Supabase Storage 경로 (사용자 업로드)
+  image_url text,                          -- 외부 URL (시드/데모 데이터)
   title text,
   note text,
   daily_vision text,
@@ -41,7 +42,8 @@ create table if not exists artworks (
   taken_at timestamptz,
   lat double precision,
   lng double precision,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  constraint artworks_has_image check (storage_path is not null or image_url is not null)
 );
 
 create index if not exists artworks_user_id_idx on artworks (user_id);

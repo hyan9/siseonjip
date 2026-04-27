@@ -14,6 +14,7 @@ import {
   setCurateOrder,
   setTwentyFive,
   updateProfile,
+  seedDemoArtworks,
 } from './lib/db';
 
 import Icon from './components/Icon';
@@ -197,16 +198,16 @@ function ShareButton({ label = '', title = '시선집', text = '이 전시를 �
   );
 }
 
-function GpsStatusBadge({ status }) {
-  const label = {
+function GpsStatusBadge({ status, source }) {
+  const baseLabel = {
     idle: '사진 선택 전',
     reading: '위치 정보 확인 중',
-    found: '위치 정보 발견',
-    empty: '위치 정보 없음',
+    found: source === 'manual' ? '내 위치로 설정됨' : '사진의 위치 정보 발견',
+    empty: '사진에 위치 정보 없음',
     error: '위치 정보 확인 실패',
   }[status] || '위치 정보 없음';
   const dark = status === 'found' || status === 'reading';
-  return <span className={`rounded-full px-3 py-1 text-[11px] ${dark ? 'bg-[#151515]/85 text-white' : 'bg-white/90 text-[#151515]'}`}>{label}</span>;
+  return <span className={`rounded-full px-3 py-1 text-[11px] ${dark ? 'bg-[#151515]/85 text-white' : 'bg-white/90 text-[#151515]'}`}>{baseLabel}</span>;
 }
 
 function ExhibitionSlot({ artwork, onOpen, large = false }) {
@@ -250,7 +251,7 @@ function EmptyState({ title, hint, onAction, actionLabel }) {
   return (
     <div className="rounded-[24px] border border-dashed border-[#d8cfbf] bg-[#fbf8f2] p-8 text-center">
       <p className="text-sm font-semibold text-[#151515]">{title}</p>
-      {hint && <p className="mt-2 text-xs leading-5 text-[#746e66]">{hint}</p>}
+      {hint && <p className="mt-2 whitespace-pre-line text-xs leading-5 text-[#746e66]">{hint}</p>}
       {onAction && (
         <button type="button" onClick={onAction} className="mt-4 rounded-full bg-[#151515] px-4 py-2 text-xs font-semibold text-white">
           {actionLabel || '시작하기'}
@@ -367,16 +368,18 @@ function HomeScreen({ setScreen, openArtwork, openPlace }) {
       </div>
 
       {artworks.length === 0 ? (
-        <EmptyState
-          title="아직 사진이 없어요"
-          hint="첫 사진을 올리면 여기에 동네별 전시가 만들어져요. 아래 + 버튼을 눌러 시작하세요."
-          onAction={() => setScreen('record')}
-          actionLabel="사진 올리기"
-        />
+        <div className="space-y-3">
+          <EmptyState
+            title="아직 시선집이 비어있어요"
+            hint={'사용법은 간단해요:\n1. 아래 + 버튼으로 사진 올리기\n2. 사진의 EXIF GPS 또는 "내 위치"로 자동 동네 매칭\n3. 같은 동네의 사진은 자동으로 한 전시에 묶여요\n\n둘러보고 싶으면 [내 전시] 탭에서 샘플 사진 5장 추가도 가능합니다.'}
+            onAction={() => setScreen('record')}
+            actionLabel="첫 사진 올리기"
+          />
+        </div>
       ) : placesWithArt.length === 0 ? (
         <EmptyState
           title="아직 위치 기반 전시가 없어요"
-          hint="위치 정보가 있는 사진을 올리면 동네별로 묶여서 보여요."
+          hint="위치 정보가 있는 사진(EXIF GPS 또는 '내 위치 사용')을 올리면 동네별로 묶여서 보여요."
           onAction={() => setScreen('record')}
           actionLabel="사진 올리기"
         />
@@ -517,6 +520,7 @@ function RecordScreen({ setScreen }) {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [mode, setMode] = useState('동네');
   const [gpsStatus, setGpsStatus] = useState('idle');
+  const [gpsSource, setGpsSource] = useState(null); // 'exif' | 'manual'
   const [gps, setGps] = useState({ lat: null, lng: null });
   const [takenAt, setTakenAt] = useState(null);
   const [neighborhood, setNeighborhood] = useState(null);
@@ -524,6 +528,7 @@ function RecordScreen({ setScreen }) {
   const [note, setNote] = useState('');
   const [dailyVision, setDailyVision] = useState('');
   const [busy, setBusy] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -532,23 +537,51 @@ function RecordScreen({ setScreen }) {
     };
   }, [previewUrl]);
 
+  const fillFromCoords = async (lat, lng, source) => {
+    setGps({ lat, lng });
+    setGpsStatus('found');
+    setGpsSource(source);
+    const geo = await reverseGeocode(lat, lng);
+    if (geo?.neighborhood) setNeighborhood(geo.neighborhood);
+  };
+
   const handleFile = async (event) => {
     const picked = event.target.files?.[0];
     if (!picked) return;
     setFile(picked);
     setPreviewUrl(URL.createObjectURL(picked));
     setGpsStatus('reading');
+    setGpsSource(null);
     setNeighborhood(null);
+    setGps({ lat: null, lng: null });
 
     const meta = await readPhotoMeta(picked);
-    setGpsStatus(meta.status);
-    setGps({ lat: meta.lat, lng: meta.lng });
     setTakenAt(meta.takenAt);
 
     if (meta.lat != null && meta.lng != null) {
-      const geo = await reverseGeocode(meta.lat, meta.lng);
-      if (geo?.neighborhood) setNeighborhood(geo.neighborhood);
+      await fillFromCoords(meta.lat, meta.lng, 'exif');
+    } else {
+      setGpsStatus(meta.status);
     }
+  };
+
+  const handleUseMyLocation = async () => {
+    setLocating(true);
+    try {
+      const pos = await getCurrentPosition();
+      await fillFromCoords(pos.lat, pos.lng, 'manual');
+    } catch (err) {
+      alert('위치 권한이 필요해요: ' + (err.message || '알 수 없는 오류'));
+    } finally {
+      setLocating(false);
+    }
+  };
+
+  const clearLocation = () => {
+    setGps({ lat: null, lng: null });
+    setNeighborhood(null);
+    setGpsStatus('empty');
+    setGpsSource(null);
   };
 
   const handleSave = async () => {
@@ -612,7 +645,7 @@ function RecordScreen({ setScreen }) {
               <div className="relative">
                 <img src={previewUrl} alt="선택한 사진" className="h-[460px] w-full object-cover" />
                 <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-                  <GpsStatusBadge status={gpsStatus} />
+                  <GpsStatusBadge status={gpsStatus} source={gpsSource} />
                   {neighborhood && (
                     <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] text-[#151515]">{neighborhood}</span>
                   )}
@@ -621,6 +654,35 @@ function RecordScreen({ setScreen }) {
             </div>
           )}
         </label>
+
+        {previewUrl && (
+          <div className="rounded-[20px] bg-[#fbf8f2] p-3 text-xs leading-5 text-[#4d4943] shadow-[0_0_0_1px_#e4dccd]">
+            {gpsStatus === 'found' && gpsSource === 'exif' && (
+              <p>📍 사진에 새겨진 좌표를 읽었어요{neighborhood ? ` (${neighborhood})` : ''}.</p>
+            )}
+            {gpsStatus === 'found' && gpsSource === 'manual' && (
+              <div className="flex items-center justify-between gap-2">
+                <p>📍 지금 내 위치로 설정됨{neighborhood ? ` (${neighborhood})` : ''}.</p>
+                <button type="button" onClick={(event) => { event.preventDefault(); clearLocation(); }} className="rounded-full border border-[#d8cfbf] px-2.5 py-1 text-[11px] text-[#746e66]">
+                  취소
+                </button>
+              </div>
+            )}
+            {(gpsStatus === 'empty' || gpsStatus === 'error') && (
+              <div className="space-y-2">
+                <p>이 사진엔 위치 정보가 없어요. (iOS는 업로드할 때 위치를 빼버리는 경우가 많아요.)</p>
+                <button
+                  type="button"
+                  onClick={(event) => { event.preventDefault(); handleUseMyLocation(); }}
+                  disabled={locating}
+                  className="rounded-full bg-[#151515] px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+                >
+                  {locating ? '위치 가져오는 중…' : '📍 현재 내 위치 사용'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {previewUrl && (
           <section className="space-y-4 rounded-[24px] bg-[#fbf8f2] p-4 shadow-[0_0_0_1px_#e4dccd]">
@@ -825,13 +887,31 @@ function CommentSection({ artworkId, comments }) {
    ====================================================================== */
 
 function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
-  const { userId, getProfile, getUserArtworks, getCurateForUser } = useData();
+  const { userId, getProfile, getUserArtworks, getCurateForUser, refresh } = useData();
   const profile = getProfile(viewedId);
   const works = getUserArtworks(viewedId);
   const wall = getCurateForUser(viewedId);
   const isMe = viewedId === userId;
+  const [seeding, setSeeding] = useState(false);
 
   if (!profile) return <EmptyState title="사용자를 찾을 수 없어요" onAction={() => setScreen('home')} actionLabel="홈으로" />;
+
+  const handleLogout = () => {
+    if (window.confirm('로그아웃 할까요?')) signOut();
+  };
+
+  const handleSeed = async () => {
+    if (!window.confirm('샘플 사진 5장을 내 계정에 추가할까요? (나중에 직접 삭제 가능)')) return;
+    setSeeding(true);
+    try {
+      await seedDemoArtworks(userId);
+      await refresh();
+    } catch (error) {
+      alert('시딩 실패: ' + error.message);
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   return (
     <>
@@ -844,7 +924,7 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
           isMe ? (
             <button
               type="button"
-              onClick={() => signOut()}
+              onClick={handleLogout}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e4dccd] bg-[#fbf8f2]"
               title="로그아웃"
             >
@@ -865,13 +945,25 @@ function PersonExhibition({ userId: viewedId, setScreen, openArtwork }) {
             </div>
           )}
           {isMe && (
-            <button
-              type="button"
-              onClick={() => setScreen('profileEdit')}
-              className="mt-3 rounded-full border border-[#151515] px-3 py-1.5 text-xs font-semibold"
-            >
-              프로필 편집
-            </button>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setScreen('profileEdit')}
+                className="rounded-full border border-[#151515] px-3 py-1.5 text-xs font-semibold"
+              >
+                프로필 편집
+              </button>
+              {works.length === 0 && (
+                <button
+                  type="button"
+                  onClick={handleSeed}
+                  disabled={seeding}
+                  className="rounded-full bg-[#151515] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                >
+                  {seeding ? '샘플 추가 중…' : '🌱 샘플 사진 5장 추가'}
+                </button>
+              )}
+            </div>
           )}
         </section>
 
