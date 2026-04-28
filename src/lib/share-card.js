@@ -233,12 +233,16 @@ export async function generateFourCutCard({ photos, profile, theme = 'light', ke
       : '하루 네 장의 시선';
   ctx.fillText(trimText(sub, 28), 64, 218);
 
-  // 4컷 그리드 (2x2)
-  const startX = 64;
-  const startY = 280;
-  const gridW = W - startX * 2;
+  // 시집 톤 인용 — 부제와 그리드 사이 (워터마크와 충돌 방지로 그리드 위로 이동)
+  drawSignature(ctx, palette, 64, 258, '"가장 오래 남는 사진은 단 한 장."');
+
+  // 4컷 그리드 (2x2) — 워터마크 침범 방지로 cellSize 살짝 줄임 + 가로 가운데 정렬
+  const startY = 308;
   const gap = 20;
-  const cellSize = (gridW - gap) / 2;
+  // 사용 가능 vertical: 워터마크 mascotY(1240) - 그리드 시작(308) - 하단 여유(24) = 908
+  const cellSize = Math.floor((908 - gap) / 2); // 444
+  const gridUsedW = cellSize * 2 + gap;
+  const startX = Math.floor((W - gridUsedW) / 2);
 
   const slots = [photos[0], photos[1], photos[2], photos[3]];
   const positions = [
@@ -277,14 +281,7 @@ export async function generateFourCutCard({ photos, profile, theme = 'light', ke
     ctx.restore();
   }
 
-  // 시그니처 — 4컷 그리드 아래
-  drawSignature(
-    ctx, palette, 64,
-    startY + (cellSize + gap) * 2 + 28,
-    '"가장 오래 남는 사진은 단 한 장."'
-  );
-
-  // 워터마크
+  // 워터마크 — 시집 톤 인용은 워터마크 sub로 통합 (별도 signature는 워터마크와 겹쳐 제거)
   const mascot = await loadMascotImage(theme === 'dark' ? 'night' : 'paper');
   drawWatermark(ctx, palette, mascot);
 

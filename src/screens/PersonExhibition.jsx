@@ -401,6 +401,18 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
             <h2 className="text-[25px] font-extrabold tracking-[-0.07em]">오늘의 4컷</h2>
             <div className="flex items-center gap-2">
               <span className="rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-[11px] text-[var(--text-muted)]">{Math.min(wall.length, 4)}/4</span>
+              {isMe && wall.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleExport4Cut}
+                  disabled={exporting}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-strong)] text-[var(--text-muted)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text)] disabled:opacity-50"
+                  title="4컷 카드 공유"
+                  aria-label="4컷 카드 공유"
+                >
+                  <IconShare size={14} />
+                </button>
+              )}
               {isMe && (
                 <button type="button" onClick={() => setScreen('curate')} className="rounded-full border border-[var(--ink)] px-3 py-1.5 text-xs font-semibold">
                   수정
