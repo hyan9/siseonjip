@@ -369,7 +369,9 @@ export function PersonaCat({ persona = 'paper', size = 80, withFrame = true, cla
       }}
     >
       <img
-        src={`/personas/${persona}.png`}
+        // -v2 파일명: PWA service worker 캐시 무효화. 옛 spotted.png 등이 캐시되어
+        // 있어도 spotted-v2.png는 새 URL이라 무조건 fetch함.
+        src={`/personas/${persona}-v2.png`}
         alt=""
         loading="lazy"
         style={{
