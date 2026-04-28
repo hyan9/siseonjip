@@ -8,7 +8,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt' — 새 버전이 있으면 사용자가 명시적으로 업데이트하도록.
+      // autoUpdate는 PWA 켜둔 채로 며칠 쓰는 사용자가 새 빌드 못 받는 문제 있음.
+      registerType: 'prompt',
       includeAssets: ['icon.svg', 'icon-maskable.svg', 'icon-v2.svg', 'icon-maskable-v2.svg', 'icon-v3.svg', 'icon-maskable-v3.svg'],
       manifest: {
         name: '카든냥',

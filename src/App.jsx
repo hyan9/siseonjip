@@ -7,8 +7,11 @@ import { ThemeProvider } from './lib/theme-context';
 import { hasSupabaseConfig } from './lib/supabase';
 
 import { Shell, Splash, ToastStack } from './components/ui';
-import OnboardingModal from './components/OnboardingModal';
-import AddToCollectionPicker from './components/AddToCollectionPicker';
+import PwaUpdatePrompt from './components/PwaUpdatePrompt';
+
+// 지연 로딩: 첫 진입에서 즉시 안 필요. 렌더 시점에 fetch.
+const OnboardingModal = lazy(() => import('./components/OnboardingModal'));
+const AddToCollectionPicker = lazy(() => import('./components/AddToCollectionPicker'));
 
 // 즉시 로딩: 첫 진입에서 반드시 보임
 import LoginScreen from './screens/LoginScreen';
@@ -158,13 +161,15 @@ function MainApp() {
       <Shell screen={screen} setScreen={setScreen}>
         <Suspense fallback={<Splash />}>{content}</Suspense>
       </Shell>
-      <OnboardingModal />
-      {collectionPickerArtwork && (
-        <AddToCollectionPicker
-          artworkId={collectionPickerArtwork}
-          onClose={() => setCollectionPickerArtwork(null)}
-        />
-      )}
+      <Suspense fallback={null}>
+        <OnboardingModal />
+        {collectionPickerArtwork && (
+          <AddToCollectionPicker
+            artworkId={collectionPickerArtwork}
+            onClose={() => setCollectionPickerArtwork(null)}
+          />
+        )}
+      </Suspense>
     </>
   );
 }
@@ -235,6 +240,7 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <Router />
+        <PwaUpdatePrompt />
       </AuthProvider>
     </ThemeProvider>
   );
