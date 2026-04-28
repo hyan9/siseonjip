@@ -76,10 +76,11 @@ export default function NearbyConstellation({
 
   const half = size / 2;
   const minR = 72; // 고양이 바로 옆
-  // 라벨이 사진 아래로 빠져나오니 안전 여백 더 — 사진 28 + 라벨 14 + 여유 6 = 48
-  const maxR = half - 50;
-  const minD = 50;     // 50m 이내는 최소 반지름
-  const maxD = 10000;  // 10km까지 분포. 5km/8km 사진이 다른 층으로 보이게
+  const maxR = half - 50; // 사진 28 + 라벨 14 + 여유 6
+  const minD = 50;
+  // 사진들의 실제 최대 거리 기반 동적 mapping. 가까운 사진만 있으면 좁게, 먼 사진까지 있으면 넓게.
+  const maxObserved = allItems.length > 0 ? allItems[allItems.length - 1].distance : 1000;
+  const maxD = Math.max(maxObserved * 1.1, minD * 6);
 
   const radiusFor = (d) => {
     if (d <= minD) return minR;
@@ -87,6 +88,19 @@ export default function NearbyConstellation({
     const t = Math.log(d / minD) / Math.log(maxD / minD);
     return minR + t * (maxR - minR);
   };
+
+  // 거리 ring 단계 — 사진 분포에 맞춰 자동. 라벨 3개 (4개는 너무 많아 겹침).
+  function pickRingDistances(maxDist) {
+    if (maxDist < 200) return [50, 100, 200];
+    if (maxDist < 500) return [100, 250, 500];
+    if (maxDist < 1000) return [200, 500, 1000];
+    if (maxDist < 3000) return [500, 1500, 3000];
+    if (maxDist < 7000) return [1000, 3000, 7000];
+    if (maxDist < 15000) return [2000, 7000, 15000];
+    if (maxDist < 30000) return [5000, 15000, 30000];
+    return [10000, 30000, 60000];
+  }
+  const ringDistances = pickRingDistances(maxObserved);
 
   // 겹침 회피 — 각도가 너무 가까운 형제는 살짝 비껴
   const placed = [];
@@ -160,19 +174,30 @@ export default function NearbyConstellation({
         />
       ))}
 
-      {/* 거리 링 — 4층 (1km / 3km / 5km / 10km+) */}
+      {/* 거리 링 — 사진 거리 분포에 맞춘 동적 단계. 라벨은 ring별 다른 시계 각도에 분산 */}
       <svg width={size} height={size} className="pointer-events-none absolute inset-0">
         <g stroke="rgba(255,255,255,0.18)" fill="none" strokeDasharray="2 5">
-          <circle cx={half} cy={half} r={radiusFor(1000)} />
-          <circle cx={half} cy={half} r={radiusFor(3000)} />
-          <circle cx={half} cy={half} r={radiusFor(5000)} />
-          <circle cx={half} cy={half} r={maxR} />
+          {ringDistances.map((d) => (
+            <circle key={d} cx={half} cy={half} r={radiusFor(d)} />
+          ))}
         </g>
         <g fill="rgba(255,255,255,0.55)" fontSize="9.5" fontWeight="600" letterSpacing="0.04em">
-          <text x={half + 4} y={half - radiusFor(1000) - 3}>1km</text>
-          <text x={half + 4} y={half - radiusFor(3000) - 3}>3km</text>
-          <text x={half + 4} y={half - radiusFor(5000) - 3}>5km</text>
-          <text x={half + 4} y={half - maxR - 3}>10km+</text>
+          {ringDistances.map((d, i) => {
+            // 라벨 분산: ring별 다른 각도 (10시 / 1시 / 2시 / 11시 ...)
+            const offsets = [-Math.PI * 0.65, -Math.PI * 0.32, -Math.PI * 1.4, -Math.PI * 0.18];
+            const angle = offsets[i % offsets.length];
+            const r = radiusFor(d) + 2;
+            const lx = half + Math.sin(angle) * r;
+            const ly = half - Math.cos(angle) * r - 4;
+            // SVG text는 좌측 정렬 기본. 좌측 시계 각도면 우측 정렬, 우측이면 좌측 정렬
+            const anchor = Math.sin(angle) < 0 ? 'end' : 'start';
+            const dx = anchor === 'end' ? -3 : 3;
+            return (
+              <text key={d} x={lx + dx} y={ly} textAnchor={anchor}>
+                {formatDistance(d)}
+              </text>
+            );
+          })}
         </g>
       </svg>
 

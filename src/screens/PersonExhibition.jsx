@@ -274,7 +274,7 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
                   aria-label="카든 온도 설명"
                 >
                   <span className={`flex items-baseline gap-0.5 text-[16px] font-extrabold leading-none tracking-[-0.05em] ${tempColor}`}>
-                    {tempEmoji}{temperature.toFixed(1)}°
+                    {tempEmoji}{Math.round(temperature)}°
                   </span>
                   <div className="relative h-1.5 w-[68px] overflow-hidden rounded-full bg-[var(--surface-2)]">
                     <div
@@ -539,31 +539,27 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
           >
             <div className="mb-3 flex items-baseline justify-between">
               <h3 className="font-display text-[20px] font-extrabold tracking-[-0.04em]">카든 온도</h3>
-              <span className={`text-[18px] font-extrabold ${tempColor}`}>{tempEmoji}{temperature.toFixed(1)}°</span>
+              <span className={`text-[20px] font-extrabold ${tempColor}`}>{tempEmoji}{Math.round(temperature)}°</span>
             </div>
             <p className="text-[12px] leading-[1.7] text-[var(--text-muted)]">
-              당근마켓 매너온도에서 영감받은 활동성 지표예요. 사진을 올리고 사람들과 반응을 주고받을수록 따뜻해집니다.
+              사진을 올리고 사람들과 반응을 주고받을수록 따뜻해져요. 36.5°에서 시작합니다.
             </p>
-            <div className="mt-4 space-y-2 rounded-[14px] bg-[var(--surface-2)] p-3 text-[12px]">
+            <div className="mt-4 space-y-2 rounded-[14px] bg-[var(--surface-2)] p-3 text-[13px]">
               <div className="flex items-baseline justify-between">
-                <span className="text-[var(--text-muted)]">기본 체온</span>
-                <span className="font-bold tracking-[-0.04em]">36.5°</span>
+                <span className="text-[var(--text-muted)]">사진</span>
+                <span className="font-semibold">{works.length}장</span>
               </div>
               <div className="flex items-baseline justify-between">
-                <span className="text-[var(--text-muted)]">사진 1장</span>
-                <span className="font-semibold">+ 0.05° <span className="ml-1 text-[var(--text-faint)]">× {works.length}장</span></span>
+                <span className="text-[var(--text-muted)]">팔로워</span>
+                <span className="font-semibold">{stats.followerCount}명</span>
               </div>
               <div className="flex items-baseline justify-between">
-                <span className="text-[var(--text-muted)]">팔로워 1명</span>
-                <span className="font-semibold">+ 0.03° <span className="ml-1 text-[var(--text-faint)]">× {stats.followerCount}명</span></span>
+                <span className="text-[var(--text-muted)]">받은 🔥</span>
+                <span className="font-semibold">{totalHypeReceived}개</span>
               </div>
               <div className="flex items-baseline justify-between">
-                <span className="text-[var(--text-muted)]">받은 🔥 1개</span>
-                <span className="font-semibold">+ 0.02° <span className="ml-1 text-[var(--text-faint)]">× {totalHypeReceived}개</span></span>
-              </div>
-              <div className="flex items-baseline justify-between">
-                <span className="text-[var(--text-muted)]">25번째 자리 채움</span>
-                <span className="font-semibold">+ 0.5° <span className="ml-1 text-[var(--text-faint)]">{twentyFiveArt ? '✓' : '−'}</span></span>
+                <span className="text-[var(--text-muted)]">25번째 자리</span>
+                <span className="font-semibold">{twentyFiveArt ? '채움 ✓' : '아직'}</span>
               </div>
             </div>
             <div className="mt-3 flex items-center gap-3 text-[11px]">
