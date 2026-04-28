@@ -360,21 +360,22 @@ export function PersonaCat({ persona = 'paper', size = 80, withFrame = true, cla
     <span
       role="img"
       aria-label={`${v.label} 카든냥`}
-      className={`inline-flex items-center justify-center overflow-hidden ${withFrame ? 'rounded-[10%]' : ''} ${className}`}
+      className={`inline-flex items-center justify-center overflow-hidden ${withFrame ? 'rounded-[12%]' : ''} ${className}`}
       style={{
         width: size,
         height: size,
         background: withFrame ? v.bg : 'transparent',
-        // PNG 가장자리까지 차있는 페르소나(점박이·사이버펑크·외계냥이 등)의 귀·꼬리가
-        // 라운드 모서리에 잘리지 않도록 10% 안쪽 여백
-        padding: withFrame ? Math.round(size * 0.1) : 0,
       }}
     >
       <img
         src={`/personas/${persona}.png`}
         alt=""
         loading="lazy"
-        className="h-full w-full object-contain"
+        // PNG 캔버스 활용 패턴이 페르소나마다 달라서(점박이·사이버펑크는 가장자리까지,
+        // 도화지·야간은 안쪽에 마진 내장) h-full w-full + 라운드 클리핑 조합으로는
+        // 일관성 안 잡힘. 이미지 자체를 타일의 76%로 박아두면 어떤 PNG든 같은 위치·크기.
+        style={{ width: '76%', height: '76%' }}
+        className="block object-contain"
         draggable={false}
       />
     </span>
