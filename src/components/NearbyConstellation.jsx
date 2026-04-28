@@ -1,4 +1,4 @@
-import { CatPhotographer } from './Mascot';
+import { CatStarlit } from './Mascot';
 import { formatDistance } from '../lib/utils';
 import { distanceMeters } from '../lib/geocoding';
 
@@ -138,11 +138,11 @@ export default function NearbyConstellation({
         }}
       />
       <div
-        className="absolute z-20 flex items-center justify-center rounded-full bg-white text-[var(--ink)] shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
-        style={{ left: half - 40, top: half - 40, width: 80, height: 80 }}
+        className="absolute z-20 flex items-center justify-center"
+        style={{ left: half - 50, top: half - 50, width: 100, height: 100 }}
         aria-label="내 위치"
       >
-        <CatPhotographer size={54} />
+        <CatStarlit size={100} />
       </div>
 
       {/* 주변 사진 — 별처럼 반짝임 */}

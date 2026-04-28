@@ -3,7 +3,8 @@
 
 const SPIN_KEYFRAMES = `
 @keyframes siseonjip-spin { to { transform: rotate(360deg); } }
-@keyframes siseonjip-tail-wag { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+@keyframes siseonjip-tail-wag { 0%,100% { transform: rotate(-14deg); } 50% { transform: rotate(14deg); } }
+@keyframes siseonjip-tail-sleepy { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
 @keyframes siseonjip-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
 `;
 
@@ -20,8 +21,8 @@ export function CatPhotographer({ size = 100, animate = false, className = '' })
       className={className}
     >
       <style>{SPIN_KEYFRAMES}</style>
-      {/* 꼬리 */}
-      <g style={animate ? { transformOrigin: '60px 105px', animation: 'siseonjip-tail-wag 1.8s ease-in-out infinite' } : undefined}>
+      {/* 꼬리 — animate일 때 살랑살랑 */}
+      <g style={animate ? { transformBox: 'fill-box', transformOrigin: '0% 100%', animation: 'siseonjip-tail-wag 1.4s ease-in-out infinite' } : undefined}>
         <path d="M 86 100 Q 102 88 96 72" stroke="currentColor" strokeWidth="5" strokeLinecap="round" fill="none"/>
       </g>
       {/* 몸 */}
@@ -66,7 +67,7 @@ export function CatPhotographer({ size = 100, animate = false, className = '' })
 }
 
 // 잠든 사진가 고양이 — 전신 (몸통 + 꼬리 + 다리 + 머리) + 4장 폴라로이드
-export function CatSleepyFour({ size = 240 }) {
+export function CatSleepyFour({ size = 240, animate = true }) {
   return (
     <svg
       viewBox="0 0 280 220"
@@ -76,6 +77,7 @@ export function CatSleepyFour({ size = 240 }) {
       role="img"
       aria-label="필름 4장을 다 쓰고 잠든 사진가 고양이"
     >
+      <style>{SPIN_KEYFRAMES}</style>
       {/* 떨어진 폴라로이드 4장 — 모서리 사방 */}
       <g>
         <g transform="translate(6 8) rotate(-18)">
@@ -98,9 +100,11 @@ export function CatSleepyFour({ size = 240 }) {
 
       {/* 옆으로 누운 사진가 고양이 — 전신 */}
       <g transform="translate(48 80)">
-        {/* 꼬리 — 몸 뒤로 살짝 말려 올라감 */}
-        <path d="M 168 60 Q 196 42 178 22 Q 170 14 158 22"
-              stroke="currentColor" strokeWidth="10" fill="none" strokeLinecap="round"/>
+        {/* 꼬리 — 몸 뒤로 살짝 말려 올라감. 자면서도 살랑살랑 */}
+        <g style={animate ? { transformBox: 'fill-box', transformOrigin: '0% 100%', animation: 'siseonjip-tail-sleepy 2.4s ease-in-out infinite' } : undefined}>
+          <path d="M 168 60 Q 196 42 178 22 Q 170 14 158 22"
+                stroke="currentColor" strokeWidth="10" fill="none" strokeLinecap="round"/>
+        </g>
 
         {/* 몸통 — 옆에서 본 둥근 타원 (큰 덩어리) */}
         <ellipse cx="100" cy="68" rx="76" ry="32" fill="currentColor"/>

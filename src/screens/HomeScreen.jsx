@@ -65,7 +65,20 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
   const featuredPool = feedFilter === '팔로잉'
     ? recommended.filter((a) => followingIds.has(a.user_id))
     : recommended;
-  const featured = featuredPool[0] || null;
+  // 오늘의 한 컷 캐러셀 — 후보 5장을 5초마다 우측 슬라이드
+  const heroSlides = useMemo(() => featuredPool.slice(0, 5), [featuredPool]);
+  const [heroIndex, setHeroIndex] = useState(0);
+  useEffect(() => {
+    setHeroIndex(0);
+  }, [heroSlides.length]);
+  useEffect(() => {
+    if (heroSlides.length <= 1) return;
+    const t = setInterval(() => {
+      setHeroIndex((i) => (i + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(t);
+  }, [heroSlides.length]);
+  const featured = heroSlides[heroIndex] || featuredPool[0] || null;
 
   const topCreators = useMemo(() => getRecommendedCreators(6), [getRecommendedCreators]);
 
@@ -219,12 +232,31 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
                 onClick={() => openArtwork(featured.id)}
                 className="block w-full overflow-hidden rounded-[24px] bg-[var(--surface)] text-left shadow-[0_0_0_1px_var(--border)]"
               >
-                {/* 풀폭 세로 비율 사진 — 시집·도록 톤 */}
+                {/* 풀폭 세로 비율 사진 — 5장 캐러셀, 5초마다 우측 슬라이드 */}
                 <div className="relative w-full overflow-hidden" style={{ aspectRatio: '3/4' }}>
-                  <ImageBox src={featured.imageUrl} alt={featured.title} className="h-full w-full" priority />
+                  <div
+                    className="absolute inset-0 flex transition-transform duration-700 ease-in-out"
+                    style={{ transform: `translateX(-${heroIndex * 100}%)`, width: `${heroSlides.length * 100}%` }}
+                  >
+                    {heroSlides.map((slide) => (
+                      <div key={slide.id} className="relative h-full shrink-0" style={{ width: `${100 / heroSlides.length}%` }}>
+                        <ImageBox src={slide.imageUrl} alt={slide.title} className="h-full w-full" priority />
+                      </div>
+                    ))}
+                  </div>
                   <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[var(--ink)]/85 px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em] text-white">
                     <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" /> 오늘의 한 컷
                   </span>
+                  {heroSlides.length > 1 && (
+                    <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1">
+                      {heroSlides.map((_, i) => (
+                        <span
+                          key={i}
+                          className={`h-1.5 rounded-full transition-all ${i === heroIndex ? 'w-5 bg-white' : 'w-1.5 bg-white/45'}`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {/* 카드 아래 — 제목 + 작가 (중앙 정렬, 명조) */}
                 <div className="px-5 py-5 text-center">

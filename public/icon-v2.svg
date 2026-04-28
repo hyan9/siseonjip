@@ -1,35 +1,55 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- 카든냥 — 카메라 든 냥이 (둥근 모서리 사각형 배경 + 마스코트) -->
-  <rect width="512" height="512" rx="96" fill="#1a1d1f"/>
-  <g transform="translate(81 81) scale(2.92)" fill="#f1f2ee">
-    <!-- 꼬리 -->
-    <path d="M 86 100 Q 102 88 96 72" stroke="#f1f2ee" stroke-width="5" stroke-linecap="round" fill="none"/>
-    <!-- 몸 -->
-    <ellipse cx="60" cy="92" rx="32" ry="20"/>
-    <!-- 발 -->
-    <ellipse cx="46" cy="108" rx="5" ry="3"/>
-    <ellipse cx="74" cy="108" rx="5" ry="3"/>
-    <!-- 머리 -->
-    <circle cx="60" cy="48" r="30"/>
-    <!-- 귀 -->
-    <path d="M 36 36 L 40 18 L 52 32 Z"/>
-    <path d="M 84 36 L 80 18 L 68 32 Z"/>
-    <path d="M 41 30 L 43 22 L 48 30 Z" fill="#1a1d1f" opacity="0.9"/>
-    <path d="M 79 30 L 77 22 L 72 30 Z" fill="#1a1d1f" opacity="0.9"/>
-    <!-- 카메라 -->
-    <rect x="32" y="40" width="56" height="26" rx="3" fill="#1a1d1f" stroke="#f1f2ee" stroke-width="2.5"/>
-    <rect x="46" y="34" width="14" height="6" rx="1" fill="#1a1d1f" stroke="#f1f2ee" stroke-width="2"/>
-    <circle cx="76" cy="38" r="2.5"/>
-    <!-- 렌즈 -->
-    <circle cx="60" cy="53" r="11" stroke="#1a1d1f" stroke-width="2"/>
-    <circle cx="60" cy="53" r="7" fill="#1a1d1f"/>
-    <circle cx="60" cy="53" r="3"/>
-    <!-- 입 -->
-    <path d="M 56 72 Q 60 75 64 72" stroke="#1a1d1f" stroke-width="2" fill="none" stroke-linecap="round"/>
-    <!-- 수염 -->
-    <line x1="20" y1="56" x2="32" y2="58" stroke="#f1f2ee" stroke-width="1.5" stroke-linecap="round"/>
-    <line x1="20" y1="62" x2="32" y2="62" stroke="#f1f2ee" stroke-width="1.5" stroke-linecap="round"/>
-    <line x1="100" y1="58" x2="88" y2="58" stroke="#f1f2ee" stroke-width="1.5" stroke-linecap="round"/>
-    <line x1="100" y1="62" x2="88" y2="62" stroke="#f1f2ee" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- 카든냥 — 별빛 실루엣 카든냥 (밤하늘에서 카메라 든 실루엣) -->
+  <defs>
+    <radialGradient id="kdn-bg" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#2a3045"/>
+      <stop offset="55%" stop-color="#161927"/>
+      <stop offset="100%" stop-color="#0a0c14"/>
+    </radialGradient>
+    <radialGradient id="kdn-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.40)"/>
+      <stop offset="60%" stop-color="rgba(255,255,255,0.10)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#kdn-bg)"/>
+
+  <!-- 별 흩뿌림 -->
+  <g fill="rgba(255,255,255,0.92)">
+    <circle cx="86" cy="118" r="3.4"/>
+    <circle cx="436" cy="104" r="2.6"/>
+    <circle cx="74" cy="394" r="3"/>
+    <circle cx="448" cy="380" r="3.4"/>
+    <circle cx="120" cy="240" r="2"/>
+    <circle cx="402" cy="262" r="2.2"/>
+    <circle cx="246" cy="62" r="2.4"/>
+    <circle cx="262" cy="468" r="2"/>
   </g>
+
+  <!-- 뒤쪽 글로우 -->
+  <circle cx="256" cy="270" r="190" fill="url(#kdn-glow)"/>
+
+  <!-- 카든냥 실루엣 — 흰색 발광 -->
+  <g fill="#ffffff">
+    <!-- 꼬리 -->
+    <path d="M 343 460 Q 420 420 405 348 Q 388 318 348 330" stroke="#ffffff" stroke-width="14" fill="none" stroke-linecap="round"/>
+    <!-- 몸 -->
+    <ellipse cx="256" cy="392" rx="84" ry="52"/>
+    <!-- 발 -->
+    <ellipse cx="220" cy="464" rx="14" ry="8"/>
+    <ellipse cx="292" cy="464" rx="14" ry="8"/>
+    <!-- 머리 -->
+    <circle cx="256" cy="236" r="78"/>
+    <!-- 귀 -->
+    <path d="M 188 216 L 198 168 L 230 208 Z"/>
+    <path d="M 324 216 L 314 168 L 282 208 Z"/>
+  </g>
+
+  <!-- 카메라 (밝은 흰색, 머리 앞) -->
+  <rect x="180" y="240" width="152" height="68" rx="8" fill="#ffffff"/>
+  <rect x="218" y="220" width="36" height="16" rx="3" fill="#ffffff"/>
+  <!-- 렌즈 — 별빛 푸른 톤 -->
+  <circle cx="256" cy="274" r="28" fill="#0a0c14"/>
+  <circle cx="256" cy="274" r="20" fill="rgba(120, 170, 220, 0.55)"/>
+  <circle cx="256" cy="274" r="10" fill="#ffffff"/>
 </svg>
