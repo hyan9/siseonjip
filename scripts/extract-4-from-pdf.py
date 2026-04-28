@@ -120,7 +120,8 @@ def main():
         cw = cr - cl
         ch = cb - ct
         print(f"{name}: card={card.size}, cat=({cl},{ct},{cr},{cb}) {cw}x{ch}")
-        out = make_persona_png(card, cat_bbox, padding_ratio=0.45)
+        # 22% 패딩 — 다른 6개 페르소나 (68-69% fill)와 사이즈 맞춤
+        out = make_persona_png(card, cat_bbox, padding_ratio=0.22)
         out.save(OUT_DIR / f"{name}-v2.png", optimize=True)
         # 검수용 — top/bottom margin 확인
         bbox2 = out.getbbox()
