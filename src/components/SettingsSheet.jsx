@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTheme } from '../lib/theme-context';
 import { IconMessage, IconLogout, IconShare } from './icons/AppIcons';
 import { InstallButton } from './InstallPrompt';
@@ -31,16 +31,34 @@ async function inviteFriend() {
 export default function SettingsSheet({ onClose, onMessages, onLogout, extraItems = [] }) {
   const { theme, setTheme, themes } = useTheme();
 
+  // onClose가 매 렌더마다 새 함수라 deps에 못 넣음. ref로 최신 값 유지
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; });
+
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e) => { if (e.key === 'Escape') onCloseRef.current(); };
+    // 안드로이드 뒤로가기 / 브라우저 뒤로가기로도 시트 닫히게
+    const onPopState = () => onCloseRef.current();
+
     window.addEventListener('keydown', onKey);
+    window.addEventListener('popstate', onPopState);
+    // history entry를 추가해두면 뒤로가기 한 번이 시트 닫기로 소비됨
+    window.history.pushState({ kdnSheet: 'settings' }, '');
+
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+
     return () => {
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('popstate', onPopState);
       document.body.style.overflow = prev;
+      // 닫기 버튼·배경 클릭으로 닫힌 경우 — 우리가 추가한 history entry 정리.
+      // 뒤로가기로 닫힌 경우는 이미 popstate가 entry를 소비했으므로 건너뜀
+      if (window.history.state?.kdnSheet === 'settings') {
+        window.history.back();
+      }
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div
