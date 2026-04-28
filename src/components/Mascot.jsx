@@ -360,13 +360,14 @@ export function PersonaCat({ persona = 'paper', size = 80, withFrame = true, cla
     <span
       role="img"
       aria-label={`${v.label} 카든냥`}
-      className={`inline-flex items-center justify-center overflow-hidden ${withFrame ? 'rounded-[18%]' : ''} ${className}`}
+      className={`inline-flex items-center justify-center overflow-hidden ${withFrame ? 'rounded-[10%]' : ''} ${className}`}
       style={{
         width: size,
         height: size,
         background: withFrame ? v.bg : 'transparent',
-        // 라운드 모서리에 꼬리·귀가 잘리지 않게 안쪽 여백 (대략 6%)
-        padding: withFrame ? Math.round(size * 0.06) : 0,
+        // PNG 가장자리까지 차있는 페르소나(점박이·사이버펑크·외계냥이 등)의 귀·꼬리가
+        // 라운드 모서리에 잘리지 않도록 10% 안쪽 여백
+        padding: withFrame ? Math.round(size * 0.1) : 0,
       }}
     >
       <img

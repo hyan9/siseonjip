@@ -91,8 +91,8 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
 
   const monthShort = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][now.getMonth()];
 
-  // 상단 탭 — 롤(25칸 진행률) / 캘린더(월별 그리드 = 위클리 row). 마지막 선택 기억.
-  const VALID_FILM_VIEWS = ['roll', 'month'];
+  // 상단 탭 — 롤(25칸 진행률) / 위클리(14일 행) / 캘린더(월별 그리드). 마지막 선택 기억.
+  const VALID_FILM_VIEWS = ['roll', 'week', 'month'];
   const [filmView, setFilmView] = useState(() => {
     try {
       const v = sessionStorage.getItem('kadennyang:film:view');
@@ -111,6 +111,7 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
       <div className="sticky top-11 z-30 -mx-3 flex items-center gap-1 border-b border-[var(--border)] bg-[var(--bg)] px-3">
         {[
           { id: 'roll', label: '롤' },
+          { id: 'week', label: '위클리' },
           { id: 'month', label: '캘린더' },
         ].map((t) => (
           <button
@@ -192,8 +193,8 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
           </div>
 
           {/* 25번째 — 별도 자리, 큰 번호 25 + ★ */}
-          <div className="mt-3 flex items-center justify-between gap-2 rounded-[14px] border border-dashed border-[var(--border-strong)] px-3 py-2.5">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="mt-3 flex items-center gap-3 rounded-[14px] border border-dashed border-[var(--border-strong)] px-3 py-2.5">
+            <div className="w-12 shrink-0">
               <RollSlot
                 number={25}
                 photo={monthArtworks.find((a) => a.is_twenty_five) || null}
@@ -205,12 +206,12 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
                   if (t) openArtwork(t.id);
                 }}
               />
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold tracking-[0.16em] opacity-70">25번째 자리</p>
-                <p className="font-display whitespace-nowrap text-[14px] font-bold italic">
-                  {has25 ? '가장 오래 남은 한 장' : '24장 다 채우면 골라주세요'}
-                </p>
-              </div>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-bold tracking-[0.16em] opacity-70">25번째 자리</p>
+              <p className="font-display text-[14px] font-bold italic">
+                {has25 ? '가장 오래 남은 한 장' : '24장 다 채우면 골라주세요'}
+              </p>
             </div>
             {rollComplete && <CatPhotographer size={32} />}
           </div>
