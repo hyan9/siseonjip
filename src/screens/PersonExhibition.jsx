@@ -444,10 +444,7 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
           </div>
           {wall.length === 0
             ? <EmptyState title="아직 4컷이 없어요" hint={isMe ? '사진을 올리면 자동으로 채워져요.' : ''} />
-            : <FourPhotoWall photos={wall} onOpen={(id) => {
-                const i = works.findIndex((a) => a.id === id);
-                setGalleryStart(i >= 0 ? i : 0);
-              }} />}
+            : <FourPhotoWall photos={wall} onOpen={openArtwork} />}
         </section>
 
         {/* 자주 쓰는 단어 — 작가의 시선 키워드 */}

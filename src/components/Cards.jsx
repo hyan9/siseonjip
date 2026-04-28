@@ -3,24 +3,30 @@ import { ImageBox } from './ui';
 import { profileLabel, timeAgo } from '../lib/utils';
 import { IconHype } from './icons/AppIcons';
 
+// 액자 mat 톤의 슬롯 — 흰 매트 + 사진 + hover 시 제목.
+// 시집·도록 느낌으로 단정히 담기게.
 function ExhibitionSlot({ artwork, onOpen, aspect = '3/4' }) {
   if (!artwork) return null;
   return (
     <button
       type="button"
       onClick={() => onOpen(artwork.id)}
-      className="group relative w-full overflow-hidden rounded-[14px] bg-[var(--surface-3)] text-left"
-      style={{ aspectRatio: aspect }}
+      className="group relative block w-full rounded-[12px] bg-[var(--surface)] p-1.5 text-left shadow-[0_1px_3px_rgba(0,0,0,0.05)] ring-1 ring-[var(--border)] transition hover:shadow-md"
     >
-      <ImageBox src={artwork.imageUrl} alt={artwork.title} className="h-full w-full" />
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2.5 opacity-0 transition group-hover:opacity-100">
-        <p className="line-clamp-2 text-[12px] font-semibold leading-5 text-white">{artwork.title}</p>
+      <div
+        className="relative w-full overflow-hidden rounded-[8px] bg-[var(--surface-3)]"
+        style={{ aspectRatio: aspect }}
+      >
+        <ImageBox src={artwork.imageUrl} alt={artwork.title} className="h-full w-full" />
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 transition group-hover:opacity-100">
+          <p className="line-clamp-2 text-[11px] font-semibold leading-snug text-white">{artwork.title}</p>
+        </div>
       </div>
     </button>
   );
 }
 
-// 세로(3/4) 비율의 갤러리 4컷. 1/2/3장도 자연스럽게.
+// 세로(3/4) 비율의 갤러리 4컷. 1/2/3장도 자연스럽게. gap 살짝 넓혀 액자 분리감.
 export function FourPhotoWall({ photos, onOpen }) {
   const list = photos.filter(Boolean);
   const count = list.length;
@@ -28,7 +34,7 @@ export function FourPhotoWall({ photos, onOpen }) {
 
   if (count === 1) {
     return (
-      <div className="mx-auto" style={{ width: '70%' }}>
+      <div className="mx-auto" style={{ width: '72%' }}>
         <ExhibitionSlot artwork={list[0]} onOpen={onOpen} aspect="3/4" />
       </div>
     );
@@ -36,7 +42,7 @@ export function FourPhotoWall({ photos, onOpen }) {
 
   if (count === 2) {
     return (
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-2 gap-2.5">
         <ExhibitionSlot artwork={list[0]} onOpen={onOpen} aspect="3/4" />
         <ExhibitionSlot artwork={list[1]} onOpen={onOpen} aspect="3/4" />
       </div>
@@ -45,7 +51,7 @@ export function FourPhotoWall({ photos, onOpen }) {
 
   if (count === 3) {
     return (
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-3 gap-2.5">
         <ExhibitionSlot artwork={list[0]} onOpen={onOpen} aspect="3/4" />
         <ExhibitionSlot artwork={list[1]} onOpen={onOpen} aspect="3/4" />
         <ExhibitionSlot artwork={list[2]} onOpen={onOpen} aspect="3/4" />
@@ -53,9 +59,9 @@ export function FourPhotoWall({ photos, onOpen }) {
     );
   }
 
-  // 4장 — 2×2, 각 칸 세로 비율 (갤러리 카드 느낌)
+  // 4장 — 2×2, 각 칸 세로 비율 (액자 카드 느낌)
   return (
-    <div className="grid grid-cols-2 gap-1.5">
+    <div className="grid grid-cols-2 gap-2.5">
       {list.slice(0, 4).map((art) => (
         <ExhibitionSlot key={art.id} artwork={art} onOpen={onOpen} aspect="3/4" />
       ))}
