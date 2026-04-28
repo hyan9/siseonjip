@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+/* 명조 — 시집·도록 톤. 헤드라인/포에틱 라벨에만 적용 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&display=swap');
+
+:root {
+  --font-display: 'Noto Serif KR', 'Apple SD Gothic Neo', 'Noto Sans KR', serif;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.04em;
+}
+.font-display-italic {
+  font-family: var(--font-display);
+  font-style: italic;
+  letter-spacing: -0.02em;
+}
+
 /* ============================================================
    카든냥 테마 변수 — 고양이 5종 모티브
    기본: 도화지(paper) / 야간(night) / 식빵(bread) / 치즈(cheese) / 고등어(mackerel)

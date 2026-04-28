@@ -193,7 +193,7 @@ export function Header({ title, subtitle, kicker, onBack, right }) {
           {kicker && (
             <p className="mb-0.5 text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">{kicker}</p>
           )}
-          <h1 className="truncate text-[22px] font-extrabold leading-tight tracking-[-0.07em]">{title}</h1>
+          <h1 className="font-display truncate text-[26px] font-black leading-tight">{title}</h1>
           {subtitle && <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-[var(--text-muted)]">{subtitle}</p>}
         </div>
       </div>

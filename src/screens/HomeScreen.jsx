@@ -167,7 +167,7 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
           <p className="text-[10px] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
             {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
           </p>
-          <h1 className="mt-0.5 text-[22px] font-extrabold tracking-[-0.07em]">오늘의 냥이들</h1>
+          <h1 className="font-display mt-0.5 text-[28px] font-black">오늘의 냥이들</h1>
         </div>
       )}
 
@@ -217,34 +217,28 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
               <button
                 type="button"
                 onClick={() => openArtwork(featured.id)}
-                className="flex w-full items-stretch gap-3 overflow-hidden rounded-[20px] bg-[var(--surface)] p-2.5 text-left shadow-[0_0_0_1px_var(--border)]"
+                className="block w-full overflow-hidden rounded-[24px] bg-[var(--surface)] text-left shadow-[0_0_0_1px_var(--border)]"
               >
-                {/* 좌측 — 세로 비율 사진 (갤러리 느낌) */}
-                <div className="relative shrink-0 overflow-hidden rounded-[14px]" style={{ width: '52%', aspectRatio: '3/4' }}>
+                {/* 풀폭 세로 비율 사진 — 시집·도록 톤 */}
+                <div className="relative w-full overflow-hidden" style={{ aspectRatio: '3/4' }}>
                   <ImageBox src={featured.imageUrl} alt={featured.title} className="h-full w-full" priority />
-                  <span className="absolute left-2 top-2 rounded-full bg-[var(--ink)]/85 px-2 py-0.5 text-[9px] font-semibold tracking-[0.16em] text-white">
-                    오늘의 한 컷
+                  <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[var(--ink)]/85 px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em] text-white">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" /> 오늘의 한 컷
                   </span>
                 </div>
-                {/* 우측 — 제목 + 작가 + hype */}
-                <div className="flex min-w-0 flex-1 flex-col justify-between py-1.5 pr-1">
-                  <div>
-                    <h2 className="line-clamp-4 text-[22px] font-extrabold leading-[1.1] tracking-[-0.07em]">
-                      {featured.title}
-                    </h2>
-                    <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
-                      <span className="font-semibold text-[var(--text-body)]">
-                        {profileLabel(getProfile(featured.user_id))}
-                      </span>
-                      <span className="text-[var(--text-faint)]">·</span>
-                      <IconHype size={11} filled />
-                      <span>{getHypeCount(featured.id)}</span>
-                    </p>
-                  </div>
-                  {/* 별빛 마스코트 — 작게 우하단 */}
-                  <div className="flex justify-end text-[var(--ink)]">
-                    <CatPhotographer size={28} animate />
-                  </div>
+                {/* 카드 아래 — 제목 + 작가 (중앙 정렬, 명조) */}
+                <div className="px-5 py-5 text-center">
+                  <h2 className="font-display line-clamp-2 text-[26px] font-black leading-[1.2]">
+                    {featured.title}
+                  </h2>
+                  <p className="mt-2 inline-flex items-center justify-center gap-1.5 text-[11px] text-[var(--text-muted)]">
+                    <span className="font-semibold text-[var(--text-body)]">
+                      {profileLabel(getProfile(featured.user_id))}
+                    </span>
+                    <span className="text-[var(--text-faint)]">·</span>
+                    <IconHype size={11} filled />
+                    <span>{getHypeCount(featured.id)}</span>
+                  </p>
                 </div>
               </button>
             </section>
@@ -375,7 +369,7 @@ function DailyThemeCard({ artworks, onOpenKeyword }) {
         <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
           오늘의 일일전 · {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
         </p>
-        <h2 className="mt-2 text-[44px] font-extrabold leading-[0.98] tracking-[-0.08em] text-center">
+        <h2 className="font-display mt-2 text-[48px] font-black leading-[0.98] text-center">
           #{today}
         </h2>
         <p className="mt-3 text-center text-[12px] leading-[1.7] text-white/85">

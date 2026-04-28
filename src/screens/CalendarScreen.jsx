@@ -172,35 +172,40 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
             )}
           </div>
 
-          {/* 발자국 밭 — 6×4 grid, 각 칸은 발자국 SVG */}
-          <div className="mt-4 grid grid-cols-6 gap-2">
+          {/* 24칸 슬롯 — 채워진 칸은 사진, 빈 칸은 큰 번호. 시집의 빈 페이지 느낌 */}
+          <div className="mt-4 grid grid-cols-6 gap-1.5">
             {Array.from({ length: 24 }).map((_, i) => {
-              const filled = i < filled24;
+              const photo = monthArtworks[i] || null;
               return (
-                <PawSlot
+                <RollSlot
                   key={i}
-                  filled={filled}
+                  number={i + 1}
+                  photo={photo}
                   rollComplete={rollComplete}
-                  index={i}
+                  onOpen={() => photo && openArtwork(photo.id)}
                 />
               );
             })}
           </div>
 
-          {/* 25번째 — 발자국 옆 별도 자리, 가운데 큰 발자국 + ★ */}
-          <div className="mt-4 flex items-center justify-between rounded-[14px] border border-dashed border-[var(--border-strong)] px-3 py-2.5">
-            <div className="flex items-center gap-2">
-              <PawSlot
-                filled={has25}
+          {/* 25번째 — 별도 자리, 큰 번호 25 + ★ */}
+          <div className="mt-3 flex items-center justify-between rounded-[14px] border border-dashed border-[var(--border-strong)] px-3 py-2.5">
+            <div className="flex items-center gap-3">
+              <RollSlot
+                number={25}
+                photo={monthArtworks.find((a) => a.is_twenty_five) || null}
                 rollComplete={rollComplete}
                 size="lg"
-                index={99}
                 isStar
+                onOpen={() => {
+                  const t = monthArtworks.find((a) => a.is_twenty_five);
+                  if (t) openArtwork(t.id);
+                }}
               />
               <div>
-                <p className="text-[10px] font-bold tracking-[0.16em] opacity-70">25번째 발자국</p>
-                <p className="text-[12px] font-bold">
-                  {has25 ? '결정됨 — 가장 오래 남은 한 장' : '24장 다 채우면 골라주세요'}
+                <p className="text-[10px] font-bold tracking-[0.16em] opacity-70">25번째 자리</p>
+                <p className="font-display text-[14px] font-bold italic">
+                  {has25 ? '가장 오래 남은 한 장' : '24장 다 채우면 골라주세요'}
                 </p>
               </div>
             </div>
@@ -364,40 +369,50 @@ function FilmDayGrid({ year, month, day, artworkIds, works, onOpenDay }) {
   );
 }
 
-// 발자국 한 칸 — 채워졌으면 진한 ink 발자국, 비었으면 옅은 흙 자국
-function PawSlot({ filled, rollComplete, size = 'sm', isStar = false, index = 0 }) {
-  const dim = size === 'lg' ? 36 : 26;
-  const padding = size === 'lg' ? 'p-1.5' : 'p-1';
-  // 살짝 회전을 줘서 발자국이 자연스럽게 흩어진 느낌 (deterministic)
-  const rot = ((index * 37) % 25) - 12; // -12 ~ +12도
-  const filledColor = rollComplete ? 'text-white' : 'text-[var(--ink)]';
-  const emptyColor = rollComplete ? 'text-white/15' : 'text-[var(--text-faint)]/30';
+// 슬롯 한 칸 — 채워졌으면 사진 썸네일, 비었으면 큰 회색 번호 (시집의 빈 페이지)
+function RollSlot({ number, photo, rollComplete, size = 'sm', isStar = false, onOpen }) {
+  const filled = !!photo;
+  const big = size === 'lg';
+  const numberClass = rollComplete
+    ? (filled ? 'text-white/80' : 'text-white/20')
+    : (filled ? 'text-white/95' : 'text-[var(--text-faint)]/55');
   return (
-    <div
-      className={`relative flex aspect-square items-center justify-center ${padding}`}
-      style={{ transform: filled ? `rotate(${rot}deg)` : 'none' }}
+    <button
+      type="button"
+      onClick={onOpen}
+      disabled={!filled}
+      className={`relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-[8px] ${
+        filled
+          ? ''
+          : rollComplete
+          ? 'border border-dashed border-white/10'
+          : 'border border-dashed border-[var(--border)] bg-[var(--surface-2)]/40'
+      } ${filled ? 'cursor-pointer' : 'cursor-default'}`}
     >
-      <svg
-        viewBox="0 0 32 32"
-        width={dim}
-        height={dim}
-        className={filled ? filledColor : emptyColor}
-        fill="currentColor"
-        aria-hidden="true"
+      {filled && (
+        <img
+          src={photo.imageUrl}
+          alt={photo.title || ''}
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
+      {filled && <span className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />}
+      <span
+        className={`font-display relative text-right ${big ? 'text-[24px]' : 'text-[15px]'} font-black italic leading-none ${numberClass}`}
+        style={{
+          position: filled ? 'absolute' : 'static',
+          right: filled ? 4 : undefined,
+          bottom: filled ? 3 : undefined,
+        }}
       >
-        {/* 발바닥 패드 (큰 가운데) */}
-        <ellipse cx="16" cy="22" rx="7" ry="5" />
-        {/* 발가락 4개 */}
-        <ellipse cx="8.5" cy="13" rx="2.5" ry="3" />
-        <ellipse cx="13.5" cy="9" rx="2.5" ry="3.2" />
-        <ellipse cx="18.5" cy="9" rx="2.5" ry="3.2" />
-        <ellipse cx="23.5" cy="13" rx="2.5" ry="3" />
-      </svg>
-      {isStar && filled && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--accent)] text-[7px] font-bold text-white">
+        {String(number).padStart(2, '0')}
+      </span>
+      {isStar && (
+        <span className="absolute left-1 top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--accent)] text-[7px] font-bold text-white">
           ★
         </span>
       )}
-    </div>
+    </button>
   );
 }

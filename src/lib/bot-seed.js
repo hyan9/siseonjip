@@ -85,7 +85,7 @@ const BOT_ARTWORK_BLUEPRINTS = [
   { user_id: 'bot:moss',  title: '풀 사이로 떨어진 빛',      daily_vision: '잎사귀', url: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&q=80', d: 19 },
 
   // ── 소금 (bot:salt) — 부엌, 주방, 그림자, 음식 ──
-  { user_id: 'bot:salt',  title: '도마 위에 떨어진 빛',     daily_vision: '오후',  url: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80', d: 0 },
+  { user_id: 'bot:salt',  title: '도마 위에 떨어진 빛',     daily_vision: '오후',  url: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=900&q=80', d: 0 },
   { user_id: 'bot:salt',  title: '컵의 그림자가 더 길다',    daily_vision: '그림자', url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80', d: 2 },
   { user_id: 'bot:salt',  title: '냄비가 만든 일식',         daily_vision: '주방',  url: 'https://images.unsplash.com/photo-1466637574441-749b8f19452f?auto=format&fit=crop&w=900&q=80', d: 4 },
   { user_id: 'bot:salt',  title: '식탁 끝에 잠시 머문 빵',   daily_vision: '오후',  url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=80', d: 8 },
@@ -115,13 +115,13 @@ const BOT_ARTWORK_BLUEPRINTS = [
   { user_id: 'bot:noir',  title: '길 끝에 남은 빨간 신호',    daily_vision: '빨강 한 점', url: 'https://images.unsplash.com/photo-1496564203457-11bb12075d90?auto=format&fit=crop&w=900&q=80', d: 17 },
 
   // ── 주전자 (bot:kettle) — 카페, 빛, 손, 책 ──
-  { user_id: 'bot:kettle', title: '컵 위에 떠 있는 빛',       daily_vision: '반사',  url: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80', d: 0 },
-  { user_id: 'bot:kettle', title: '에스프레소 표면',          daily_vision: '커피',  url: 'https://images.unsplash.com/photo-1485808191679-5f86510681a2?auto=format&fit=crop&w=900&q=80', d: 1 },
-  { user_id: 'bot:kettle', title: '카페 조명은 늘 따뜻하다',  daily_vision: '카페',  url: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?auto=format&fit=crop&w=900&q=80', d: 3 },
-  { user_id: 'bot:kettle', title: '잠시 멈춘 손',             daily_vision: '카페',  url: 'https://images.unsplash.com/photo-1442975631115-c4f7b05b8a2c?auto=format&fit=crop&w=900&q=80', d: 6 },
+  { user_id: 'bot:kettle', title: '컵 위에 떠 있는 빛',       daily_vision: '반사',  url: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=900&q=80', d: 0 },
+  { user_id: 'bot:kettle', title: '에스프레소 표면',          daily_vision: '커피',  url: 'https://images.unsplash.com/photo-1542353436-312f0e1f67ff?auto=format&fit=crop&w=900&q=80', d: 1 },
+  { user_id: 'bot:kettle', title: '카페 조명은 늘 따뜻하다',  daily_vision: '카페',  url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=80', d: 3 },
+  { user_id: 'bot:kettle', title: '잠시 멈춘 손',             daily_vision: '카페',  url: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=900&q=80', d: 6 },
   { user_id: 'bot:kettle', title: '책 모서리에 닿은 빛',      daily_vision: '책 모서리', url: 'https://images.unsplash.com/photo-1495640388908-05fa85288e61?auto=format&fit=crop&w=900&q=80', d: 8 },
-  { user_id: 'bot:kettle', title: '드립이 떨어지는 0.5초',    daily_vision: '커피',  url: 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=900&q=80', d: 10 },
-  { user_id: 'bot:kettle', title: '창가 자리 — 평일 11시',    daily_vision: '카페 창가', url: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=900&q=80', d: 13 },
+  { user_id: 'bot:kettle', title: '드립이 떨어지는 0.5초',    daily_vision: '커피',  url: 'https://images.unsplash.com/photo-1490604001847-b712b0c2f967?auto=format&fit=crop&w=900&q=80', d: 10 },
+  { user_id: 'bot:kettle', title: '창가 자리 — 평일 11시',    daily_vision: '카페 창가', url: 'https://images.unsplash.com/photo-1448630360428-65456885c650?auto=format&fit=crop&w=900&q=80', d: 13 },
   { user_id: 'bot:kettle', title: '의자 위에 두고 간 책',     daily_vision: '의자',  url: 'https://images.unsplash.com/photo-1519682337058-a94d519337bc?auto=format&fit=crop&w=900&q=80', d: 16 },
   { user_id: 'bot:kettle', title: '하늘 한 조각',             daily_vision: '하늘 한 조각', url: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=900&q=80', d: 20 },
 ];
