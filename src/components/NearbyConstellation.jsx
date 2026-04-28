@@ -14,7 +14,7 @@ export default function NearbyConstellation({
 }) {
   if (!center || !points?.length) return null;
 
-  const items = points
+  const allItems = points
     .map((p) => {
       const distance = distanceMeters(center.lat, center.lng, p.lat, p.lng);
       // 화면상 방위 (북쪽이 위). 동=오른쪽
@@ -24,8 +24,24 @@ export default function NearbyConstellation({
       return { ...p, distance, bearing };
     })
     .filter((p) => Number.isFinite(p.distance))
-    .sort((a, b) => a.distance - b.distance)
-    .slice(0, maxItems);
+    .sort((a, b) => a.distance - b.distance);
+
+  // 같은 구역 묶기 — 거리·방위가 비슷하면 첫 사진만 보여주고 "+N" 배지.
+  // 사용자가 "다 보여줄 필요 없음. 깔끔히" 요청.
+  const ANGLE_THRESHOLD = 0.26;   // ~15도
+  const DISTANCE_RATIO = 0.25;    // 25% 이내 거리 차
+  const groups = [];
+  for (const it of allItems) {
+    const found = groups.find((g) => {
+      const angDiff = Math.abs(((it.bearing - g.bearing + Math.PI) % (2 * Math.PI)) - Math.PI);
+      if (angDiff > ANGLE_THRESHOLD) return false;
+      const distRatio = Math.abs(it.distance - g.distance) / Math.max(it.distance, g.distance, 100);
+      return distRatio < DISTANCE_RATIO;
+    });
+    if (found) found.others.push(it);
+    else groups.push({ ...it, others: [] });
+  }
+  const items = groups.slice(0, maxItems);
 
   const half = size / 2;
   const minR = 72; // 고양이 바로 옆
@@ -149,6 +165,7 @@ export default function NearbyConstellation({
       {/* 주변 사진 — 별처럼 반짝임. 거리 라벨은 사진 우측 하단 배지 (이웃 사진과 안 겹침) */}
       {positioned.map((p, i) => {
         const photoSize = 56;
+        const extraCount = p.others?.length || 0;
         return (
           <button
             key={p.id}
@@ -181,6 +198,15 @@ export default function NearbyConstellation({
                 {formatDistance(p.distance)}
               </span>
             </div>
+            {/* +N 배지 — 같은 구역에 사진 더 있을 때 (우측 상단) */}
+            {extraCount > 0 && (
+              <span
+                className="absolute -right-1 -top-1 rounded-full bg-[var(--accent)] px-1.5 py-[1px] text-[9px] font-bold leading-none text-white shadow"
+                aria-label={`이 구역에 ${extraCount + 1}장`}
+              >
+                +{extraCount}
+              </span>
+            )}
           </button>
         );
       })}

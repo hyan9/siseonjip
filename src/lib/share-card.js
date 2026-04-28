@@ -71,10 +71,37 @@ async function loadImage(url) {
 }
 
 async function loadMascotImage(persona = 'paper') {
+  // -v2 우선 시도. 캐시 우회된 새 PNG. 실패 시 옛 PNG.
   try {
-    return await loadImage(`/personas/${persona}.png`);
+    return await loadImage(`/personas/${persona}-v2.png`);
   } catch {
-    return null;
+    try {
+      return await loadImage(`/personas/${persona}.png`);
+    } catch {
+      return null;
+    }
+  }
+}
+
+// 어두운 페르소나 — share-card 색상 모드를 dark로
+const DARK_PERSONAS = new Set(['cyberpunk', 'alien']);
+function colorModeFor(persona) {
+  return DARK_PERSONAS.has(persona) ? 'dark' : 'light';
+}
+
+// 4컷 프레임 종류. 사용자가 "단조롭잖아" 피드백 — 매번 다른 프레임 회전.
+export const FOURCUT_FRAMES = ['grid', 'filmstrip', 'mosaic'];
+const FRAME_LS_KEY = 'kdn:fourcut:last-frame';
+
+export function pickNextFourCutFrame() {
+  try {
+    const last = typeof localStorage !== 'undefined' ? localStorage.getItem(FRAME_LS_KEY) : null;
+    const idx = FOURCUT_FRAMES.indexOf(last);
+    const next = FOURCUT_FRAMES[(idx + 1) % FOURCUT_FRAMES.length];
+    if (typeof localStorage !== 'undefined') localStorage.setItem(FRAME_LS_KEY, next);
+    return next;
+  } catch {
+    return FOURCUT_FRAMES[Math.floor(Math.random() * FOURCUT_FRAMES.length)];
   }
 }
 
@@ -188,13 +215,15 @@ function trimText(s, max) {
 }
 
 // =============== 4컷 카드 ===============
-export async function generateFourCutCard({ photos, profile, theme = 'light', keyword }) {
+export async function generateFourCutCard({ photos, profile, theme, keyword, persona = 'paper', frame = 'grid' }) {
   await ensureFonts();
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
-  const palette = PALETTES[theme] || PALETTES.light;
+  // theme이 명시되면 그대로 (호환), 없으면 페르소나 기반 자동 결정
+  const colorMode = theme && PALETTES[theme] ? theme : colorModeFor(persona);
+  const palette = PALETTES[colorMode];
 
   // 배경
   ctx.fillStyle = palette.bg;
@@ -236,66 +265,106 @@ export async function generateFourCutCard({ photos, profile, theme = 'light', ke
   // 시집 톤 인용 — 부제와 그리드 사이 (워터마크와 충돌 방지로 그리드 위로 이동)
   drawSignature(ctx, palette, 64, 258, '"가장 오래 남는 사진은 단 한 장."');
 
-  // 4컷 그리드 (2x2) — 워터마크 침범 방지로 cellSize 살짝 줄임 + 가로 가운데 정렬
+  // 프레임별 셀 위치/크기 산출
   const startY = 308;
-  const gap = 20;
   // 사용 가능 vertical: 워터마크 mascotY(1240) - 그리드 시작(308) - 하단 여유(24) = 908
-  const cellSize = Math.floor((908 - gap) / 2); // 444
-  const gridUsedW = cellSize * 2 + gap;
-  const startX = Math.floor((W - gridUsedW) / 2);
-
-  const slots = [photos[0], photos[1], photos[2], photos[3]];
-  const positions = [
-    [startX, startY],
-    [startX + cellSize + gap, startY],
-    [startX, startY + cellSize + gap],
-    [startX + cellSize + gap, startY + cellSize + gap],
-  ];
+  const availH = 908;
+  const cells = computeFrameCells(frame, startY, availH);
 
   for (let i = 0; i < 4; i++) {
-    const [x, y] = positions[i];
-    const photo = slots[i];
+    const cell = cells[i];
+    const photo = photos[i];
+    const { x, y, w, h, radius = 18 } = cell;
     ctx.save();
-    roundRectPath(ctx, x, y, cellSize, cellSize, 18);
+    roundRectPath(ctx, x, y, w, h, radius);
     ctx.clip();
     if (photo?.imageUrl) {
       try {
         const img = await loadImage(photo.imageUrl);
-        drawCover(ctx, img, x, y, cellSize, cellSize);
+        drawCover(ctx, img, x, y, w, h);
       } catch {
         ctx.fillStyle = palette.divider;
-        ctx.fillRect(x, y, cellSize, cellSize);
+        ctx.fillRect(x, y, w, h);
       }
     } else {
       // 빈 슬롯 — 시집 톤. 큰 명조 번호 흐리게
       ctx.fillStyle = palette.surface;
-      ctx.fillRect(x, y, cellSize, cellSize);
+      ctx.fillRect(x, y, w, h);
       ctx.fillStyle = palette.faint;
-      ctx.font = `italic 900 120px ${SERIF}`;
+      const fontSize = Math.min(w, h) * 0.5;
+      ctx.font = `italic 900 ${fontSize}px ${SERIF}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(String(i + 1).padStart(2, '0'), x + cellSize / 2, y + cellSize / 2);
+      ctx.fillText(String(i + 1).padStart(2, '0'), x + w / 2, y + h / 2);
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
     }
     ctx.restore();
   }
 
-  // 워터마크 — 시집 톤 인용은 워터마크 sub로 통합 (별도 signature는 워터마크와 겹쳐 제거)
-  const mascot = await loadMascotImage(theme === 'dark' ? 'night' : 'paper');
+  // 워터마크 — 사용자가 선택한 페르소나 마스코트
+  const mascot = await loadMascotImage(persona);
   drawWatermark(ctx, palette, mascot);
 
   return blobFromCanvas(canvas);
 }
 
+// 4컷 프레임 종류별 셀 좌표 — startY부터 availH 안에 배치.
+function computeFrameCells(frame, startY, availH) {
+  if (frame === 'filmstrip') {
+    // 4×1 세로 — 영화 필름 스트립 톤
+    const gap = 14;
+    const cellH = Math.floor((availH - gap * 3) / 4);
+    const cellW = Math.floor(W * 0.72);
+    const x = Math.floor((W - cellW) / 2);
+    return [0, 1, 2, 3].map((i) => ({
+      x,
+      y: startY + i * (cellH + gap),
+      w: cellW,
+      h: cellH,
+      radius: 12,
+    }));
+  }
+  if (frame === 'mosaic') {
+    // 큰 1 + 작은 3 (좌측 큰 사진, 우측 세로 3개) — 매거진 톤
+    const gap = 16;
+    const bigSize = availH; // 정사각형, 사용 가능 세로 만큼
+    const smallH = Math.floor((availH - gap * 2) / 3);
+    const smallW = Math.floor(W - 64 * 2 - bigSize - gap);
+    const startX = 64;
+    const bigCell = { x: startX, y: startY, w: bigSize, h: bigSize, radius: 22 };
+    const smallX = startX + bigSize + gap;
+    const smallCells = [0, 1, 2].map((i) => ({
+      x: smallX,
+      y: startY + i * (smallH + gap),
+      w: smallW,
+      h: smallH,
+      radius: 14,
+    }));
+    return [bigCell, ...smallCells];
+  }
+  // 기본 grid (2x2)
+  const gap = 20;
+  const cellSize = Math.floor((availH - gap) / 2);
+  const gridUsedW = cellSize * 2 + gap;
+  const startX = Math.floor((W - gridUsedW) / 2);
+  return [
+    { x: startX,                       y: startY,                          w: cellSize, h: cellSize, radius: 18 },
+    { x: startX + cellSize + gap,      y: startY,                          w: cellSize, h: cellSize, radius: 18 },
+    { x: startX,                       y: startY + cellSize + gap,         w: cellSize, h: cellSize, radius: 18 },
+    { x: startX + cellSize + gap,      y: startY + cellSize + gap,         w: cellSize, h: cellSize, radius: 18 },
+  ];
+}
+
 // =============== 단일 사진 카드 ===============
-export async function generateSinglePhotoCard({ photo, profile, theme = 'light' }) {
+export async function generateSinglePhotoCard({ photo, profile, theme, persona = 'paper' }) {
   await ensureFonts();
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
-  const palette = PALETTES[theme] || PALETTES.light;
+  const colorMode = theme && PALETTES[theme] ? theme : colorModeFor(persona);
+  const palette = PALETTES[colorMode];
 
   ctx.fillStyle = palette.bg;
   ctx.fillRect(0, 0, W, H);
@@ -358,21 +427,22 @@ export async function generateSinglePhotoCard({ photo, profile, theme = 'light' 
     ctx.fillText(`#${photo.daily_vision}`, 64, photoBottom + 132);
   }
 
-  // 워터마크
-  const mascot = await loadMascotImage(theme === 'dark' ? 'night' : 'paper');
+  // 워터마크 — 사용자 페르소나
+  const mascot = await loadMascotImage(persona);
   drawWatermark(ctx, palette, mascot);
 
   return blobFromCanvas(canvas);
 }
 
 // =============== 위클리 회고 카드 ===============
-export async function generateWeeklyRecapCard({ photos, profile, theme = 'light', weekRange }) {
+export async function generateWeeklyRecapCard({ photos, profile, theme, weekRange, persona = 'paper' }) {
   await ensureFonts();
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
-  const palette = PALETTES[theme] || PALETTES.light;
+  const colorMode = theme && PALETTES[theme] ? theme : colorModeFor(persona);
+  const palette = PALETTES[colorMode];
 
   ctx.fillStyle = palette.bg;
   ctx.fillRect(0, 0, W, H);
@@ -464,37 +534,39 @@ export async function generateWeeklyRecapCard({ photos, profile, theme = 'light'
     `사진 ${photos.length}장 — 그중 가장 오래 남을 한 장.`
   );
 
-  // 워터마크
-  const mascot = await loadMascotImage(theme === 'dark' ? 'night' : 'paper');
+  // 워터마크 — 사용자 페르소나
+  const mascot = await loadMascotImage(persona);
   drawWatermark(ctx, palette, mascot);
 
   return blobFromCanvas(canvas);
 }
 
 // =============== Share / download ===============
-export async function downloadFourCutCard({ photos, profile, theme, keyword }) {
-  const blob = await generateFourCutCard({ photos, profile, theme, keyword });
-  triggerDownload(blob, `kadennyang-fourcut-${profile?.nickname || 'card'}.png`);
+export async function downloadFourCutCard({ photos, profile, theme, keyword, persona = 'paper', frame }) {
+  const finalFrame = frame || pickNextFourCutFrame();
+  const blob = await generateFourCutCard({ photos, profile, theme, keyword, persona, frame: finalFrame });
+  triggerDownload(blob, `kadennyang-fourcut-${profile?.nickname || 'card'}-${finalFrame}.png`);
 }
 
-export async function shareFourCutCard({ photos, profile, theme, keyword }) {
-  const blob = await generateFourCutCard({ photos, profile, theme, keyword });
-  return shareOrDownload(blob, `kadennyang-fourcut-${profile?.nickname || 'card'}.png`, {
+export async function shareFourCutCard({ photos, profile, theme, keyword, persona = 'paper', frame }) {
+  const finalFrame = frame || pickNextFourCutFrame();
+  const blob = await generateFourCutCard({ photos, profile, theme, keyword, persona, frame: finalFrame });
+  return shareOrDownload(blob, `kadennyang-fourcut-${profile?.nickname || 'card'}-${finalFrame}.png`, {
     title: '카든냥 4컷',
     text: `${profile?.nickname || ''}의 오늘의 네 장`,
   });
 }
 
-export async function shareSinglePhotoCard({ photo, profile, theme }) {
-  const blob = await generateSinglePhotoCard({ photo, profile, theme });
+export async function shareSinglePhotoCard({ photo, profile, theme, persona = 'paper' }) {
+  const blob = await generateSinglePhotoCard({ photo, profile, theme, persona });
   return shareOrDownload(blob, `kadennyang-${photo?.title || 'photo'}.png`, {
     title: '카든냥',
     text: photo?.title || '',
   });
 }
 
-export async function shareWeeklyRecapCard({ photos, profile, theme, weekRange }) {
-  const blob = await generateWeeklyRecapCard({ photos, profile, theme, weekRange });
+export async function shareWeeklyRecapCard({ photos, profile, theme, weekRange, persona = 'paper' }) {
+  const blob = await generateWeeklyRecapCard({ photos, profile, theme, weekRange, persona });
   return shareOrDownload(blob, `kadennyang-weekly-${profile?.nickname || 'me'}.png`, {
     title: '이번 주 카든냥',
   });

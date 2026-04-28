@@ -339,7 +339,7 @@ export function CatStarlit({ size = 220, className = '' }) {
 // currentColor 의존 X — 테마와 무관하게 페르소나 정체성 유지.
 export const PERSONA_VARIANTS = {
   paper:       { label: '도화지',     pose: 'camera', bg: '#f1f2ee', ink: '#1a1d1f', accent: '#d97757' },
-  night:       { label: '야간',       pose: 'curl',   bg: '#3d434b', ink: '#ecedef', accent: '#f5d28a', extra: 'moon' },
+  night:       { label: '흑냥이',     pose: 'curl',   bg: '#dde3ec', ink: '#1a1d1f', accent: '#5b6370' },
   bread:       { label: '식빵',       pose: 'loaf',   bg: '#f6ecdc', ink: '#7a5a36', accent: '#d97757' },
   cheese:      { label: '치즈',       pose: 'stand',  bg: '#fbf2dc', ink: '#c98c2e', accent: '#50331a' },
   mackerel:    { label: '고등어',     pose: 'camera', bg: '#e7e9ec', ink: '#5a6168', accent: '#2eb6c6', extra: 'stripes' },

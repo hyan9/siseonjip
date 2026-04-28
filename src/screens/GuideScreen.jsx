@@ -87,7 +87,7 @@ export default function GuideScreen({ setScreen }) {
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">10가지 자아</p>
           <h3 className="mt-1 text-[18px] font-extrabold tracking-[-0.05em]">오늘은 어떤 냥이의 시선?</h3>
           <p className="mt-2 text-[12px] leading-[1.7] text-[var(--text-muted)]">
-            카든냥은 한 마리가 아니에요. 도화지·야간·식빵·치즈·고등어·점박이·보라·엽록소·사이버펑크·외계 — 열 가지 자아 중 하나를 골라 셔터를 누르는 작은 의례.
+            카든냥은 한 마리가 아니에요. 도화지·흑냥이·식빵·치즈·고등어·점박이·보라·엽록소·사이버펑크·외계 — 열 가지 자아 중 하나를 골라 셔터를 누르는 작은 의례.
           </p>
           <div className="mt-4 grid grid-cols-5 gap-2">
             {PERSONA_KEYS.map((key) => (

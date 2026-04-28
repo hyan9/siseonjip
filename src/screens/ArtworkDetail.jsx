@@ -136,7 +136,7 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
   const handleShareSingle = async () => {
     setSharingCard(true);
     try {
-      await shareSinglePhotoCard({ photo: art, profile, theme });
+      await shareSinglePhotoCard({ photo: art, profile, persona: theme });
     } catch (err) {
       alert('카드 생성 실패: ' + err.message);
     } finally {

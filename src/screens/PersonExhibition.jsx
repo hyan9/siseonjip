@@ -139,7 +139,8 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
     }
     setExporting(true);
     try {
-      await shareFourCutCard({ photos: wall, profile, theme });
+      // theme(=페르소나 id)를 persona로 전달. 마스코트 + 컬러 모드 둘 다 자동 결정.
+      await shareFourCutCard({ photos: wall, profile, persona: theme });
     } catch (err) {
       alert('카드 생성 실패: ' + err.message);
     } finally {
@@ -178,7 +179,7 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
       const start = new Date(today.getTime() - 6 * 86400000);
       const fmt = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
       const weekRange = `${fmt(start)} – ${fmt(today)}`;
-      await shareWeeklyRecapCard({ photos: recent, profile, theme, weekRange });
+      await shareWeeklyRecapCard({ photos: recent, profile, persona: theme, weekRange });
     } catch (err) {
       alert('회고 카드 실패: ' + err.message);
     } finally {

@@ -16,10 +16,10 @@ export const THEMES = [
   },
   {
     id: 'night',
-    label: '야간',
-    hint: '깊은 새벽, 가로등의 외로움',
-    swatch: ['#0e1014', '#ecedef', '#f08461'],
-    color: '#0e1014',
+    label: '흑냥이',
+    hint: '밝은 종이 위 검은 실루엣',
+    swatch: ['#dde3ec', '#1a1d1f', '#5b6370'],
+    color: '#dde3ec',
   },
   {
     id: 'bread',
@@ -85,7 +85,7 @@ function getInitialTheme() {
   if (typeof window === 'undefined') return 'paper';
   const saved = window.localStorage.getItem(STORAGE_KEY);
   if (saved && VALID_IDS.has(saved)) return saved;
-  // 시스템 다크 선호 → 야간
+  // 시스템 다크 선호 → 흑냥이
   if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) return 'night';
   return 'paper';
 }
