@@ -543,31 +543,31 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
               </span>
             </div>
             <p className="text-[12px] leading-[1.7] text-[var(--text-muted)]">
-              사진을 올리고 사람들과 반응을 주고받을수록 따뜻해져요. 36.5°에서 시작합니다.
+              36.5°에서 시작해요. 사진을 올리고 사람들과 반응을 주고받을수록 따뜻해집니다.
             </p>
-            <div className="mt-4 space-y-2 rounded-[14px] bg-[var(--surface-2)] p-3 text-[13px]">
-              <div className="flex items-baseline justify-between">
-                <span className="text-[var(--text-muted)]">사진</span>
-                <span className="font-semibold">{works.length}장</span>
-              </div>
-              <div className="flex items-baseline justify-between">
-                <span className="text-[var(--text-muted)]">팔로워</span>
-                <span className="font-semibold">{stats.followerCount}명</span>
-              </div>
-              <div className="flex items-baseline justify-between">
-                <span className="text-[var(--text-muted)]">받은 🔥</span>
-                <span className="font-semibold">{totalHypeReceived}개</span>
-              </div>
-              <div className="flex items-baseline justify-between">
-                <span className="text-[var(--text-muted)]">25번째 자리</span>
-                <span className="font-semibold">{twentyFiveArt ? '채움 ✓' : '아직'}</span>
-              </div>
-            </div>
-            <div className="mt-3 flex items-center gap-3 text-[11px]">
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-cyan-400" />~36.8 차분</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />~37.5 새싹</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-orange-400" />~39 햇살</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" />39+ 활활</span>
+            <ul className="mt-4 space-y-1.5 text-[13px] leading-snug">
+              <li className="flex items-baseline gap-2">
+                <span className="text-[var(--text-faint)]">↑</span>
+                <span>사진을 올리면</span>
+              </li>
+              <li className="flex items-baseline gap-2">
+                <span className="text-[var(--text-faint)]">↑</span>
+                <span>팔로워가 늘면</span>
+              </li>
+              <li className="flex items-baseline gap-2">
+                <span className="text-[var(--text-faint)]">↑</span>
+                <span>🔥를 받으면</span>
+              </li>
+              <li className="flex items-baseline gap-2">
+                <span className="text-[var(--accent)]">↑↑</span>
+                <span>25번째 자리를 채우면</span>
+              </li>
+            </ul>
+            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--text-muted)]">
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-cyan-400" />차분</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />새싹</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-orange-400" />햇살</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" />활활</span>
             </div>
             <button
               type="button"
