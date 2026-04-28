@@ -354,44 +354,14 @@ export const PERSONA_VARIANTS = {
 
 export const PERSONA_KEYS = Object.keys(PERSONA_VARIANTS);
 
-// 새 PersonaCat — NotebookLM이 만든 PDF 6페이지 일러스트 PNG 사용.
-// 기존 SVG 버전은 PersonaCatSvg로 보존 (의도적 기괴함이 살아있음).
+// PersonaCat — SVG 기반 렌더링.
+// 이전 PNG 버전은 페르소나마다 캔버스 활용도(50~90%)가 달라 잘림 문제가 계속 발생.
+// SVG는 모든 페르소나가 120×120 viewBox에 동일 좌표로 그려져 위치 100% 일관 보장.
 export function PersonaCat({ persona = 'paper', size = 80, withFrame = true, className = '' }) {
-  const v = PERSONA_VARIANTS[persona] || PERSONA_VARIANTS.paper;
-  const imgPx = Math.round(size * (v.imgScale ?? 0.8));
-  return (
-    <span
-      role="img"
-      aria-label={`${v.label} 카든냥`}
-      className={`inline-flex items-center justify-center overflow-hidden ${withFrame ? 'rounded-[12%]' : ''} ${className}`}
-      style={{
-        width: size,
-        height: size,
-        background: withFrame ? v.bg : 'transparent',
-      }}
-    >
-      <img
-        src={`/personas/${persona}.png`}
-        alt=""
-        loading="lazy"
-        width={imgPx}
-        height={imgPx}
-        // 인라인 스타일로 강하게 박음 — Tailwind preflight의 `img { max-width:100%; height:auto }`
-        // 가 imgPx를 무력화하던 가능성 차단. display:block, object-fit:contain도 인라인으로.
-        style={{
-          width: `${imgPx}px`,
-          height: `${imgPx}px`,
-          maxWidth: 'none',
-          display: 'block',
-          objectFit: 'contain',
-        }}
-        draggable={false}
-      />
-    </span>
-  );
+  return <PersonaCatSvg persona={persona} size={size} withFrame={withFrame} className={className} />;
 }
 
-// 기존 SVG 페르소나 — 의도적 기괴함, 백업용. 추후 다른 화면에서 활용 가능.
+// SVG 페르소나 — 모든 페르소나 동일 viewBox·동일 좌표계라 위치 일관됨.
 export function PersonaCatSvg({ persona = 'paper', size = 80, withFrame = true, className = '' }) {
   const v = PERSONA_VARIANTS[persona] || PERSONA_VARIANTS.paper;
   return (
