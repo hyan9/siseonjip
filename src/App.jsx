@@ -41,6 +41,13 @@ const GuideScreen = lazy(() => import('./screens/GuideScreen'));
 function MainApp() {
   const [screenStack, setScreenStack] = useState(['home']);
   const screen = screenStack[screenStack.length - 1];
+
+  // 화면별 스크롤 위치 — 처음 방문하는 화면은 0(맨 위)으로 시작.
+  // 다시 돌아올 때(detail → home 등)는 떠날 때 위치 복원.
+  // setScreen 호출 시점에 직전 위치를 박아둔 뒤 새 화면 마운트 후 복원.
+  const scrollByScreen = useRef(new Map());
+  const screenRef = useRef(screen);
+  useEffect(() => { screenRef.current = screen; }, [screen]);
   const [selectedArtworkId, setSelectedArtworkId] = useState(null);
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
@@ -56,6 +63,8 @@ function MainApp() {
   const isInternalNav = useRef(false);
 
   const setScreen = useCallback((next) => {
+    // 직전 화면의 스크롤 저장 (setState 전에 — 그래야 정확한 현재 값)
+    scrollByScreen.current.set(screenRef.current, window.scrollY);
     setScreenStack((prev) => {
       const cur = prev[prev.length - 1];
       if (next === cur) return prev;
@@ -84,6 +93,8 @@ function MainApp() {
   // 뒤로가기 처리 — stack pop. stack 길이 1이면 그대로 (앱 종료 방지: 다시 push)
   useEffect(() => {
     const onPop = () => {
+      // 떠나는 화면의 스크롤 저장
+      scrollByScreen.current.set(screenRef.current, window.scrollY);
       setScreenStack((prev) => {
         if (prev.length <= 1) {
           // 홈 상태에서 back — 히스토리 entry 다시 추가해 앱 안 나가게
@@ -98,6 +109,14 @@ function MainApp() {
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
+
+  // 화면 변경 시 저장된 스크롤 복원 — 처음 보는 화면이면 0
+  useEffect(() => {
+    const target = scrollByScreen.current.get(screen) ?? 0;
+    // 새 콘텐츠가 commit + layout 된 다음 프레임에 스크롤
+    const id = requestAnimationFrame(() => window.scrollTo(0, target));
+    return () => cancelAnimationFrame(id);
+  }, [screen]);
 
   const openArtwork = (id) => { setSelectedArtworkId(id); setScreen('detail'); };
   const openPlace = (id) => { setSelectedPlaceId(id); setScreen('place'); };

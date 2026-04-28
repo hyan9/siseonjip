@@ -235,11 +235,11 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
                 {/* 풀폭 세로 비율 사진 — 5장 캐러셀, 5초마다 우측 슬라이드 */}
                 <div className="relative w-full overflow-hidden" style={{ aspectRatio: '3/4' }}>
                   <div
-                    className="absolute inset-0 flex transition-transform duration-700 ease-in-out"
-                    style={{ transform: `translateX(-${heroIndex * 100}%)`, width: `${heroSlides.length * 100}%` }}
+                    className="absolute inset-0 flex transition-transform duration-[600ms] ease-out"
+                    style={{ transform: `translateX(-${heroIndex * 100}%)` }}
                   >
                     {heroSlides.map((slide) => (
-                      <div key={slide.id} className="relative h-full shrink-0" style={{ width: `${100 / heroSlides.length}%` }}>
+                      <div key={slide.id} className="relative h-full w-full shrink-0">
                         <ImageBox src={slide.imageUrl} alt={slide.title} className="h-full w-full" priority />
                       </div>
                     ))}
@@ -360,18 +360,57 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
   );
 }
 
-// 오늘의 주제 — 풀폭 이벤트 카드 (별빛 + 펄스 애니메이션)
+// 키워드별 색감 매핑 — 의미와 색감이 어긋나지 않게.
+// 색상 키워드(빨강·초록 등)는 직접 매칭, 자연/감각 키워드는 정서적 매핑.
+const KEYWORD_PALETTE = {
+  // 색
+  빨강:   { from: '#e11d48', via: '#7f1d1d', to: '#1a0a0a' },
+  초록:   { from: '#16a34a', via: '#14532d', to: '#0d1a14' },
+  파랑:   { from: '#2563eb', via: '#1e3a8a', to: '#0a1326' },
+  회색:   { from: '#6b7280', via: '#374151', to: '#0f172a' },
+  하양:   { from: '#cbd5e1', via: '#64748b', to: '#1e293b' },
+  검정:   { from: '#404040', via: '#171717', to: '#000000' },
+  // 빛과 그림자
+  빛:     { from: '#ca8a04', via: '#7c2d12', to: '#1a1208' },
+  그림자: { from: '#475569', via: '#1e293b', to: '#020617' },
+  반사:   { from: '#67e8f9', via: '#0e7490', to: '#082f49' },
+  역광:   { from: '#fb923c', via: '#7c2d12', to: '#1a0e08' },
+  그늘:   { from: '#64748b', via: '#1e293b', to: '#020617' },
+  // 자연
+  하늘:   { from: '#60a5fa', via: '#1d4ed8', to: '#0c1f3d' },
+  구름:   { from: '#94a3b8', via: '#475569', to: '#1e293b' },
+  바람:   { from: '#34d399', via: '#15803d', to: '#0d1a14' },
+  비:     { from: '#38bdf8', via: '#075985', to: '#0c1929' },
+  잎:     { from: '#22c55e', via: '#166534', to: '#0d1a14' },
+  돌:     { from: '#78716c', via: '#44403c', to: '#1c1917' },
+  꽃:     { from: '#ec4899', via: '#9d174d', to: '#1a0a14' },
+  // 시간
+  아침:   { from: '#f59e0b', via: '#b45309', to: '#1a1208' },
+  오후:   { from: '#fdba74', via: '#9a3412', to: '#1a0e08' },
+  저녁:   { from: '#a78bfa', via: '#5b21b6', to: '#1a0e26' },
+  '잠들기 전': { from: '#818cf8', via: '#3730a3', to: '#0a0a1a' },
+  // 감각
+  온기:   { from: '#fcd34d', via: '#b45309', to: '#1a1208' },
+  서늘함: { from: '#7dd3fc', via: '#0369a1', to: '#0c1929' },
+  조용함: { from: '#a5b4fc', via: '#3730a3', to: '#0a0a1a' },
+};
+const DEFAULT_PALETTE = { from: 'var(--accent)', via: '#3a2a18', to: '#1a1d1f' };
+
 function DailyThemeCard({ artworks, onOpenKeyword }) {
   const today = getTodayKeyword();
   const todaysList = artworks.filter((a) => a.daily_vision === today);
   const todaysCount = todaysList.length;
   const previews = todaysList.slice(0, 4);
+  const palette = KEYWORD_PALETTE[today] || DEFAULT_PALETTE;
 
   return (
     <button
       type="button"
       onClick={() => onOpenKeyword?.(today)}
-      className="relative block w-full overflow-hidden rounded-[24px] bg-gradient-to-br from-[var(--accent)] via-[#3a2a18] to-[#1a1d1f] p-6 text-left text-white shadow-[0_12px_36px_rgba(0,0,0,0.22)]"
+      className="relative block w-full overflow-hidden rounded-[24px] p-6 text-left text-white shadow-[0_12px_36px_rgba(0,0,0,0.22)]"
+      style={{
+        backgroundImage: `linear-gradient(to bottom right, ${palette.from}, ${palette.via}, ${palette.to})`,
+      }}
     >
       <style>{`
         @keyframes kadennyang-pulse {

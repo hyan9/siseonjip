@@ -373,7 +373,7 @@ export function PersonaCat({ persona = 'paper', size = 80, withFrame = true, cla
         loading="lazy"
         width={size}
         height={size}
-        className="h-full w-full object-cover"
+        className="h-full w-full object-contain"
         draggable={false}
       />
     </span>

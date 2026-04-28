@@ -285,12 +285,17 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
             </div>
           </div>
 
-          {/* Stats — 사진/팔로워/팔로잉 (팔로워·팔로잉은 클릭하면 목록) */}
+          {/* Stats — 사진/팔로워/팔로잉 (각각 클릭 가능: 사진은 갤러리, 나머지는 목록) */}
           <div className="mt-4 grid grid-cols-3 gap-2 border-t border-[var(--border)] pt-3 text-center">
-            <div>
+            <button
+              type="button"
+              onClick={() => stats.artworkCount > 0 && setGalleryStart(0)}
+              disabled={stats.artworkCount === 0}
+              className="rounded-[8px] py-1 transition hover:bg-[var(--surface-2)] disabled:cursor-default disabled:hover:bg-transparent"
+            >
               <p className="text-[18px] font-extrabold tracking-[-0.05em]">{stats.artworkCount}</p>
               <p className="text-[10px] text-[var(--text-muted)]">사진</p>
-            </div>
+            </button>
             <button
               type="button"
               onClick={() => stats.followerCount > 0 && setFollowListType('followers')}

@@ -80,8 +80,8 @@ const BOT_ARTWORK_BLUEPRINTS = [
   { user_id: 'bot:moss',  title: '오래된 간판은 둥글다',     daily_vision: '간판',  url: 'https://images.unsplash.com/photo-1493514789931-586cb221d7a7?auto=format&fit=crop&w=900&q=80', d: 6 },
   { user_id: 'bot:moss',  title: '골목 모서리의 흰 줄',      daily_vision: '간판',  url: 'https://images.unsplash.com/photo-1515263487990-61b07816b324?auto=format&fit=crop&w=900&q=80', d: 9 },
   { user_id: 'bot:moss',  title: '잎사귀가 꽉 찬 창문',      daily_vision: '잎사귀', url: 'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=900&q=80', d: 11 },
-  { user_id: 'bot:moss',  title: '습기 많은 벽',             daily_vision: '돌담',  url: 'https://images.unsplash.com/photo-1604147706283-d7119b5b822c?auto=format&fit=crop&w=900&q=80', d: 13 },
-  { user_id: 'bot:moss',  title: '비 그치고 남은 물웅덩이',   daily_vision: '비',    url: 'https://images.unsplash.com/photo-1493244040629-496f6d136e80?auto=format&fit=crop&w=900&q=80', d: 16 },
+  { user_id: 'bot:moss',  title: '습기 많은 벽',             daily_vision: '돌담',  url: 'https://images.unsplash.com/photo-1690683134285-9d5eccefd766?auto=format&fit=crop&w=900&q=80', d: 13 },
+  { user_id: 'bot:moss',  title: '비 그치고 남은 물웅덩이',   daily_vision: '비',    url: 'https://images.unsplash.com/photo-1428592953211-077101b2021b?auto=format&fit=crop&w=900&q=80', d: 16 },
   { user_id: 'bot:moss',  title: '풀 사이로 떨어진 빛',      daily_vision: '잎사귀', url: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&q=80', d: 19 },
 
   // ── 소금 (bot:salt) — 부엌, 주방, 그림자, 음식 ──
@@ -89,7 +89,7 @@ const BOT_ARTWORK_BLUEPRINTS = [
   { user_id: 'bot:salt',  title: '유리잔의 그림자',          daily_vision: '그림자', url: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=900&q=70', d: 2 },
   { user_id: 'bot:salt',  title: '주방 한 켠',               daily_vision: '주방',  url: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=900&q=70', d: 4 },
   { user_id: 'bot:salt',  title: '식탁 끝에 잠시 머문 빵',   daily_vision: '오후',  url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=80', d: 8 },
-  { user_id: 'bot:salt',  title: '레몬 두 알의 무게',        daily_vision: '주방',  url: 'https://images.unsplash.com/photo-1556909172-bd5315ff2354?auto=format&fit=crop&w=900&q=80', d: 10 },
+  { user_id: 'bot:salt',  title: '레몬 두 알의 무게',        daily_vision: '주방',  url: 'https://images.unsplash.com/photo-1590502593747-42a996133562?auto=format&fit=crop&w=900&q=80', d: 10 },
   { user_id: 'bot:salt',  title: '나이프와 그릇',            daily_vision: '주방',  url: 'https://images.unsplash.com/photo-1466637574441-749b8f19452f?auto=format&fit=crop&w=900&q=80', d: 12 },
   { user_id: 'bot:salt',  title: '오후 다섯 시의 잼',        daily_vision: '오후',  url: 'https://images.unsplash.com/photo-1559054663-e8d23213f55c?auto=format&fit=crop&w=900&q=80', d: 14 },
   { user_id: 'bot:salt',  title: '파스타가 식기 직전',       daily_vision: '주방',  url: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=900&q=80', d: 17 },
@@ -108,10 +108,10 @@ const BOT_ARTWORK_BLUEPRINTS = [
   { user_id: 'bot:noir',  title: '도시의 깊은 밤',           daily_vision: '야경',  url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=70', d: 0 },
   { user_id: 'bot:noir',  title: '네온이 머무는 자리',       daily_vision: '도시',  url: 'https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?auto=format&fit=crop&w=900&q=70', d: 2 },
   { user_id: 'bot:noir',  title: '야경의 한 점',             daily_vision: '야경',  url: 'https://images.unsplash.com/photo-1474314243412-cd4a79f02c6a?auto=format&fit=crop&w=900&q=70', d: 4 },
-  { user_id: 'bot:noir',  title: '편의점 앞의 검은 자국',    daily_vision: '도시',  url: 'https://images.unsplash.com/photo-1490217751470-db269bb56b8c?auto=format&fit=crop&w=900&q=80', d: 7 },
+  { user_id: 'bot:noir',  title: '편의점 앞의 검은 자국',    daily_vision: '도시',  url: 'https://images.unsplash.com/photo-1761031699802-d84fc55592be?auto=format&fit=crop&w=900&q=80', d: 7 },
   { user_id: 'bot:noir',  title: '네온이 다 켜지기 전',      daily_vision: '야경',  url: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=900&q=80', d: 9 },
-  { user_id: 'bot:noir',  title: '지하철 마지막 칸',          daily_vision: '도시',  url: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=80', d: 11 },
-  { user_id: 'bot:noir',  title: '비에 젖은 차도',            daily_vision: '비',    url: 'https://images.unsplash.com/photo-1519074031893-e72a85f1ad2d?auto=format&fit=crop&w=900&q=80', d: 14 },
+  { user_id: 'bot:noir',  title: '지하철 마지막 칸',          daily_vision: '도시',  url: 'https://images.unsplash.com/photo-1627283699359-033f900853e0?auto=format&fit=crop&w=900&q=80', d: 11 },
+  { user_id: 'bot:noir',  title: '비에 젖은 차도',            daily_vision: '비',    url: 'https://images.unsplash.com/photo-1609342431967-e3c2b6da9d41?auto=format&fit=crop&w=900&q=80', d: 14 },
   { user_id: 'bot:noir',  title: '길 끝에 남은 빨간 신호',    daily_vision: '빨강 한 점', url: 'https://images.unsplash.com/photo-1496564203457-11bb12075d90?auto=format&fit=crop&w=900&q=80', d: 17 },
 
   // ── 주전자 (bot:kettle) — 카페, 빛, 손, 책 ──

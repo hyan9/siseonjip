@@ -8,11 +8,44 @@ const NotificationsContext = createContext(null);
 
 const TOAST_TTL_MS = 4500;
 
+// 봇 알림(client-side 시뮬)은 DB에 없으므로 읽음 상태를 localStorage에 저장.
+// 알림 화면을 닫거나 알림을 클릭하면 해당 봇 알림 ID가 누적되어,
+// 새로고침 후에도 🔥/빨간 점이 다시 켜지지 않게 함.
+const BOT_READ_STORAGE_PREFIX = 'kadennyang:bot-noti-read:v1:';
+
+function loadBotReadIds(userId) {
+  if (!userId || typeof window === 'undefined') return new Set();
+  try {
+    const raw = window.localStorage.getItem(BOT_READ_STORAGE_PREFIX + userId);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? new Set(arr) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function saveBotReadIds(userId, set) {
+  if (!userId || typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(BOT_READ_STORAGE_PREFIX + userId, JSON.stringify([...set]));
+  } catch {
+    // 용량 초과 등 — 무시
+  }
+}
+
 export function NotificationsProvider({ children }) {
   const { userId, getArtwork, getProfile, getUserArtworks, refresh } = useData();
   const [dbNotifications, setDbNotifications] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [error, setError] = useState(null);
+  // 봇 알림 읽음 ID — userId 바뀌면 다시 로드 (render-and-set 패턴)
+  const [botReadIds, setBotReadIds] = useState(() => loadBotReadIds(userId));
+  const [botReadUserId, setBotReadUserId] = useState(userId);
+  if (botReadUserId !== userId) {
+    setBotReadUserId(userId);
+    setBotReadIds(loadBotReadIds(userId));
+  }
 
   const dataRef = useRef({ getArtwork, getProfile, refresh });
   useEffect(() => {
@@ -21,10 +54,18 @@ export function NotificationsProvider({ children }) {
 
   // 봇 활동 알림(client-side 시뮬레이션) — 사용자 작품과 함께 변화
   const userArtworks = userId ? getUserArtworks(userId) : [];
-  const botNotifications = useMemo(
+  const botNotificationsRaw = useMemo(
     () => buildBotNotifications({ userId, userArtworks }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [userId, userArtworks.length]
+  );
+  // 저장된 읽음 상태 적용 — 한 번 클릭한 봇 알림은 read_at이 채워져 빨간 점 사라짐
+  const botNotifications = useMemo(
+    () =>
+      botNotificationsRaw.map((n) =>
+        botReadIds.has(n.id) ? { ...n, read_at: n.read_at ?? new Date().toISOString() } : n
+      ),
+    [botNotificationsRaw, botReadIds]
   );
   const notifications = useMemo(
     () =>
@@ -66,8 +107,17 @@ export function NotificationsProvider({ children }) {
   const markRead = useCallback(
     async (notificationId) => {
       if (!userId) return;
-      // 봇 알림은 client-side 시뮬이라 DB 호출 불필요
-      if (typeof notificationId === 'string' && notificationId.startsWith('bot-noti:')) return;
+      // 봇 알림 — DB 대신 localStorage 기반 set에 기록
+      if (typeof notificationId === 'string' && notificationId.startsWith('bot-noti:')) {
+        setBotReadIds((prev) => {
+          if (prev.has(notificationId)) return prev;
+          const next = new Set(prev);
+          next.add(notificationId);
+          saveBotReadIds(userId, next);
+          return next;
+        });
+        return;
+      }
       setDbNotifications((prev) =>
         prev.map((n) => (n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n))
       );
@@ -83,12 +133,22 @@ export function NotificationsProvider({ children }) {
   const clearUnread = useCallback(async () => {
     if (!userId) return;
     setDbNotifications((prev) => prev.map((n) => (n.read_at ? n : { ...n, read_at: new Date().toISOString() })));
+    // 현재 보이는 봇 알림 모두 읽음으로
+    setBotReadIds((prev) => {
+      const next = new Set(prev);
+      let changed = false;
+      for (const n of botNotificationsRaw) {
+        if (!next.has(n.id)) { next.add(n.id); changed = true; }
+      }
+      if (changed) saveBotReadIds(userId, next);
+      return changed ? next : prev;
+    });
     try {
       await markAllNotificationsRead(userId);
     } catch (err) {
       console.warn('clearUnread 실패', err);
     }
-  }, [userId]);
+  }, [userId, botNotificationsRaw]);
 
   // 초기 로드
   useEffect(() => {
