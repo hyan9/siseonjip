@@ -273,8 +273,9 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
                   className="flex shrink-0 flex-col items-end gap-1 rounded-[10px] -m-1 p-1 transition hover:bg-[var(--surface-2)]/60"
                   aria-label="카든 온도 설명"
                 >
-                  <span className={`flex items-baseline gap-0.5 text-[16px] font-extrabold leading-none tracking-[-0.05em] ${tempColor}`}>
-                    {tempEmoji}{Math.round(temperature)}°
+                  <span className={`flex items-center gap-1 leading-none tracking-[-0.05em] ${tempColor}`}>
+                    <span className="text-[13px] leading-none">{tempEmoji}</span>
+                    <span className="text-[17px] font-extrabold leading-none">{Math.round(temperature)}°</span>
                   </span>
                   <div className="relative h-1.5 w-[68px] overflow-hidden rounded-full bg-[var(--surface-2)]">
                     <div
@@ -536,7 +537,10 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
           >
             <div className="mb-3 flex items-baseline justify-between">
               <h3 className="font-display text-[20px] font-extrabold tracking-[-0.04em]">카든 온도</h3>
-              <span className={`text-[20px] font-extrabold ${tempColor}`}>{tempEmoji}{Math.round(temperature)}°</span>
+              <span className={`flex items-center gap-1.5 leading-none ${tempColor}`}>
+                <span className="text-[17px] leading-none">{tempEmoji}</span>
+                <span className="text-[22px] font-extrabold leading-none tracking-[-0.04em]">{Math.round(temperature)}°</span>
+              </span>
             </div>
             <p className="text-[12px] leading-[1.7] text-[var(--text-muted)]">
               사진을 올리고 사람들과 반응을 주고받을수록 따뜻해져요. 36.5°에서 시작합니다.
