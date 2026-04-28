@@ -311,7 +311,7 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
                   type="button"
                   onClick={() => count > 0 && openDayZoom(dayPhotos, 0)}
                   disabled={!art}
-                  className={`relative aspect-[0.78] overflow-hidden rounded-[12px] bg-[var(--surface-2)] ${!art ? 'cursor-default opacity-60' : ''}`}
+                  className={`relative aspect-[0.78] overflow-hidden rounded-[12px] bg-[var(--surface-2)] ${art ? 'ring-1 ring-[var(--border-strong)]/50' : 'cursor-default opacity-60'}`}
                 >
                   {art && <img src={transformedPhotoUrl(art.imageUrl, { width: 240 })} alt={art.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
                   <span className={`absolute left-1 top-1 rounded-full px-1.5 py-0.5 text-[9px] ${art ? 'bg-white/85 text-[var(--text)]' : 'text-[var(--text-faint)]'}`}>
@@ -378,10 +378,11 @@ function FilmDayGrid({ year, month, day, artworkIds, works, onOpenDay }) {
 function RollSlot({ number, photo, rollComplete, size = 'sm', isStar = false, onOpen }) {
   const filled = !!photo;
   const big = size === 'lg';
-  // 빈 슬롯은 더 크고 더 흐리게 — 시집의 빈 페이지 톤
+  // 빈 슬롯은 더 크고 흐리게 (시집의 빈 페이지 톤). 다크 모드 가독성 위해
+  // alpha를 살짝 올림 — 30% → 50%, 15% → 30%.
   const numberClass = filled
     ? (rollComplete ? 'text-white/80' : 'text-white/95')
-    : (rollComplete ? 'text-white/15' : 'text-[var(--text-faint)]/30');
+    : (rollComplete ? 'text-white/30' : 'text-[var(--text-faint)]/55');
   const numberSize = filled
     ? (big ? 'text-[24px]' : 'text-[15px]')
     : (big ? 'text-[44px]' : 'text-[32px]');
@@ -392,10 +393,10 @@ function RollSlot({ number, photo, rollComplete, size = 'sm', isStar = false, on
       disabled={!filled}
       className={`relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-[8px] ${
         filled
-          ? ''
+          ? 'ring-1 ring-[var(--border-strong)]/60'
           : rollComplete
-          ? 'border border-dashed border-white/10'
-          : 'border border-dashed border-[var(--border)] bg-[var(--surface-2)]/40'
+          ? 'border border-dashed border-white/20 bg-white/[0.04]'
+          : 'border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)]'
       } ${filled ? 'cursor-pointer' : 'cursor-default'}`}
     >
       {filled && (
