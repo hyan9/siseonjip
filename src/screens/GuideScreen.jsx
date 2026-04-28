@@ -1,6 +1,6 @@
 // 카든냥 소개 / 사용법 — 처음 들어오는 사람용 가이드
 import { Header } from '../components/ui';
-import { CatPhotographer, CatSleepyFour, CatStarlit } from '../components/Mascot';
+import { CatSleepyFour, CatStarlit, PersonaCat, PERSONA_VARIANTS, PERSONA_KEYS } from '../components/Mascot';
 import { IconHype, IconStar, IconBookmark, IconCalendar } from '../components/icons/AppIcons';
 
 export default function GuideScreen({ setScreen }) {
@@ -82,7 +82,29 @@ export default function GuideScreen({ setScreen }) {
           </div>
         </section>
 
-        {/* 페르소나 5명 */}
+        {/* 10가지 카든냥 자아 — 페르소나 그리드 */}
+        <section className="rounded-[20px] bg-[var(--surface)] p-5 shadow-[0_0_0_1px_var(--border)]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">10가지 자아</p>
+          <h3 className="mt-1 text-[18px] font-extrabold tracking-[-0.05em]">오늘은 어떤 냥이의 시선?</h3>
+          <p className="mt-2 text-[12px] leading-[1.7] text-[var(--text-muted)]">
+            카든냥은 한 마리가 아니에요. 도화지·야간·식빵·치즈·고등어·점박이·보라·엽록소·사이버펑크·외계 — 열 가지 자아 중 하나를 골라 셔터를 누르는 작은 의례.
+          </p>
+          <div className="mt-4 grid grid-cols-5 gap-2">
+            {PERSONA_KEYS.map((key) => (
+              <div key={key} className="flex flex-col items-center gap-1">
+                <PersonaCat persona={key} size={56} />
+                <span className="text-[10px] font-bold tracking-[-0.04em] text-[var(--text-body)]">
+                  {PERSONA_VARIANTS[key].label}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] leading-[1.7] text-[var(--text-faint)]">
+            메뉴 → 오늘의 냥이에서 자유롭게 전환. 색·질감·마스코트가 모두 함께 바뀝니다.
+          </p>
+        </section>
+
+        {/* 봇 친구 5명 */}
         <section className="rounded-[20px] bg-[var(--surface)] p-5 shadow-[0_0_0_1px_var(--border)]">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">데모 봇</p>
           <h3 className="mt-1 text-[18px] font-extrabold tracking-[-0.05em]">함께 둘러보는 다섯 마리</h3>
@@ -90,13 +112,21 @@ export default function GuideScreen({ setScreen }) {
             처음에는 다섯 마리 데모 봇과 함께 둘러봅니다.<br />
             친구를 초대하면 같이 셔터를 누를 수 있어요.
           </p>
-          <ul className="mt-3 space-y-1.5 text-[13px] leading-[1.7]">
-            <li><strong>이끼</strong> — 비 오기 직전의 색</li>
-            <li><strong>소금</strong> — 오후 세 시의 식탁</li>
-            <li><strong>리넨</strong> — 느린 산책</li>
-            <li><strong>느와르</strong> — 검은 빛</li>
-            <li><strong>주전자</strong> — 하루의 윗면</li>
-          </ul>
+          <div className="mt-3 grid grid-cols-5 gap-2">
+            {[
+              { name: '이끼',   note: '비 오기 직전',     persona: 'chlorophyll' },
+              { name: '소금',   note: '오후 세 시',       persona: 'paper' },
+              { name: '리넨',   note: '느린 산책',         persona: 'bread' },
+              { name: '느와르', note: '검은 빛',           persona: 'night' },
+              { name: '주전자', note: '하루의 윗면',       persona: 'mackerel' },
+            ].map(({ name, note, persona }) => (
+              <div key={name} className="flex flex-col items-center gap-1">
+                <PersonaCat persona={persona} size={48} />
+                <span className="text-[11px] font-bold tracking-[-0.04em]">{name}</span>
+                <span className="text-[9px] leading-[1.4] text-[var(--text-faint)]">{note}</span>
+              </div>
+            ))}
+          </div>
         </section>
 
         {/* 시작 흐름 4단계 */}

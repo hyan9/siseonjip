@@ -329,6 +329,183 @@ export function CatStarlit({ size = 220, className = '' }) {
   );
 }
 
+// === 카든냥 10가지 페르소나 (자아) ===
+// 각 페르소나마다 자세·장식·색이 고정된 미니 초상화.
+// SettingsSheet 테마 picker, GuideScreen 페르소나 그리드에 사용.
+// currentColor 의존 X — 테마와 무관하게 페르소나 정체성 유지.
+export const PERSONA_VARIANTS = {
+  paper:       { label: '도화지',     pose: 'camera', bg: '#f1f2ee', ink: '#1a1d1f', accent: '#d97757' },
+  night:       { label: '야간',       pose: 'curl',   bg: '#0e1014', ink: '#ecedef', accent: '#f5d28a', extra: 'moon' },
+  bread:       { label: '식빵',       pose: 'loaf',   bg: '#f6ecdc', ink: '#7a5a36', accent: '#d97757' },
+  cheese:      { label: '치즈',       pose: 'stand',  bg: '#fbf2dc', ink: '#c98c2e', accent: '#50331a' },
+  mackerel:    { label: '고등어',     pose: 'camera', bg: '#e7e9ec', ink: '#5a6168', accent: '#2eb6c6', extra: 'stripes' },
+  spotted:     { label: '점박이',     pose: 'stand',  bg: '#fafafa', ink: '#e8e8e8', accent: '#141414', extra: 'spots' },
+  lavender:    { label: '보라냥',     pose: 'curl',   bg: '#efebf6', ink: '#a890c8', accent: '#8b5cf6' },
+  chlorophyll: { label: '엽록소',     pose: 'stand',  bg: '#eef3e9', ink: '#3a6e44', accent: '#7ab875', extra: 'leaf' },
+  cyberpunk:   { label: '사이버펑크', pose: 'stand',  bg: '#0a0814', ink: '#f0f0ff', accent: '#ff2d92', extra: 'glitch' },
+  alien:       { label: '외계냥이',   pose: 'stand',  bg: '#0e1a14', ink: '#a3ff57', accent: '#7c5cff', extra: 'antennae' },
+};
+
+export const PERSONA_KEYS = Object.keys(PERSONA_VARIANTS);
+
+export function PersonaCat({ persona = 'paper', size = 80, withFrame = true, className = '' }) {
+  const v = PERSONA_VARIANTS[persona] || PERSONA_VARIANTS.paper;
+  return (
+    <svg
+      viewBox="0 0 120 120"
+      width={size}
+      height={size}
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label={`${v.label} 카든냥`}
+      className={className}
+    >
+      {withFrame && <rect width="120" height="120" rx="18" fill={v.bg} />}
+      {v.pose === 'camera' && <PersonaCameraPose v={v} />}
+      {v.pose === 'curl'   && <PersonaCurlPose v={v} />}
+      {v.pose === 'loaf'   && <PersonaLoafPose v={v} />}
+      {v.pose === 'stand'  && <PersonaStandPose v={v} />}
+    </svg>
+  );
+}
+
+function PersonaCameraPose({ v }) {
+  return (
+    <g>
+      <path d="M 86 100 Q 102 88 96 72" stroke={v.ink} strokeWidth="5" strokeLinecap="round" fill="none"/>
+      <ellipse cx="60" cy="92" rx="32" ry="20" fill={v.ink}/>
+      <circle cx="60" cy="48" r="30" fill={v.ink}/>
+      <path d="M 36 36 L 40 18 L 52 32 Z" fill={v.ink}/>
+      <path d="M 84 36 L 80 18 L 68 32 Z" fill={v.ink}/>
+      {v.extra === 'stripes' && (
+        <g stroke={v.bg} strokeWidth="2.2" strokeLinecap="round" fill="none" opacity="0.6">
+          <path d="M 36 80 Q 60 86 84 80" />
+          <path d="M 32 92 Q 60 100 88 92" />
+          <path d="M 40 102 Q 60 108 80 102" />
+        </g>
+      )}
+      <rect x="32" y="40" width="56" height="26" rx="3" fill={v.bg} stroke={v.ink} strokeWidth="2.5"/>
+      <rect x="46" y="34" width="14" height="6" rx="1" fill={v.bg} stroke={v.ink} strokeWidth="2"/>
+      <circle cx="76" cy="38" r="2.5" fill={v.accent}/>
+      <circle cx="60" cy="53" r="11" fill={v.ink} stroke={v.bg} strokeWidth="2"/>
+      <circle cx="60" cy="53" r="6" fill={v.accent}/>
+      <circle cx="60" cy="53" r="2.5" fill={v.bg}/>
+      <path d="M 56 72 Q 60 75 64 72" stroke={v.bg} strokeWidth="2" fill="none" strokeLinecap="round"/>
+    </g>
+  );
+}
+
+function PersonaCurlPose({ v }) {
+  return (
+    <g>
+      {v.extra === 'moon' && (
+        <g>
+          <circle cx="32" cy="30" r="9" fill={v.accent} opacity="0.9"/>
+          <circle cx="35" cy="28" r="7.5" fill={v.bg}/>
+          <circle cx="20" cy="50" r="1.5" fill={v.ink} opacity="0.85"/>
+          <circle cx="48" cy="20" r="1.2" fill={v.ink} opacity="0.85"/>
+          <circle cx="100" cy="36" r="1.4" fill={v.ink} opacity="0.85"/>
+          <circle cx="92" cy="22" r="1" fill={v.ink} opacity="0.7"/>
+        </g>
+      )}
+      <ellipse cx="60" cy="82" rx="42" ry="22" fill={v.ink}/>
+      <path d="M 22 88 Q 14 70 30 60 Q 42 56 50 66" stroke={v.ink} strokeWidth="9" strokeLinecap="round" fill="none"/>
+      <ellipse cx="80" cy="62" rx="22" ry="20" fill={v.ink}/>
+      <path d="M 66 50 L 64 36 L 76 48 Z" fill={v.ink}/>
+      <path d="M 92 50 L 94 38 L 86 50 Z" fill={v.ink}/>
+      <path d="M 70 60 Q 74 64 78 60" stroke={v.bg} strokeWidth="2" fill="none" strokeLinecap="round"/>
+      <path d="M 84 60 Q 88 64 92 60" stroke={v.bg} strokeWidth="2" fill="none" strokeLinecap="round"/>
+      <path d="M 78 68 L 84 68 L 81 71 Z" fill={v.bg}/>
+      <path d="M 76 74 Q 81 77 86 74" stroke={v.bg} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+    </g>
+  );
+}
+
+function PersonaLoafPose({ v }) {
+  return (
+    <g>
+      <path d="M 24 92 Q 24 64 60 64 Q 96 64 96 92 L 96 100 L 24 100 Z" fill={v.ink}/>
+      <circle cx="60" cy="56" r="24" fill={v.ink}/>
+      <path d="M 42 46 L 44 30 L 54 44 Z" fill={v.ink}/>
+      <path d="M 78 46 L 76 30 L 66 44 Z" fill={v.ink}/>
+      <path d="M 50 56 L 54 56" stroke={v.bg} strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+      <path d="M 66 56 L 70 56" stroke={v.bg} strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+      <path d="M 58 62 L 62 62 L 60 65 Z" fill={v.bg}/>
+      <path d="M 56 68 Q 60 71 64 68" stroke={v.bg} strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+      <line x1="32" y1="60" x2="46" y2="60" stroke={v.bg} strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+      <line x1="32" y1="64" x2="46" y2="63" stroke={v.bg} strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+      <line x1="88" y1="60" x2="74" y2="60" stroke={v.bg} strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+      <line x1="88" y1="64" x2="74" y2="63" stroke={v.bg} strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+    </g>
+  );
+}
+
+function PersonaStandPose({ v }) {
+  const isSpotted = v.extra === 'spots';
+  return (
+    <g>
+      <path d="M 88 80 Q 102 60 92 38" stroke={v.ink} strokeWidth="6" strokeLinecap="round" fill="none"/>
+      <ellipse cx="60" cy="86" rx="22" ry="26" fill={v.ink} stroke={isSpotted ? v.accent : 'none'} strokeWidth={isSpotted ? 0.8 : 0}/>
+      <ellipse cx="48" cy="108" rx="6" ry="5" fill={v.ink}/>
+      <ellipse cx="72" cy="108" rx="6" ry="5" fill={v.ink}/>
+      <circle cx="60" cy="42" r="24" fill={v.ink} stroke={isSpotted ? v.accent : 'none'} strokeWidth={isSpotted ? 0.8 : 0}/>
+      <path d="M 40 32 L 42 16 L 54 30 Z" fill={v.ink}/>
+      <path d="M 80 32 L 78 16 L 66 30 Z" fill={v.ink}/>
+      {v.extra === 'antennae' && (
+        <g>
+          <line x1="46" y1="14" x2="42" y2="3" stroke={v.accent} strokeWidth="2" strokeLinecap="round"/>
+          <circle cx="42" cy="3" r="3" fill={v.accent}/>
+          <line x1="74" y1="14" x2="78" y2="3" stroke={v.accent} strokeWidth="2" strokeLinecap="round"/>
+          <circle cx="78" cy="3" r="3" fill={v.accent}/>
+        </g>
+      )}
+      {v.extra === 'leaf' && (
+        <g>
+          <path d="M 60 18 Q 50 8 48 16 Q 50 24 60 22 Q 70 24 72 16 Q 70 8 60 18 Z" fill={v.accent}/>
+          <line x1="60" y1="22" x2="60" y2="14" stroke={v.ink} strokeWidth="1.4" strokeLinecap="round"/>
+        </g>
+      )}
+      {/* 눈 */}
+      <ellipse cx="51" cy="42" rx="2.5" ry="3.5" fill={v.bg}/>
+      <ellipse cx="69" cy="42" rx="2.5" ry="3.5" fill={v.bg}/>
+      <circle cx="51" cy="43" r="1.4" fill={v.ink}/>
+      <circle cx="69" cy="43" r="1.4" fill={v.ink}/>
+      <path d="M 57 50 L 63 50 L 60 54 Z" fill={v.bg}/>
+      <path d="M 56 56 Q 60 59 64 56" stroke={v.bg} strokeWidth="1.6" fill="none" strokeLinecap="round"/>
+      <line x1="40" y1="50" x2="50" y2="51" stroke={v.bg} strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+      <line x1="40" y1="54" x2="50" y2="54" stroke={v.bg} strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+      <line x1="80" y1="50" x2="70" y2="51" stroke={v.bg} strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+      <line x1="80" y1="54" x2="70" y2="54" stroke={v.bg} strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+
+      {v.extra === 'spots' && (
+        <g fill={v.accent}>
+          <circle cx="48" cy="36" r="2.4"/>
+          <circle cx="68" cy="32" r="1.8"/>
+          <circle cx="72" cy="46" r="1.6"/>
+          <circle cx="42" cy="46" r="1.8"/>
+          <circle cx="50" cy="76" r="3"/>
+          <circle cx="68" cy="78" r="2.4"/>
+          <circle cx="58" cy="92" r="3.4"/>
+          <circle cx="44" cy="94" r="2.2"/>
+          <circle cx="72" cy="96" r="2"/>
+          <circle cx="56" cy="68" r="1.6"/>
+          <circle cx="52" cy="102" r="1.8"/>
+          <circle cx="68" cy="104" r="1.4"/>
+        </g>
+      )}
+
+      {v.extra === 'glitch' && (
+        <g opacity="0.85">
+          <rect x="36" y="40" width="48" height="2" fill="#00f5ff"/>
+          <rect x="38" y="44" width="44" height="1.5" fill={v.accent}/>
+          <rect x="42" y="76" width="36" height="2" fill="#00f5ff"/>
+          <rect x="40" y="92" width="40" height="1.5" fill={v.accent}/>
+        </g>
+      )}
+    </g>
+  );
+}
+
 // 외계 냥이 — 더듬이 + 카메라
 export function CatAlien({ size = 100, className = '' }) {
   return (

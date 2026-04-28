@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useTheme } from '../lib/theme-context';
 import { IconMessage, IconLogout, IconShare } from './icons/AppIcons';
 import { InstallButton } from './InstallPrompt';
+import { PersonaCat } from './Mascot';
 
 async function inviteFriend() {
   const url = (typeof window !== 'undefined' && window.location.origin) || 'https://kadennyang.app';
@@ -52,11 +53,11 @@ export default function SettingsSheet({ onClose, onMessages, onLogout, extraItem
       >
         <div className="mx-auto mb-3 mt-2 h-1 w-10 rounded-full bg-[var(--border)] sm:hidden" />
         <div className="space-y-1 p-2">
-          {/* 카든냥 테마 picker — 5개 고양이 모티브 */}
+          {/* 카든냥 자아 picker — 10가지 페르소나 (오늘은 어떤 냥이의 시선?) */}
           <div className="rounded-[14px] px-3 py-3">
             <div className="mb-2 flex items-baseline justify-between">
-              <p className="text-[12px] font-bold tracking-[-0.04em]">털 색깔</p>
-              <p className="text-[10px] text-[var(--text-muted)]">테마</p>
+              <p className="text-[12px] font-bold tracking-[-0.04em]">오늘의 냥이</p>
+              <p className="text-[10px] text-[var(--text-muted)]">10자아</p>
             </div>
             <div className="grid grid-cols-5 gap-1.5">
               {themes.map((t) => {
@@ -67,23 +68,11 @@ export default function SettingsSheet({ onClose, onMessages, onLogout, extraItem
                     type="button"
                     onClick={() => setTheme(t.id)}
                     title={`${t.label} — ${t.hint}`}
-                    className={`flex flex-col items-center gap-1 rounded-[10px] p-1.5 transition ${
-                      active ? 'bg-[var(--surface-2)]' : 'hover:bg-[var(--surface-2)]/60'
+                    className={`flex flex-col items-center gap-1 rounded-[12px] p-1.5 transition ${
+                      active ? 'bg-[var(--surface-2)] ring-2 ring-[var(--ink)]' : 'hover:bg-[var(--surface-2)]/60'
                     }`}
                   >
-                    <span
-                      className={`flex h-9 w-9 items-center justify-center overflow-hidden rounded-full ${
-                        active ? 'ring-2 ring-[var(--ink)] ring-offset-2 ring-offset-[var(--surface)]' : ''
-                      }`}
-                      style={{
-                        background: `linear-gradient(135deg, ${t.swatch[0]} 0% 50%, ${t.swatch[1]} 50% 100%)`,
-                      }}
-                    >
-                      <span
-                        className="block h-3 w-3 rounded-full"
-                        style={{ background: t.swatch[2] }}
-                      />
-                    </span>
+                    <PersonaCat persona={t.id} size={44} />
                     <span className={`text-[10px] font-bold tracking-[-0.04em] ${active ? 'text-[var(--text)]' : 'text-[var(--text-muted)]'}`}>
                       {t.label}
                     </span>
