@@ -51,13 +51,8 @@ function groupNotifications(notifications, getProfile) {
 }
 
 export default function NotificationsScreen({ setScreen, openArtwork, openPerson }) {
-  const { notifications, markRead, clearUnread, error } = useNotifications();
+  const { notifications, markRead, error } = useNotifications();
   const { getProfile, getArtwork } = useData();
-
-  useEffect(() => {
-    // 화면 닫을 때 일괄 읽음 처리
-    return () => { clearUnread(); };
-  }, [clearUnread]);
 
   // 매 30초마다 강제 리렌더 — timeAgo("3분 전")가 자연스럽게 갱신
   const [, setTick] = useState(0);
@@ -152,8 +147,8 @@ export default function NotificationsScreen({ setScreen, openArtwork, openPerson
                 onClick={() => handleClick(g)}
                 className={`flex w-full items-center gap-2.5 border-b border-[var(--border)] py-2.5 text-left last:border-b-0 transition ${
                   g.read_at
-                    ? 'pl-1 opacity-60'
-                    : 'border-l-[3px] border-l-[var(--accent)] pl-2.5'
+                    ? 'pl-1'
+                    : 'border-l-[3px] border-l-[var(--accent)] bg-[var(--surface-2)]/40 pl-2.5'
                 }`}
               >
                 <div className="relative shrink-0">

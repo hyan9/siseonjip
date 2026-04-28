@@ -339,7 +339,7 @@ export function CatStarlit({ size = 220, className = '' }) {
 // currentColor 의존 X — 테마와 무관하게 페르소나 정체성 유지.
 export const PERSONA_VARIANTS = {
   paper:       { label: '도화지',     pose: 'camera', bg: '#f1f2ee', ink: '#1a1d1f', accent: '#d97757' },
-  night:       { label: '야간',       pose: 'curl',   bg: '#0e1014', ink: '#ecedef', accent: '#f5d28a', extra: 'moon' },
+  night:       { label: '야간',       pose: 'curl',   bg: '#3d434b', ink: '#ecedef', accent: '#f5d28a', extra: 'moon' },
   bread:       { label: '식빵',       pose: 'loaf',   bg: '#f6ecdc', ink: '#7a5a36', accent: '#d97757' },
   cheese:      { label: '치즈',       pose: 'stand',  bg: '#fbf2dc', ink: '#c98c2e', accent: '#50331a' },
   mackerel:    { label: '고등어',     pose: 'camera', bg: '#e7e9ec', ink: '#5a6168', accent: '#2eb6c6', extra: 'stripes' },
@@ -365,14 +365,14 @@ export function PersonaCat({ persona = 'paper', size = 80, withFrame = true, cla
         width: size,
         height: size,
         background: withFrame ? v.bg : 'transparent',
+        // 라운드 모서리에 꼬리·귀가 잘리지 않게 안쪽 여백 (대략 6%)
+        padding: withFrame ? Math.round(size * 0.06) : 0,
       }}
     >
       <img
         src={`/personas/${persona}.png`}
         alt=""
         loading="lazy"
-        width={size}
-        height={size}
         className="h-full w-full object-contain"
         draggable={false}
       />

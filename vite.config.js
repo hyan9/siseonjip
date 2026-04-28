@@ -9,7 +9,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg', 'icon-maskable.svg', 'icon-v2.svg', 'icon-maskable-v2.svg'],
+      includeAssets: ['icon.svg', 'icon-maskable.svg', 'icon-v2.svg', 'icon-maskable-v2.svg', 'icon-v3.svg', 'icon-maskable-v3.svg'],
       manifest: {
         name: '카든냥',
         short_name: '카든냥',
@@ -21,10 +21,10 @@ export default defineConfig({
         lang: 'ko',
         start_url: '/',
         scope: '/',
-        // 아이콘 파일명 강제 변경 (icon → icon-v2) — OS가 변경 감지하도록
+        // 아이콘 파일명 강제 변경 (v2 → v3, 도화지 페르소나로 교체) — OS가 캐시 갱신하도록
         icons: [
-          { src: 'icon-v2.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-          { src: 'icon-maskable-v2.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
+          { src: 'icon-v3.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: 'icon-maskable-v3.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
         ],
       },
       workbox: {

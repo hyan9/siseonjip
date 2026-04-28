@@ -192,8 +192,8 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
           </div>
 
           {/* 25번째 — 별도 자리, 큰 번호 25 + ★ */}
-          <div className="mt-3 flex items-center justify-between rounded-[14px] border border-dashed border-[var(--border-strong)] px-3 py-2.5">
-            <div className="flex items-center gap-3">
+          <div className="mt-3 flex items-center justify-between gap-2 rounded-[14px] border border-dashed border-[var(--border-strong)] px-3 py-2.5">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               <RollSlot
                 number={25}
                 photo={monthArtworks.find((a) => a.is_twenty_five) || null}
@@ -205,9 +205,9 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
                   if (t) openArtwork(t.id);
                 }}
               />
-              <div>
+              <div className="min-w-0">
                 <p className="text-[10px] font-bold tracking-[0.16em] opacity-70">25번째 자리</p>
-                <p className="font-display text-[14px] font-bold italic">
+                <p className="font-display whitespace-nowrap text-[14px] font-bold italic">
                   {has25 ? '가장 오래 남은 한 장' : '24장 다 채우면 골라주세요'}
                 </p>
               </div>
