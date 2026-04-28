@@ -48,7 +48,7 @@ export default function SettingsSheet({ onClose, onMessages, onLogout, extraItem
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[400px] rounded-t-[24px] bg-[var(--surface)] p-2 shadow-xl sm:rounded-[24px]"
+        className="flex max-h-[90dvh] w-full max-w-[400px] flex-col overflow-y-auto overscroll-contain rounded-t-[24px] bg-[var(--surface)] p-2 shadow-xl sm:max-h-[85vh] sm:rounded-[24px]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto mb-3 mt-2 h-1 w-10 rounded-full bg-[var(--border)] sm:hidden" />
