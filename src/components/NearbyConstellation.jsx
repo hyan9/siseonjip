@@ -1,6 +1,7 @@
 import { CatStarlit } from './Mascot';
 import { formatDistance } from '../lib/utils';
 import { distanceMeters } from '../lib/geocoding';
+import { transformedPhotoUrl } from '../lib/db';
 
 // 내 위치 = 가운데 카든냥, 주변 = 사진들. 지도 대신 별자리.
 // 거리는 로그 스케일로 반지름에 매핑, 방위는 그대로.
@@ -167,7 +168,7 @@ export default function NearbyConstellation({
             >
               {p.imageUrl ? (
                 <img
-                  src={p.imageUrl}
+                  src={transformedPhotoUrl(p.imageUrl, { width: 160 })}
                   alt={p.label || ''}
                   className="h-full w-full object-cover"
                   draggable={false}

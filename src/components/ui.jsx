@@ -202,10 +202,31 @@ export function Header({ title, subtitle, kicker, onBack, right }) {
   );
 }
 
-export function ImageBox({ src, alt, className = '', fit = 'cover', priority = false, width = 800, transform = true }) {
-  // Supabase Storage URL이면 transform 적용 (width/quality 줄여 빠르게).
-  // 외부 URL은 그대로 사용.
-  const finalSrc = transform && src ? transformedPhotoUrl(src, { width }) : src;
+// 명시적 width 안 주면 className에서 h-X / w-X 패턴 추정해서 적절한 transform width 결정.
+// 작은 썸네일에 800px 이미지 받는 낭비 방지.
+function inferWidthFromClass(className) {
+  if (!className) return null;
+  // 작은 썸네일 (60-100px 박스)
+  if (/\bh-(?:\[?6\d|\[?7\d|\[?8\d|\[?9\d|10)|\bw-12|\bw-14|\bw-16|\bw-20|\bw-24/.test(className)) {
+    return 240;
+  }
+  // 중간 (100-300px)
+  if (/\bh-(?:32|36|40|44|48)|\bh-\[1[0-9]\dpx\]/.test(className)) {
+    return 480;
+  }
+  // 큰 hero / aspect-square w-full
+  if (/\baspect-square\s+w-full|\bh-\[40\dpx\]|\bh-\[5\d\dpx\]/.test(className)) {
+    return 1000;
+  }
+  return null;
+}
+
+export function ImageBox({ src, alt, className = '', fit = 'cover', priority = false, width, transform = true }) {
+  // 1) 명시 width  2) className 추정  3) 안전한 디폴트(600)
+  const targetWidth = width ?? inferWidthFromClass(className) ?? 600;
+  // 레티나/HiDPI 대응 — 화면에 그릴 폭의 1.5배까지 받기
+  const finalWidth = Math.round(targetWidth * 1.5);
+  const finalSrc = transform && src ? transformedPhotoUrl(src, { width: finalWidth }) : src;
   return (
     <div className={`overflow-hidden bg-[var(--image-bg)] ${className}`}>
       {finalSrc ? (

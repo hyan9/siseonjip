@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Icon from './Icon';
+import { transformedPhotoUrl } from '../lib/db';
 
 // 사진 캐러셀 — 위아래 스크롤 (오늘의 4컷을 한번에 감상)
 // scroll-snap-y, 사진만 풀스크린
@@ -84,7 +85,7 @@ export default function PhotoZoomModal({ photos, initialIndex = 0, onClose }) {
             style={{ scrollSnapAlign: 'center' }}
           >
             <img
-              src={p.imageUrl}
+              src={transformedPhotoUrl(p.imageUrl, { width: 1600 })}
               alt={p.title || ''}
               className="max-h-full max-w-full select-none object-contain"
               draggable={false}

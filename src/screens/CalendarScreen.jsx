@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useData } from '../lib/data-context';
+import { transformedPhotoUrl } from '../lib/db';
 import {
   Header,
   ImageBox,
@@ -270,7 +271,7 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
                                 : 'border border-dashed border-[var(--border)] bg-[var(--bg)]'
                             }`}
                           >
-                            {art && <img src={art.imageUrl} alt={art.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
+                            {art && <img src={transformedPhotoUrl(art.imageUrl, { width: 240 })} alt={art.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
                           </button>
                         );
                       })}
@@ -312,7 +313,7 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
                   disabled={!art}
                   className={`relative aspect-[0.78] overflow-hidden rounded-[12px] bg-[var(--surface-2)] ${!art ? 'cursor-default opacity-60' : ''}`}
                 >
-                  {art && <img src={art.imageUrl} alt={art.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
+                  {art && <img src={transformedPhotoUrl(art.imageUrl, { width: 240 })} alt={art.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />}
                   <span className={`absolute left-1 top-1 rounded-full px-1.5 py-0.5 text-[9px] ${art ? 'bg-white/85 text-[var(--text)]' : 'text-[var(--text-faint)]'}`}>
                     {day.day}
                   </span>
@@ -399,7 +400,7 @@ function RollSlot({ number, photo, rollComplete, size = 'sm', isStar = false, on
     >
       {filled && (
         <img
-          src={photo.imageUrl}
+          src={transformedPhotoUrl(photo.imageUrl, { width: big ? 240 : 160 })}
           alt={photo.title || ''}
           loading="lazy"
           className="absolute inset-0 h-full w-full object-cover"
