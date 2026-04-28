@@ -348,7 +348,36 @@ export const PERSONA_VARIANTS = {
 
 export const PERSONA_KEYS = Object.keys(PERSONA_VARIANTS);
 
+// 새 PersonaCat — NotebookLM이 만든 PDF 6페이지 일러스트 PNG 사용.
+// 기존 SVG 버전은 PersonaCatSvg로 보존 (의도적 기괴함이 살아있음).
 export function PersonaCat({ persona = 'paper', size = 80, withFrame = true, className = '' }) {
+  const v = PERSONA_VARIANTS[persona] || PERSONA_VARIANTS.paper;
+  return (
+    <span
+      role="img"
+      aria-label={`${v.label} 카든냥`}
+      className={`inline-flex items-center justify-center overflow-hidden ${withFrame ? 'rounded-[18%]' : ''} ${className}`}
+      style={{
+        width: size,
+        height: size,
+        background: withFrame ? v.bg : 'transparent',
+      }}
+    >
+      <img
+        src={`/personas/${persona}.png`}
+        alt=""
+        loading="lazy"
+        width={size}
+        height={size}
+        className="h-full w-full object-cover"
+        draggable={false}
+      />
+    </span>
+  );
+}
+
+// 기존 SVG 페르소나 — 의도적 기괴함, 백업용. 추후 다른 화면에서 활용 가능.
+export function PersonaCatSvg({ persona = 'paper', size = 80, withFrame = true, className = '' }) {
   const v = PERSONA_VARIANTS[persona] || PERSONA_VARIANTS.paper;
   return (
     <svg
