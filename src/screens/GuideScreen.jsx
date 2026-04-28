@@ -1,6 +1,6 @@
 // 카든냥 소개 / 사용법 — 처음 들어오는 사람용 가이드
 import { Header } from '../components/ui';
-import { CatSleepyFour, CatStarlit, PersonaCat, PERSONA_VARIANTS, PERSONA_KEYS } from '../components/Mascot';
+import { CatSleepyFour, CatStarlit, PersonaCat, PersonaCatSvg, PERSONA_VARIANTS, PERSONA_KEYS } from '../components/Mascot';
 import { IconHype, IconStar, IconBookmark, IconCalendar } from '../components/icons/AppIcons';
 
 export default function GuideScreen({ setScreen }) {
@@ -104,15 +104,16 @@ export default function GuideScreen({ setScreen }) {
           </p>
         </section>
 
-        {/* 봇 친구 5명 */}
+        {/* 고양이 봇 5명 — 내가 그린 SVG (어딘가 기괴한 맛) */}
         <section className="rounded-[20px] bg-[var(--surface)] p-5 shadow-[0_0_0_1px_var(--border)]">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">데모 봇</p>
-          <h3 className="mt-1 text-[18px] font-extrabold tracking-[-0.05em]">함께 둘러보는 다섯 마리</h3>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">고양이 봇</p>
+          <h3 className="mt-1 text-[18px] font-extrabold tracking-[-0.05em]">먼저 와있는 다섯 마리</h3>
           <p className="mt-2 text-[12px] leading-[1.7] text-[var(--text-muted)]">
-            처음에는 다섯 마리 데모 봇과 함께 둘러봅니다.<br />
-            친구를 초대하면 같이 셔터를 누를 수 있어요.
+            처음 들어와도 외롭지 않게,<br />
+            카든냥 봇 다섯 마리가 이미 셔터를 누르고 있어요.<br />
+            사진을 올리면 800ms 안에 짧은 댓글 한 줄을 남깁니다.
           </p>
-          <div className="mt-3 grid grid-cols-5 gap-2">
+          <div className="mt-4 grid grid-cols-5 gap-2">
             {[
               { name: '이끼',   note: '비 오기 직전',     persona: 'chlorophyll' },
               { name: '소금',   note: '오후 세 시',       persona: 'paper' },
@@ -121,7 +122,11 @@ export default function GuideScreen({ setScreen }) {
               { name: '주전자', note: '하루의 윗면',       persona: 'mackerel' },
             ].map(({ name, note, persona }) => (
               <div key={name} className="flex flex-col items-center gap-1">
-                <PersonaCat persona={persona} size={48} />
+                <span
+                  className="flex h-12 w-12 items-center justify-center rounded-[12px] bg-[var(--surface-2)] text-[var(--ink)]"
+                >
+                  <PersonaCatSvg persona={persona} size={42} withFrame={false} />
+                </span>
                 <span className="text-[11px] font-bold tracking-[-0.04em]">{name}</span>
                 <span className="text-[9px] leading-[1.4] text-[var(--text-faint)]">{note}</span>
               </div>

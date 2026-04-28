@@ -263,8 +263,30 @@ export function buildBotMemoryGraph(userId) {
 
 // 알림 화면을 풍성하게 — 봇이 사용자를 follow / 사용자 작품에 hype·comment.
 // 사용자 작품이 0개여도 follow 알림은 항상 보임.
+// 봇 알림 시드 시점 — 사용자별로 한 번만 찍고 localStorage에 저장.
+// 페이지 새로고침해도 같은 시점 → 시간이 흐를수록 알림이 자연스럽게 옛날 것이 됨.
+function getBotSeedTime(userId) {
+  if (typeof window === 'undefined') return Date.now();
+  const key = `kadennyang:bot-noti-seed:${userId || 'anon'}`;
+  try {
+    const saved = window.localStorage.getItem(key);
+    if (saved) {
+      const t = parseInt(saved, 10);
+      if (Number.isFinite(t) && t > 0) return t;
+    }
+    const now = Date.now();
+    window.localStorage.setItem(key, String(now));
+    return now;
+  } catch {
+    return Date.now();
+  }
+}
+
 export function buildBotNotifications({ userId, userArtworks = [] }) {
   if (!userId) return [];
+  // 시드 시점 — localStorage에 한 번 찍고 페이지 새로고침해도 유지.
+  // 시간이 흐를수록 알림이 자연스럽게 옛날 것이 됨.
+  const seedTime = getBotSeedTime(userId);
   const items = [];
   // 1) 모든 봇이 사용자를 follow (각각 시점 살짝 다르게)
   BOT_PROFILES.forEach((b, i) => {
@@ -276,7 +298,7 @@ export function buildBotNotifications({ userId, userArtworks = [] }) {
       artwork_id: null,
       comment_id: null,
       read_at: null,
-      created_at: new Date(Date.now() - (i + 1) * 1.7 * 3600000).toISOString(),
+      created_at: new Date(seedTime - (i + 1) * 1.7 * 3600000).toISOString(),
     });
   });
   // 2) 사용자 작품이 있으면 봇들이 hype + 댓글
@@ -293,7 +315,7 @@ export function buildBotNotifications({ userId, userArtworks = [] }) {
         artwork_id: art.id,
         comment_id: null,
         read_at: null,
-        created_at: new Date(Date.now() - (idx * 4 + i + 1) * 1800000).toISOString(),
+        created_at: new Date(seedTime - (idx * 4 + i + 1) * 1800000).toISOString(),
       });
     });
     // 댓글 한 개
@@ -306,7 +328,7 @@ export function buildBotNotifications({ userId, userArtworks = [] }) {
       artwork_id: art.id,
       comment_id: null,
       read_at: null,
-      created_at: new Date(Date.now() - (idx * 4 + 6) * 1800000).toISOString(),
+      created_at: new Date(seedTime - (idx * 4 + 6) * 1800000).toISOString(),
     });
   });
   return items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));

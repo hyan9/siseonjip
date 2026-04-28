@@ -22,31 +22,51 @@ export default function ActivityScreen({ setScreen, openArtwork, openPerson }) {
   const { userId, getMyActivity, getProfile, getArtwork, getUserArtworks, getHypeCount } = useData();
   const items = getMyActivity(80);
 
-  // 월별 통계 (최근 6개월)
-  const monthlyStats = useMemo(() => {
+  // 최근 14일 일별 통계 — 활동 적은 사용자도 잘 보이는 기간
+  const dailyStats = useMemo(() => {
     if (!userId) return [];
     const works = getUserArtworks(userId);
     const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const buckets = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const next = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-      const monthArts = works.filter((a) => {
+    for (let i = 13; i >= 0; i--) {
+      const start = today.getTime() - i * 86400000;
+      const end = start + 86400000;
+      const d = new Date(start);
+      const dayArts = works.filter((a) => {
         const t = new Date(a.created_at).getTime();
-        return t >= d.getTime() && t < next.getTime();
+        return t >= start && t < end;
       });
-      const hype = monthArts.reduce((sum, a) => sum + getHypeCount(a.id), 0);
+      const hype = dayArts.reduce((sum, a) => sum + getHypeCount(a.id), 0);
       buckets.push({
-        label: `${d.getMonth() + 1}월`,
-        photos: monthArts.length,
+        date: d,
+        day: d.getDate(),
+        weekday: ['일', '월', '화', '수', '목', '금', '토'][d.getDay()],
+        photos: dayArts.length,
         hype,
+        isToday: i === 0,
       });
     }
     return buckets;
   }, [userId, getUserArtworks, getHypeCount]);
 
-  const maxPhotos = Math.max(1, ...monthlyStats.map((m) => m.photos));
-  const maxHype = Math.max(1, ...monthlyStats.map((m) => m.hype));
+  // 시간대 통계 — 0~23시 어느 시간대에 셔터를 누르나
+  const hourlyStats = useMemo(() => {
+    if (!userId) return Array.from({ length: 24 }, (_, h) => ({ hour: h, count: 0 }));
+    const works = getUserArtworks(userId);
+    const buckets = Array.from({ length: 24 }, (_, h) => ({ hour: h, count: 0 }));
+    for (const a of works) {
+      const h = new Date(a.created_at).getHours();
+      buckets[h].count += 1;
+    }
+    return buckets;
+  }, [userId, getUserArtworks]);
+
+  const maxDailyPhotos = Math.max(1, ...dailyStats.map((m) => m.photos));
+  const maxDailyHype = Math.max(1, ...dailyStats.map((m) => m.hype));
+  const maxHourly = Math.max(1, ...hourlyStats.map((h) => h.count));
+  const totalPhotos = dailyStats.reduce((s, d) => s + d.photos, 0);
+  const peakHour = hourlyStats.reduce((best, h) => h.count > best.count ? h : best, hourlyStats[0]);
 
   if (!userId) return <Splash />;
 
@@ -71,32 +91,94 @@ export default function ActivityScreen({ setScreen, openArtwork, openPerson }) {
         onBack={() => setScreen('profile')}
       />
 
-      <section className="mb-5 rounded-[20px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
-        <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">최근 6개월</p>
-        <h2 className="mt-1 text-[18px] font-extrabold tracking-[-0.06em]">월별 업로드 · 받은 추천</h2>
-        <div className="mt-4 grid grid-cols-6 gap-2">
-          {monthlyStats.map((m) => (
-            <div key={m.label} className="flex flex-col items-center gap-1">
-              <div className="flex h-[72px] w-full items-end justify-center gap-0.5">
-                <div
-                  className="w-2.5 rounded-t bg-[var(--ink)]"
-                  style={{ height: `${(m.photos / maxPhotos) * 100}%`, minHeight: m.photos > 0 ? '6px' : '0' }}
-                  title={`${m.photos}장`}
-                />
-                <div
-                  className="w-2.5 rounded-t bg-orange-400"
-                  style={{ height: `${(m.hype / maxHype) * 100}%`, minHeight: m.hype > 0 ? '6px' : '0' }}
-                  title={`🔥 ${m.hype}`}
-                />
+      {/* 최근 14일 일별 그래프 */}
+      <section className="mb-3 rounded-[20px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
+        <div className="flex items-baseline justify-between">
+          <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">최근 2주</p>
+          <span className="text-[10px] text-[var(--text-faint)]">{totalPhotos}장</span>
+        </div>
+        <h2 className="font-display mt-1 text-[18px] font-extrabold tracking-[-0.06em]">일별 셔터</h2>
+        <div className="mt-4 flex items-end justify-between gap-1">
+          {dailyStats.map((d, i) => {
+            const photoH = d.photos > 0 ? Math.max(8, (d.photos / maxDailyPhotos) * 56) : 2;
+            const hypeH = d.hype > 0 ? Math.max(4, (d.hype / maxDailyHype) * 28) : 0;
+            return (
+              <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                <div className="flex h-[64px] w-full items-end justify-center">
+                  <div className="flex w-full flex-col-reverse items-center gap-px">
+                    <div
+                      className={`w-full rounded-t ${d.isToday ? 'bg-[var(--accent)]' : 'bg-[var(--ink)]'}`}
+                      style={{
+                        height: `${photoH}px`,
+                        opacity: d.photos > 0 ? 1 : 0.18,
+                      }}
+                      title={`${d.day}일 · 사진 ${d.photos}장`}
+                    />
+                    {hypeH > 0 && (
+                      <div
+                        className="w-full bg-orange-400"
+                        style={{ height: `${hypeH}px` }}
+                        title={`🔥 ${d.hype}`}
+                      />
+                    )}
+                  </div>
+                </div>
+                <span className={`text-[8px] ${d.isToday ? 'font-bold text-[var(--accent)]' : 'text-[var(--text-faint)]'}`}>
+                  {d.weekday}
+                </span>
+                <span className={`text-[9px] font-semibold ${d.isToday ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`}>
+                  {d.day}
+                </span>
               </div>
-              <span className="text-[10px] text-[var(--text-muted)]">{m.label}</span>
-              <span className="text-[10px] font-semibold">{m.photos}/{m.hype}🔥</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div className="mt-3 flex items-center gap-3 text-[10px] text-[var(--text-muted)]">
-          <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded bg-[var(--ink)]" /> 사진 업로드</span>
+          <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded bg-[var(--ink)]" /> 사진</span>
           <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded bg-orange-400" /> 받은 🔥</span>
+          <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded bg-[var(--accent)]" /> 오늘</span>
+        </div>
+      </section>
+
+      {/* 시간대별 — 어느 시간에 셔터를 누르나 */}
+      <section className="mb-5 rounded-[20px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
+        <div className="flex items-baseline justify-between">
+          <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">시간대</p>
+          {peakHour.count > 0 && (
+            <span className="text-[10px] text-[var(--text-faint)]">
+              주로 <strong className="text-[var(--text)]">{peakHour.hour}시</strong>
+            </span>
+          )}
+        </div>
+        <h2 className="font-display mt-1 text-[18px] font-extrabold tracking-[-0.06em]">언제 셔터를 누르나</h2>
+        <div className="mt-4 flex items-end justify-between gap-px">
+          {hourlyStats.map((h, i) => {
+            const barH = h.count > 0 ? Math.max(3, (h.count / maxHourly) * 48) : 2;
+            return (
+              <div
+                key={i}
+                className="group relative flex min-w-0 flex-1 flex-col items-center"
+                title={`${h.hour}시 · ${h.count}장`}
+              >
+                <div className="flex h-[52px] w-full items-end">
+                  <div
+                    className="w-full rounded-t bg-[var(--ink)]"
+                    style={{
+                      height: `${barH}px`,
+                      opacity: h.count > 0 ? 1 : 0.12,
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-1 flex justify-between text-[8px] text-[var(--text-faint)]">
+          <span>0시</span>
+          <span>6시</span>
+          <span>12시</span>
+          <span>18시</span>
+          <span>24시</span>
         </div>
       </section>
 
