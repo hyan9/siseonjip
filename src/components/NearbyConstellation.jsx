@@ -45,9 +45,10 @@ export default function NearbyConstellation({
 
   const half = size / 2;
   const minR = 72; // 고양이 바로 옆
-  const maxR = half - 36; // 사진 28px + 안전 8px (라벨이 사진 안쪽으로 옮겨져서 더 가능)
-  const minD = 50; // 50m 이내는 최소 반지름
-  const maxD = 5000; // 5km 이상은 최대 반지름
+  // 라벨이 사진 아래로 빠져나오니 안전 여백 더 — 사진 28 + 라벨 14 + 여유 6 = 48
+  const maxR = half - 50;
+  const minD = 50;     // 50m 이내는 최소 반지름
+  const maxD = 10000;  // 10km까지 분포. 5km/8km 사진이 다른 층으로 보이게
 
   const radiusFor = (d) => {
     if (d <= minD) return minR;
@@ -128,17 +129,19 @@ export default function NearbyConstellation({
         />
       ))}
 
-      {/* 거리 링 */}
+      {/* 거리 링 — 4층 (1km / 3km / 5km / 10km+) */}
       <svg width={size} height={size} className="pointer-events-none absolute inset-0">
         <g stroke="rgba(255,255,255,0.18)" fill="none" strokeDasharray="2 5">
-          <circle cx={half} cy={half} r={radiusFor(500)} />
-          <circle cx={half} cy={half} r={radiusFor(2000)} />
+          <circle cx={half} cy={half} r={radiusFor(1000)} />
+          <circle cx={half} cy={half} r={radiusFor(3000)} />
+          <circle cx={half} cy={half} r={radiusFor(5000)} />
           <circle cx={half} cy={half} r={maxR} />
         </g>
         <g fill="rgba(255,255,255,0.55)" fontSize="9.5" fontWeight="600" letterSpacing="0.04em">
-          <text x={half + 4} y={half - radiusFor(500) - 3}>500m</text>
-          <text x={half + 4} y={half - radiusFor(2000) - 3}>2km</text>
-          <text x={half + 4} y={half - maxR - 3}>5km+</text>
+          <text x={half + 4} y={half - radiusFor(1000) - 3}>1km</text>
+          <text x={half + 4} y={half - radiusFor(3000) - 3}>3km</text>
+          <text x={half + 4} y={half - radiusFor(5000) - 3}>5km</text>
+          <text x={half + 4} y={half - maxR - 3}>10km+</text>
         </g>
       </svg>
 
@@ -162,7 +165,7 @@ export default function NearbyConstellation({
         <CatStarlit size={100} />
       </div>
 
-      {/* 주변 사진 — 별처럼 반짝임. 거리 라벨은 사진 우측 하단 배지 (이웃 사진과 안 겹침) */}
+      {/* 주변 사진 — 별처럼 반짝임. 거리 라벨은 사진 아래 (외부에 깔끔히) */}
       {positioned.map((p, i) => {
         const photoSize = 56;
         const extraCount = p.others?.length || 0;
@@ -171,7 +174,7 @@ export default function NearbyConstellation({
             key={p.id}
             type="button"
             onClick={() => onPhotoClick?.(p)}
-            className="absolute z-10"
+            className="absolute z-10 flex flex-col items-center"
             style={{ left: p.x - photoSize / 2, top: p.y - photoSize / 2 }}
           >
             <div
@@ -193,20 +196,20 @@ export default function NearbyConstellation({
               ) : (
                 <div className="h-full w-full" />
               )}
-              {/* 거리 배지 — 사진 우측 하단에 겹쳐서. 이웃 사진에 가려질 일 없음 */}
-              <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/85 px-1.5 py-[1px] text-[9px] font-bold leading-none text-white shadow">
-                {formatDistance(p.distance)}
-              </span>
+              {/* +N 배지 — 같은 구역에 사진 더 있을 때 (우측 상단) */}
+              {extraCount > 0 && (
+                <span
+                  className="absolute -right-1 -top-1 rounded-full bg-[var(--accent)] px-1.5 py-[1px] text-[9px] font-bold leading-none text-white shadow"
+                  aria-label={`이 구역에 ${extraCount + 1}장`}
+                >
+                  +{extraCount}
+                </span>
+              )}
             </div>
-            {/* +N 배지 — 같은 구역에 사진 더 있을 때 (우측 상단) */}
-            {extraCount > 0 && (
-              <span
-                className="absolute -right-1 -top-1 rounded-full bg-[var(--accent)] px-1.5 py-[1px] text-[9px] font-bold leading-none text-white shadow"
-                aria-label={`이 구역에 ${extraCount + 1}장`}
-              >
-                +{extraCount}
-              </span>
-            )}
+            {/* 거리 라벨 — 사진 아래 (이전처럼 외부에. 사진 가리지 않음) */}
+            <span className="mt-1 whitespace-nowrap rounded-full bg-white/95 px-1.5 py-[2px] text-[9px] font-bold leading-none text-[var(--ink)] shadow">
+              {formatDistance(p.distance)}
+            </span>
           </button>
         );
       })}

@@ -62,6 +62,7 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [blockOpen, setBlockOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [tempInfoOpen, setTempInfoOpen] = useState(false);
   const [followListType, setFollowListType] = useState(null); // 'followers' | 'following'
   const [galleryStart, setGalleryStart] = useState(null); // 갤러리 zoom 시작 인덱스
 
@@ -247,10 +248,12 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
                 ) : (
                   <span className="flex-1" />
                 )}
-                {/* 카든 온도 — 우상단 게이지 (36.5° → 45° 범위 시각화) */}
-                <div
-                  className="flex shrink-0 flex-col items-end gap-1"
-                  title={`사진 ${works.length}장 · 받은 하입 ${totalHypeReceived} · 팔로워 ${stats.followerCount}`}
+                {/* 카든 온도 — 우상단 게이지. 클릭 시 계산식 설명 모달 */}
+                <button
+                  type="button"
+                  onClick={() => setTempInfoOpen(true)}
+                  className="flex shrink-0 flex-col items-end gap-1 rounded-[10px] -m-1 p-1 transition hover:bg-[var(--surface-2)]/60"
+                  aria-label="카든 온도 설명"
                 >
                   <span className={`flex items-baseline gap-0.5 text-[16px] font-extrabold leading-none tracking-[-0.05em] ${tempColor}`}>
                     {tempEmoji}{temperature.toFixed(1)}°
@@ -267,9 +270,9 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
                     />
                   </div>
                   <span className="text-[8.5px] font-semibold tracking-[0.16em] text-[var(--text-faint)]">
-                    카든 온도
+                    카든 온도 ⓘ
                   </span>
-                </div>
+                </button>
               </div>
               {profile.note && (
                 <p className={`${profile.exhibition_title ? 'mt-2' : 'mt-1'} line-clamp-3 text-[12px] leading-[1.6] text-[var(--text-body)]`}>
@@ -497,6 +500,61 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
         onConfirm={handleLogoutConfirm}
         onCancel={() => setLogoutOpen(false)}
       />
+
+      {tempInfoOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setTempInfoOpen(false)}
+        >
+          <div
+            className="w-full max-w-[380px] rounded-[20px] bg-[var(--surface)] p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-baseline justify-between">
+              <h3 className="font-display text-[20px] font-extrabold tracking-[-0.04em]">카든 온도</h3>
+              <span className={`text-[18px] font-extrabold ${tempColor}`}>{tempEmoji}{temperature.toFixed(1)}°</span>
+            </div>
+            <p className="text-[12px] leading-[1.7] text-[var(--text-muted)]">
+              당근마켓 매너온도에서 영감받은 활동성 지표예요. 사진을 올리고 사람들과 반응을 주고받을수록 따뜻해집니다.
+            </p>
+            <div className="mt-4 space-y-2 rounded-[14px] bg-[var(--surface-2)] p-3 text-[12px]">
+              <div className="flex items-baseline justify-between">
+                <span className="text-[var(--text-muted)]">기본 체온</span>
+                <span className="font-bold tracking-[-0.04em]">36.5°</span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-[var(--text-muted)]">사진 1장</span>
+                <span className="font-semibold">+ 0.05° <span className="ml-1 text-[var(--text-faint)]">× {works.length}장</span></span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-[var(--text-muted)]">팔로워 1명</span>
+                <span className="font-semibold">+ 0.03° <span className="ml-1 text-[var(--text-faint)]">× {stats.followerCount}명</span></span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-[var(--text-muted)]">받은 🔥 1개</span>
+                <span className="font-semibold">+ 0.02° <span className="ml-1 text-[var(--text-faint)]">× {totalHypeReceived}개</span></span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-[var(--text-muted)]">25번째 자리 채움</span>
+                <span className="font-semibold">+ 0.5° <span className="ml-1 text-[var(--text-faint)]">{twentyFiveArt ? '✓' : '−'}</span></span>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-3 text-[11px]">
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-cyan-400" />~36.8 차분</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />~37.5 새싹</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-orange-400" />~39 햇살</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" />39+ 활활</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setTempInfoOpen(false)}
+              className="mt-4 w-full rounded-full border border-[var(--border-strong)] py-2.5 text-sm font-semibold"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
 
       {settingsOpen && isMe && (
         <SettingsSheet

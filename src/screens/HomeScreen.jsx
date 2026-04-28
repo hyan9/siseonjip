@@ -65,20 +65,74 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
   const featuredPool = feedFilter === '팔로잉'
     ? recommended.filter((a) => followingIds.has(a.user_id))
     : recommended;
-  // 오늘의 한 컷 캐러셀 — 후보 5장을 5초마다 우측 슬라이드
+  // 오늘의 한 컷 캐러셀 — 후보 5장.
+  // 자동 5초 슬라이드 + 사용자 좌우 스와이프 + 끝→처음 자연스럽게 (뫼비우스).
+  // 마지막에 첫 슬라이드 복제 → idx가 N 도달 시 transition 끄고 0으로 instant jump.
   const heroSlides = useMemo(() => featuredPool.slice(0, 5), [featuredPool]);
+  const N = heroSlides.length;
   const [heroIndex, setHeroIndex] = useState(0);
+  const [heroAnimate, setHeroAnimate] = useState(true);
   useEffect(() => {
     setHeroIndex(0);
-  }, [heroSlides.length]);
+    setHeroAnimate(true);
+  }, [N]);
+
+  // 자동 5초 — 사용자 스와이프 후 타이머 리셋되도록 deps에 heroIndex
   useEffect(() => {
-    if (heroSlides.length <= 1) return;
-    const t = setInterval(() => {
-      setHeroIndex((i) => (i + 1) % heroSlides.length);
+    if (N <= 1) return;
+    const t = setTimeout(() => {
+      setHeroAnimate(true);
+      setHeroIndex((i) => i + 1);
     }, 5000);
-    return () => clearInterval(t);
-  }, [heroSlides.length]);
-  const featured = heroSlides[heroIndex] || featuredPool[0] || null;
+    return () => clearTimeout(t);
+  }, [N, heroIndex]);
+
+  // idx가 N에 도달(복제 슬라이드 위) 시 transition 끄고 0으로 instant jump
+  useEffect(() => {
+    if (heroIndex !== N || N <= 1) return;
+    const t = setTimeout(() => {
+      setHeroAnimate(false);
+      setHeroIndex(0);
+      // 다음 두 프레임 후 transition 다시 활성 (브라우저가 instant jump 적용한 후)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setHeroAnimate(true));
+      });
+    }, 600);
+    return () => clearTimeout(t);
+  }, [heroIndex, N]);
+
+  // 좌우 스와이프 핸들러 (PointerEvent — 터치+마우스 통합)
+  const heroPointerStart = useRef({ x: 0, active: false });
+  const onHeroPointerDown = (e) => {
+    if (N <= 1) return;
+    heroPointerStart.current = { x: e.clientX, active: true };
+  };
+  const onHeroPointerUp = (e) => {
+    if (!heroPointerStart.current.active) return;
+    heroPointerStart.current.active = false;
+    const dx = e.clientX - heroPointerStart.current.x;
+    if (Math.abs(dx) < 40) return;
+    setHeroAnimate(true);
+    if (dx < 0) {
+      setHeroIndex((i) => i + 1); // 왼쪽 스와이프 → 다음
+    } else {
+      // 오른쪽 스와이프 → 이전. idx=0이면 마지막으로 점프 (역방향 wrap)
+      setHeroIndex((i) => {
+        if (i > 0) return i - 1;
+        // 0에서 이전 가려면 instant jump to N (복제 슬라이드) 후 다음 프레임에 N-1로 transition
+        setHeroAnimate(false);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setHeroAnimate(true);
+            setHeroIndex(N - 1);
+          });
+        });
+        return N;
+      });
+    }
+  };
+
+  const featured = heroSlides[heroIndex % N] || featuredPool[0] || null;
 
   const topCreators = useMemo(() => getRecommendedCreators(6), [getRecommendedCreators]);
 
@@ -232,14 +286,21 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
                 onClick={() => openArtwork(featured.id)}
                 className="block w-full overflow-hidden rounded-[24px] bg-[var(--surface)] text-left shadow-[0_0_0_1px_var(--border)]"
               >
-                {/* 풀폭 세로 비율 사진 — 5장 캐러셀, 5초마다 우측 슬라이드 */}
-                <div className="relative w-full overflow-hidden" style={{ aspectRatio: '3/4' }}>
+                {/* 풀폭 세로 비율 사진 — 5장 캐러셀. 자동 5초 + 좌우 스와이프 + 무한 루프 */}
+                <div
+                  className="relative w-full overflow-hidden touch-pan-y"
+                  style={{ aspectRatio: '3/4' }}
+                  onPointerDown={onHeroPointerDown}
+                  onPointerUp={onHeroPointerUp}
+                  onPointerCancel={() => { heroPointerStart.current.active = false; }}
+                >
                   <div
-                    className="absolute inset-0 flex transition-transform duration-[600ms] ease-out"
+                    className={`absolute inset-0 flex ${heroAnimate ? 'transition-transform duration-[600ms] ease-out' : ''}`}
                     style={{ transform: `translateX(-${heroIndex * 100}%)` }}
                   >
-                    {heroSlides.map((slide) => (
-                      <div key={slide.id} className="relative h-full w-full shrink-0">
+                    {/* 본 슬라이드 + 첫 슬라이드 복제 (뫼비우스 효과) */}
+                    {[...heroSlides, heroSlides[0]].filter(Boolean).map((slide, i) => (
+                      <div key={`${slide.id}-${i}`} className="relative h-full w-full shrink-0">
                         <ImageBox src={slide.imageUrl} alt={slide.title} className="h-full w-full" priority />
                       </div>
                     ))}
@@ -247,12 +308,12 @@ export default function HomeScreen({ setScreen, openArtwork, openPlace, openPers
                   <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[var(--ink)]/85 px-2.5 py-1 text-[10px] font-semibold tracking-[0.16em] text-white">
                     <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" /> 오늘의 한 컷
                   </span>
-                  {heroSlides.length > 1 && (
+                  {N > 1 && (
                     <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1">
                       {heroSlides.map((_, i) => (
                         <span
                           key={i}
-                          className={`h-1.5 rounded-full transition-all ${i === heroIndex ? 'w-5 bg-white' : 'w-1.5 bg-white/45'}`}
+                          className={`h-1.5 rounded-full transition-all ${i === (heroIndex % N) ? 'w-5 bg-white' : 'w-1.5 bg-white/45'}`}
                         />
                       ))}
                     </div>
