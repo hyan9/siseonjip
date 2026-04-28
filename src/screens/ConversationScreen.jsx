@@ -25,14 +25,33 @@ export default function ConversationScreen({ otherId, setScreen, openPerson }) {
   const thread = getThread(otherId);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
-  // 진입/메시지 추가 시 자동 스크롤 + read 마킹
+  // 진입/메시지 추가/타이핑 시 자동 스크롤 + read 마킹
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [thread.length]);
+  }, [thread.length, isTyping]);
+
+  // 봇 답장이 thread에 들어오면 타이핑 인디케이터 끔
+  const lastMsgId = thread[thread.length - 1]?.id;
+  const lastSender = thread[thread.length - 1]?.sender_id;
+  useEffect(() => {
+    if (lastSender === otherId) {
+      setIsTyping(false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+    }
+  }, [lastMsgId, lastSender, otherId]);
+
+  useEffect(() => () => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+  }, []);
 
   useEffect(() => {
     if (!userId || !otherId) return;
@@ -48,6 +67,10 @@ export default function ConversationScreen({ otherId, setScreen, openPerson }) {
     if (other?.is_bot) {
       addLocalBotMessage(otherId, text.trim());
       setText('');
+      setIsTyping(true);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      // 봇 답장 안 올 경우 안전장치 (data-context 답장 시간 ~900-1500ms)
+      typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 2000);
       return;
     }
     setBusy(true);
@@ -119,6 +142,19 @@ export default function ConversationScreen({ otherId, setScreen, openPerson }) {
             </div>
           );
         })}
+        {/* 봇 타이핑중 인디케이터 — 점 3개 펄스 */}
+        {isTyping && (
+          <div className="mt-2 flex items-end gap-1.5 justify-start">
+            <Avatar profile={other} size={26} />
+            <div className="rounded-[14px] bg-[var(--surface-2)] px-3 py-2.5">
+              <span className="flex gap-1">
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--text-muted)]" style={{ animationDelay: '0ms' }} />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--text-muted)]" style={{ animationDelay: '160ms' }} />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--text-muted)]" style={{ animationDelay: '320ms' }} />
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSend} className="mt-3 flex gap-2">

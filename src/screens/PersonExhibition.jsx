@@ -246,15 +246,26 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
                 ) : (
                   <span className="flex-1" />
                 )}
-                {/* 카든 온도 — 우상단 작은 pill */}
+                {/* 카든 온도 — 우상단 게이지 (36.5° → 45° 범위 시각화) */}
                 <div
-                  className="flex shrink-0 flex-col items-end"
+                  className="flex shrink-0 flex-col items-end gap-1"
                   title={`사진 ${works.length}장 · 받은 하입 ${totalHypeReceived} · 팔로워 ${stats.followerCount}`}
                 >
                   <span className={`flex items-baseline gap-0.5 text-[16px] font-extrabold leading-none tracking-[-0.05em] ${tempColor}`}>
                     {tempEmoji}{temperature.toFixed(1)}°
                   </span>
-                  <span className="mt-0.5 text-[8.5px] font-semibold tracking-[0.16em] text-[var(--text-faint)]">
+                  <div className="relative h-1.5 w-[68px] overflow-hidden rounded-full bg-[var(--surface-2)]">
+                    <div
+                      className={`h-full rounded-full transition-[width] duration-700 ${
+                        temperature >= 39 ? 'bg-red-500' :
+                        temperature >= 37.5 ? 'bg-orange-400' :
+                        temperature >= 36.8 ? 'bg-emerald-500' :
+                        'bg-cyan-400'
+                      }`}
+                      style={{ width: `${Math.max(0, Math.min(100, ((temperature - 36.5) / (45 - 36.5)) * 100))}%` }}
+                    />
+                  </div>
+                  <span className="text-[8.5px] font-semibold tracking-[0.16em] text-[var(--text-faint)]">
                     카든 온도
                   </span>
                 </div>

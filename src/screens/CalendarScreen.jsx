@@ -373,9 +373,13 @@ function FilmDayGrid({ year, month, day, artworkIds, works, onOpenDay }) {
 function RollSlot({ number, photo, rollComplete, size = 'sm', isStar = false, onOpen }) {
   const filled = !!photo;
   const big = size === 'lg';
-  const numberClass = rollComplete
-    ? (filled ? 'text-white/80' : 'text-white/20')
-    : (filled ? 'text-white/95' : 'text-[var(--text-faint)]/55');
+  // 빈 슬롯은 더 크고 더 흐리게 — 시집의 빈 페이지 톤
+  const numberClass = filled
+    ? (rollComplete ? 'text-white/80' : 'text-white/95')
+    : (rollComplete ? 'text-white/15' : 'text-[var(--text-faint)]/30');
+  const numberSize = filled
+    ? (big ? 'text-[24px]' : 'text-[15px]')
+    : (big ? 'text-[44px]' : 'text-[32px]');
   return (
     <button
       type="button"
@@ -399,7 +403,7 @@ function RollSlot({ number, photo, rollComplete, size = 'sm', isStar = false, on
       )}
       {filled && <span className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />}
       <span
-        className={`font-display relative text-right ${big ? 'text-[24px]' : 'text-[15px]'} font-black italic leading-none ${numberClass}`}
+        className={`font-display relative font-black italic leading-none ${numberSize} ${numberClass} ${filled ? 'text-right' : ''}`}
         style={{
           position: filled ? 'absolute' : 'static',
           right: filled ? 4 : undefined,

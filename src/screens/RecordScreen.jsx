@@ -273,27 +273,35 @@ export default function RecordScreen({ setScreen, openArtwork }) {
               <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-muted)]">
                 냥이는 잠들었어요. 내일 다시 만나요.
               </p>
-              <div className="mt-4 grid w-full grid-cols-4 gap-1.5">
-                {todayWorks.map((art) => (
-                  <div key={art.id} className="relative aspect-square overflow-hidden rounded-[10px]">
-                    <button
-                      type="button"
-                      onClick={() => openArtwork?.(art.id)}
-                      className="block h-full w-full"
+              {/* 오늘의 네 장 — 흩뿌려진 폴라로이드 톤 (PDF 5페이지) */}
+              <div className="mt-5 grid w-full grid-cols-2 gap-3 px-2">
+                {todayWorks.map((art, i) => {
+                  const rot = [-2.5, 1.8, -1.6, 2.4][i] || 0;
+                  return (
+                    <div
+                      key={art.id}
+                      className="relative rounded-[3px] bg-white p-1.5 pb-5 shadow-[0_6px_14px_rgba(0,0,0,0.14)]"
+                      style={{ transform: `rotate(${rot}deg)` }}
                     >
-                      <img src={art.imageUrl} alt={art.title} className="h-full w-full object-cover" loading="lazy" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleDeleteToday(art); }}
-                      disabled={deletingId === art.id}
-                      className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-[10px] text-white backdrop-blur-sm disabled:opacity-50"
-                      title="삭제"
-                    >
-                      {deletingId === art.id ? '…' : '✕'}
-                    </button>
-                  </div>
-                ))}
+                      <button
+                        type="button"
+                        onClick={() => openArtwork?.(art.id)}
+                        className="block aspect-square w-full overflow-hidden"
+                      >
+                        <img src={art.imageUrl} alt={art.title} className="h-full w-full object-cover" loading="lazy" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteToday(art); }}
+                        disabled={deletingId === art.id}
+                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-[10px] text-white backdrop-blur-sm disabled:opacity-50"
+                        title="삭제"
+                      >
+                        {deletingId === art.id ? '…' : '✕'}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </section>
           ) : (
