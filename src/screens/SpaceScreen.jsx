@@ -7,6 +7,7 @@ import {
 } from '../components/ui';
 import Icon from '../components/Icon';
 import NearbyConstellation from '../components/NearbyConstellation';
+import { CatStarlit } from '../components/Mascot';
 
 
 import { getCurrentPosition, distanceMeters, searchPlaces } from '../lib/geocoding';
@@ -232,9 +233,20 @@ export default function SpaceScreen({ openPlace, openArtwork }) {
               )}
             </div>
             {allPoints.length === 0 ? (
-              <p className="px-4 py-8 text-center text-[12px] text-[var(--text-muted)]">
-                아직 별이 없어요. 위치를 켠 사진이 올라오면 여기로 떠올라요.
-              </p>
+              <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#1f2436] via-[#191b2a] to-[#0d0e16] px-6 py-8 text-center text-white">
+                <span className="pointer-events-none absolute right-4 top-4 text-white/50">✦</span>
+                <span className="pointer-events-none absolute left-6 top-12 text-[10px] text-white/40">✦</span>
+                <span className="pointer-events-none absolute bottom-6 right-10 text-[8px] text-white/40">✦</span>
+                <div className="flex justify-center">
+                  <CatStarlit size={120} />
+                </div>
+                <p className="font-display mt-2 text-[16px] font-extrabold tracking-[-0.05em]">
+                  아직 별이 뜨지 않았어요
+                </p>
+                <p className="font-display mt-2 text-[12px] italic leading-[1.7] text-white/75">
+                  위치를 켠 사진이 올라오면<br />이 자리에 별로 떠올라요.
+                </p>
+              </div>
             ) : (
               <NearbyConstellation
                 center={center}

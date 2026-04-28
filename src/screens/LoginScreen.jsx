@@ -75,10 +75,13 @@ export default function LoginScreen() {
               <span>카메라 든 냥이</span>
             </div>
             <div>
-              <h1 className="text-[48px] font-extrabold leading-[0.92] tracking-[-0.1em]">
+              <h1 className="font-display text-[52px] font-black leading-[0.92] tracking-[-0.08em]">
                 냥이가<br />본 오늘
               </h1>
-              <p className="mt-4 text-[15px] leading-7 text-white/80">하루 네 장.<br />그중 가장 오래 남은 25번째 한 장.</p>
+              <p className="font-display mt-4 text-[15px] italic leading-[1.7] text-white/85">
+                하루 네 장.<br />
+                그중 가장 오래 남은 25번째 한 장.
+              </p>
 
               {sent ? (
                 <div className="mt-8 rounded-[20px] bg-white/10 p-5 text-sm leading-6">

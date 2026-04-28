@@ -49,11 +49,15 @@ export default function OnboardingModal() {
           </div>
           <div>
             <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">카든냥</p>
-            <h2 className="mt-0.5 text-[18px] font-extrabold tracking-[-0.06em]">
+            <h2 className="font-display mt-0.5 text-[20px] font-extrabold tracking-[-0.06em]">
               어떻게 불러드릴까요?
             </h2>
           </div>
         </div>
+        <p className="font-display mb-3 text-[12px] italic leading-[1.65] text-[var(--text-body)]">
+          처음 만난 냥이에게 이름을 지어줘요.<br />
+          오늘부터 하루 네 장이 시작됩니다.
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-2">
           <input
