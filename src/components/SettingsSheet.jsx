@@ -57,7 +57,7 @@ export default function SettingsSheet({ onClose, onMessages, onLogout, extraItem
           <div className="rounded-[14px] px-3 py-3">
             <div className="mb-2 flex items-baseline justify-between">
               <p className="text-[12px] font-bold tracking-[-0.04em]">오늘의 냥이</p>
-              <p className="text-[10px] text-[var(--text-muted)]">10자아</p>
+              <p className="text-[10px] text-[var(--text-muted)]">냥이 페르소나</p>
             </div>
             <div className="grid grid-cols-5 gap-1.5">
               {themes.map((t) => {

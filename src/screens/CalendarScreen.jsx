@@ -91,9 +91,13 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
 
   const monthShort = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][now.getMonth()];
 
-  // 상단 탭 — 롤(25칸 진행률) / 일주일 / 월별. 마지막 선택 기억.
+  // 상단 탭 — 롤(25칸 진행률) / 캘린더(월별 그리드 = 위클리 row). 마지막 선택 기억.
+  const VALID_FILM_VIEWS = ['roll', 'month'];
   const [filmView, setFilmView] = useState(() => {
-    try { return sessionStorage.getItem('kadennyang:film:view') || 'roll'; } catch { return 'roll'; }
+    try {
+      const v = sessionStorage.getItem('kadennyang:film:view');
+      return VALID_FILM_VIEWS.includes(v) ? v : 'roll';
+    } catch { return 'roll'; }
   });
   useEffect(() => {
     try { sessionStorage.setItem('kadennyang:film:view', filmView); } catch {
@@ -107,8 +111,7 @@ export default function CalendarScreen({ setScreen, openArtwork }) {
       <div className="sticky top-11 z-30 -mx-3 flex items-center gap-1 border-b border-[var(--border)] bg-[var(--bg)] px-3">
         {[
           { id: 'roll', label: '롤' },
-          { id: 'week', label: '일주일' },
-          { id: 'month', label: '월별' },
+          { id: 'month', label: '캘린더' },
         ].map((t) => (
           <button
             key={t.id}

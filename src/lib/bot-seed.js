@@ -99,9 +99,9 @@ const BOT_ARTWORK_BLUEPRINTS = [
   { user_id: 'bot:linen', title: '버스가 지나가고 남은 자리', daily_vision: '천천히', url: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=900&q=80', d: 1 },
   { user_id: 'bot:linen', title: '어떤 집의 창문',           daily_vision: '동네',  url: 'https://images.unsplash.com/photo-1496317899792-9d7dbcd928a1?auto=format&fit=crop&w=900&q=80', d: 5 },
   { user_id: 'bot:linen', title: '필름이 한 칸 비었던 날',    daily_vision: '필름',  url: 'https://images.unsplash.com/photo-1444212477490-ca407925329e?auto=format&fit=crop&w=900&q=80', d: 12 },
-  { user_id: 'bot:linen', title: '아빠와 딸의 뒷모습',        daily_vision: '뒷모습', url: 'https://images.unsplash.com/photo-1517022812141-23620dba5c23?auto=format&fit=crop&w=900&q=80', d: 14 },
-  { user_id: 'bot:linen', title: '주말 시장 한가운데',        daily_vision: '주말 시장', url: 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=900&q=80', d: 16 },
-  { user_id: 'bot:linen', title: '버스 정류장의 둘',          daily_vision: '둘',    url: 'https://images.unsplash.com/photo-1517959105821-eaf2591984ca?auto=format&fit=crop&w=900&q=80', d: 18 },
+  { user_id: 'bot:linen', title: '닫힌 셔터의 텍스처',         daily_vision: '동네',  url: 'https://images.unsplash.com/photo-1493514789931-586cb221d7a7?auto=format&fit=crop&w=900&q=80', d: 14 },
+  { user_id: 'bot:linen', title: '주말 시장 빈 좌판',          daily_vision: '주말 시장', url: 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=900&q=80', d: 16 },
+  { user_id: 'bot:linen', title: '버스 정류장의 빈 의자',      daily_vision: '천천히',    url: 'https://images.unsplash.com/photo-1543353071-873f17a7a088?auto=format&fit=crop&w=900&q=80', d: 18 },
   { user_id: 'bot:linen', title: '동네 책방의 노란 창',       daily_vision: '동네',  url: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=900&q=80', d: 21 },
 
   // ── 느와르 (bot:noir) — 야경, 비, 도시, 네온 ──

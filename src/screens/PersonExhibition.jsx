@@ -358,26 +358,38 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
           )}
         </section>
 
-        {stats.topArtwork && stats.totalHype > 0 && (
-          <section className="rounded-[24px] bg-[var(--surface)] p-3 shadow-[0_0_0_1px_var(--border)]">
-            <button
-              type="button"
-              onClick={() => openArtwork(stats.topArtwork.id)}
-              className="block w-full text-left"
-            >
-              <div className="mb-2 flex items-center justify-between px-1">
-                <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">가장 인기 있는 사진</p>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--ink)] px-2 py-0.5 text-[10px] font-semibold text-white">
-                  <IconHype size={11} filled /> {getHypeCount(stats.topArtwork.id)}
-                </span>
-              </div>
-              <div className="overflow-hidden rounded-[18px]">
-                <ImageBox src={stats.topArtwork.imageUrl} alt={stats.topArtwork.title} className="h-44" />
-              </div>
-              <p className="mt-2 px-1 text-sm font-bold tracking-[-0.04em]">{stats.topArtwork.title || '제목 없음'}</p>
-            </button>
-          </section>
-        )}
+        {/* 가장 인기 있는 사진 — 프로필 사진(25번째 or 첫 사진)과 겹치지 않을 때만 표시.
+            한 장 제대로 보이게 portrait 3:4. 누르면 작품 디테일. */}
+        {(() => {
+          const profilePhotoId = (twentyFiveArt || works[0])?.id;
+          const showTopArt =
+            stats.topArtwork &&
+            stats.totalHype > 0 &&
+            stats.topArtwork.id !== profilePhotoId;
+          if (!showTopArt) return null;
+          return (
+            <section className="rounded-[24px] bg-[var(--surface)] p-3 shadow-[0_0_0_1px_var(--border)]">
+              <button
+                type="button"
+                onClick={() => openArtwork(stats.topArtwork.id)}
+                className="block w-full text-left"
+              >
+                <div className="mb-2 flex items-center justify-between px-1">
+                  <p className="text-[10px] font-semibold tracking-[0.16em] text-[var(--text-muted)]">가장 인기 있는 사진</p>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--ink)] px-2 py-0.5 text-[10px] font-semibold text-white">
+                    <IconHype size={11} filled /> {getHypeCount(stats.topArtwork.id)}
+                  </span>
+                </div>
+                <div className="overflow-hidden rounded-[18px]">
+                  <ImageBox src={stats.topArtwork.imageUrl} alt={stats.topArtwork.title} className="aspect-[3/4]" />
+                </div>
+                <p className="font-display mt-3 px-1 text-center text-[16px] font-extrabold italic tracking-[-0.05em]">
+                  {stats.topArtwork.title || '제목 없음'}
+                </p>
+              </button>
+            </section>
+          );
+        })()}
 
         <section>
           <div className="mb-3 flex items-center justify-between">

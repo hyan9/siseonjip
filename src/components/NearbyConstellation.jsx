@@ -58,33 +58,95 @@ export default function NearbyConstellation({
     return { ...p, x, y };
   });
 
+  // 별 흩뿌림 — 배경 장식 (deterministic 위치)
+  const stars = [
+    [size * 0.10, size * 0.18, 1.4, 0.7, '0s'],
+    [size * 0.86, size * 0.12, 2, 0.85, '0.4s'],
+    [size * 0.92, size * 0.40, 1.2, 0.6, '0.8s'],
+    [size * 0.06, size * 0.55, 1.8, 0.7, '1.2s'],
+    [size * 0.18, size * 0.88, 1.4, 0.6, '1.6s'],
+    [size * 0.78, size * 0.92, 1.6, 0.7, '2.0s'],
+    [size * 0.95, size * 0.78, 1.1, 0.5, '0.6s'],
+    [size * 0.04, size * 0.30, 1.3, 0.6, '1.4s'],
+  ];
+
   return (
-    <div className="relative mx-auto select-none" style={{ width: size, height: size }}>
+    <div
+      className="relative mx-auto select-none overflow-hidden rounded-[24px]"
+      style={{
+        width: size,
+        height: size,
+        background: 'radial-gradient(circle at 50% 35%, #232a3e 0%, #161927 55%, #0a0c14 100%)',
+      }}
+    >
+      <style>{`
+        @keyframes kadennyang-twinkle {
+          0%, 100% { opacity: 0.35; transform: scale(0.85); }
+          50% { opacity: 1; transform: scale(1.15); }
+        }
+        @keyframes kadennyang-glow {
+          0%, 100% { opacity: 0.5; transform: scale(1); }
+          50% { opacity: 0.85; transform: scale(1.08); }
+        }
+        @keyframes kadennyang-photo-glow {
+          0%, 100% { box-shadow: 0 0 0 2px rgba(255,255,255,0.85), 0 0 12px rgba(255,220,150,0.18); }
+          50% { box-shadow: 0 0 0 2px rgba(255,255,255,0.95), 0 0 22px rgba(255,220,150,0.45); }
+        }
+      `}</style>
+
+      {/* 별 흩뿌림 */}
+      {stars.map(([sx, sy, sr, opacity, delay], i) => (
+        <span
+          key={i}
+          className="pointer-events-none absolute rounded-full bg-white"
+          style={{
+            left: sx - sr,
+            top: sy - sr,
+            width: sr * 2,
+            height: sr * 2,
+            opacity,
+            animation: `kadennyang-twinkle 3.6s ease-in-out infinite`,
+            animationDelay: delay,
+          }}
+        />
+      ))}
+
       {/* 거리 링 */}
-      <svg width={size} height={size} className="absolute inset-0 pointer-events-none">
-        <g stroke="var(--border)" fill="none" strokeDasharray="2 5">
+      <svg width={size} height={size} className="pointer-events-none absolute inset-0">
+        <g stroke="rgba(255,255,255,0.18)" fill="none" strokeDasharray="2 5">
           <circle cx={half} cy={half} r={radiusFor(500)} />
           <circle cx={half} cy={half} r={radiusFor(2000)} />
           <circle cx={half} cy={half} r={maxR} />
         </g>
-        <g fill="var(--text-faint)" fontSize="9.5" fontWeight="600" letterSpacing="0.04em">
+        <g fill="rgba(255,255,255,0.55)" fontSize="9.5" fontWeight="600" letterSpacing="0.04em">
           <text x={half + 4} y={half - radiusFor(500) - 3}>500m</text>
           <text x={half + 4} y={half - radiusFor(2000) - 3}>2km</text>
           <text x={half + 4} y={half - maxR - 3}>5km+</text>
         </g>
       </svg>
 
-      {/* 가운데 카든냥 = 내 위치 */}
+      {/* 가운데 카든냥 = 내 위치 — 글로우 펄스 */}
+      <span
+        className="pointer-events-none absolute z-10 rounded-full"
+        style={{
+          left: half - 60,
+          top: half - 60,
+          width: 120,
+          height: 120,
+          background: 'radial-gradient(circle, rgba(255,220,150,0.45) 0%, rgba(255,220,150,0) 70%)',
+          animation: 'kadennyang-glow 3.2s ease-in-out infinite',
+        }}
+      />
       <div
-        className="absolute z-20 flex items-center justify-center rounded-full bg-[var(--ink)] text-[var(--bg)] shadow-[0_6px_18px_rgba(0,0,0,0.18)]"
+        className="absolute z-20 flex items-center justify-center rounded-full bg-white text-[var(--ink)] shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
         style={{ left: half - 40, top: half - 40, width: 80, height: 80 }}
         aria-label="내 위치"
       >
         <CatPhotographer size={54} />
       </div>
 
-      {/* 주변 사진 */}
-      {positioned.map((p) => {
+      {/* 주변 사진 — 별처럼 반짝임 */}
+      {positioned.map((p, i) => {
         const photoSize = 56;
         return (
           <button
@@ -95,11 +157,12 @@ export default function NearbyConstellation({
             style={{ left: p.x - photoSize / 2, top: p.y - photoSize / 2 }}
           >
             <div
-              className="overflow-hidden rounded-full bg-[var(--surface-2)]"
+              className="overflow-hidden rounded-full bg-white/10"
               style={{
                 width: photoSize,
                 height: photoSize,
-                boxShadow: '0 0 0 2px var(--bg), 0 4px 10px rgba(0,0,0,0.2)',
+                animation: `kadennyang-photo-glow ${3.2 + (i % 4) * 0.4}s ease-in-out infinite`,
+                animationDelay: `${(i * 0.3) % 1.6}s`,
               }}
             >
               {p.imageUrl ? (
@@ -113,7 +176,7 @@ export default function NearbyConstellation({
                 <div className="h-full w-full" />
               )}
             </div>
-            <span className="mt-1 whitespace-nowrap rounded-full bg-[var(--ink)] px-1.5 py-[2px] text-[9px] font-bold leading-none text-[var(--bg)]">
+            <span className="mt-1 whitespace-nowrap rounded-full bg-white/95 px-1.5 py-[2px] text-[9px] font-bold leading-none text-[var(--ink)]">
               {formatDistance(p.distance)}
             </span>
           </button>
