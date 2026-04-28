@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Persona Debug</title>
+<style>
+  body { font-family: sans-serif; padding: 24px; background: #f4f4f4; }
+  h1 { font-size: 18px; }
+  .row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tile { display: inline-flex; align-items: center; justify-content: center; width: 88px; height: 88px; overflow: hidden; border-radius: 12%; }
+  .tile img { width: 100%; height: 100%; max-width: none; display: block; object-fit: contain; }
+  .label { text-align: center; font-size: 11px; margin-top: 4px; }
+  .col { display: flex; flex-direction: column; align-items: center; }
+  .spotted { background: #fafafa; }
+  .lavender { background: #efebf6; }
+  .chlorophyll { background: #eef3e9; }
+  .cyberpunk { background: #0a0814; }
+  .v1Section { border: 2px dashed #999; padding: 12px; margin-bottom: 24px; }
+  .v2Section { border: 2px solid #d97757; padding: 12px; }
+</style>
+</head>
+<body>
+<div class="v2Section">
+<h1>v2 (현재 사용 중) — 30% 패딩 적용된 4개</h1>
+<div class="row">
+  <div class="col"><div class="tile spotted"><img src="/personas/spotted-v2.png"></div><div class="label">점박이 v2</div></div>
+  <div class="col"><div class="tile lavender"><img src="/personas/lavender-v2.png"></div><div class="label">보라냥 v2</div></div>
+  <div class="col"><div class="tile chlorophyll"><img src="/personas/chlorophyll-v2.png"></div><div class="label">엽록소 v2</div></div>
+  <div class="col"><div class="tile cyberpunk"><img src="/personas/cyberpunk-v2.png"></div><div class="label">사이버펑크 v2</div></div>
+</div>
+</div>
+<div class="v1Section">
+<h1>v1 (옛 빌드, 캐시될 가능성)</h1>
+<div class="row">
+  <div class="col"><div class="tile spotted"><img src="/personas/spotted.png"></div><div class="label">점박이 v1</div></div>
+  <div class="col"><div class="tile lavender"><img src="/personas/lavender.png"></div><div class="label">보라냥 v1</div></div>
+  <div class="col"><div class="tile chlorophyll"><img src="/personas/chlorophyll.png"></div><div class="label">엽록소 v1</div></div>
+  <div class="col"><div class="tile cyberpunk"><img src="/personas/cyberpunk.png"></div><div class="label">사이버펑크 v1</div></div>
+</div>
+</div>
+</body>
+</html>
