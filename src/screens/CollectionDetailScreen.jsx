@@ -115,7 +115,7 @@ export default function CollectionDetailScreen({ collectionId, setScreen, openAr
       {items.length === 0 ? (
         <EmptyState
           title="아직 사진이 없어요"
-          hint={isMine ? '다른 사람 사진의 + 컬렉션 버튼으로 추가하세요.' : ''}
+          hint={isMine ? '사진을 담는 법:\n사진을 클릭해 상세 화면 → 우상단 📚 컬렉션 아이콘 → 이 컬렉션 선택' : ''}
         />
       ) : (
         <div className="grid grid-cols-2 gap-3">

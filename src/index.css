@@ -54,34 +54,35 @@
   --hero-to: #000000;
 }
 
-/* 흑냥이 — 밝은 종이 위 검은 실루엣. 밝은 청회색 톤 */
+/* 흑냥이 — 야간 모드 (다크 슬레이트). 페르소나 picker 타일은 PNG 시각성 위해
+   별도 밝은 톤(#dde3ec) 유지하고, 사이트 전체는 야간 다크로. */
 [data-theme="night"] {
-  --bg: #dde3ec;
-  --surface: #eef2f7;
-  --surface-2: #ced6e0;
-  --surface-3: #b8c1cd;
-  --image-bg: #aab4c2;
+  --bg: #0e1014;
+  --surface: #161a20;
+  --surface-2: #1f242b;
+  --surface-3: #2a3038;
+  --image-bg: #06080b;
 
-  --ink: #1a1d1f;
+  --ink: #050608;
   --ink-text: #ffffff;
 
-  --text: #1a1d1f;
-  --text-muted: #5b6370;
-  --text-faint: #8a91a0;
-  --text-body: #2a2e34;
-  --text-quote: #1a1d1f;
-  --text-meta: #6b7382;
-  --placeholder: #98a0ad;
+  --text: #ecedef;
+  --text-muted: #9ea3a9;
+  --text-faint: #6a6f74;
+  --text-body: #c4c8cc;
+  --text-quote: #d6d9dc;
+  --text-meta: #8a8e92;
+  --placeholder: #5e6266;
 
-  --border: #c0cad7;
-  --border-strong: #a4b0bf;
-  --border-dashed: #b4bfcc;
+  --border: #232830;
+  --border-strong: #353c44;
+  --border-dashed: #353c44;
 
-  --accent: #5b6370;
-  --accent-soft: #d6dde7;
+  --accent: #f08461;
+  --accent-soft: #2c1e19;
 
-  --hero-from: #2a3340;
-  --hero-via: #161b22;
+  --hero-from: #1f2126;
+  --hero-via: #0e1014;
   --hero-to: #000000;
 }
 

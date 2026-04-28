@@ -63,7 +63,7 @@ export default function CollectionsScreen({ setScreen, openCollection }) {
       {myCollections.length === 0 && !creating ? (
         <EmptyState
           title="아직 컬렉션이 없어요"
-          hint={'예: "겨울의 빛", "도시의 모서리", "흔들리는 것들"\n사진들을 테마로 묶어 다시 보고 싶을 때 만들어요.'}
+          hint={'사용법:\n1. "+ 새 컬렉션" 으로 빈 컬렉션 만들기 (예: "겨울의 빛")\n2. 사진을 클릭해 상세 화면 → 우상단 📚 아이콘으로 컬렉션에 담기\n3. 여기로 돌아오면 채워진 컬렉션이 보여요'}
           onAction={() => setCreating(true)}
           actionLabel="첫 컬렉션 만들기"
         />

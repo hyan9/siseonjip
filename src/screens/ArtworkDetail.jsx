@@ -362,7 +362,7 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
               >
                 <IconShare size={15} />
               </button>
-              {userId && !isMine && openCollectionPicker && (
+              {userId && openCollectionPicker && (
                 <button
                   type="button"
                   onClick={() => openCollectionPicker(art.id)}

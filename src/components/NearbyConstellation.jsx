@@ -1,7 +1,38 @@
-import { CatStarlit } from './Mascot';
 import { formatDistance } from '../lib/utils';
 import { distanceMeters } from '../lib/geocoding';
 import { transformedPhotoUrl } from '../lib/db';
+
+// 내 위치 상징 — 핀 + 카든냥 발자국. 톤: 시집 잉크 색, 별빛 위에서 깔끔히.
+function MyLocationIcon({ size = 64 }) {
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      width={size}
+      height={size}
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="내 위치"
+    >
+      {/* 외곽 글로우 */}
+      <circle cx="32" cy="32" r="30" fill="rgba(255,255,255,0.06)" />
+      {/* 위치 핀 본체 — 흰색 stroke */}
+      <path
+        d="M32 12 C 22 12, 16 19, 16 28 C 16 38, 32 52, 32 52 C 32 52, 48 38, 48 28 C 48 19, 42 12, 32 12 Z"
+        fill="rgba(255,255,255,0.95)"
+        stroke="rgba(255,220,150,0.6)"
+        strokeWidth="1.5"
+      />
+      {/* 핀 안 — 카든냥 발자국 (단순화된 발 + 발가락 4개) */}
+      <g fill="rgba(20,20,28,1)" transform="translate(32 28)">
+        <ellipse cx="0" cy="3" rx="6.5" ry="5.5" />
+        <ellipse cx="-7.5" cy="-5" rx="2.4" ry="3" />
+        <ellipse cx="-3" cy="-9" rx="2.2" ry="2.8" />
+        <ellipse cx="3" cy="-9" rx="2.2" ry="2.8" />
+        <ellipse cx="7.5" cy="-5" rx="2.4" ry="3" />
+      </g>
+    </svg>
+  );
+}
 
 // 내 위치 = 가운데 카든냥, 주변 = 사진들. 지도 대신 별자리.
 // 거리는 로그 스케일로 반지름에 매핑, 방위는 그대로.
@@ -145,29 +176,30 @@ export default function NearbyConstellation({
         </g>
       </svg>
 
-      {/* 가운데 카든냥 = 내 위치 — 글로우 펄스 */}
+      {/* 가운데 = 내 위치 (위치 핀 + 카든냥 발자국 단순 아이콘) */}
       <span
         className="pointer-events-none absolute z-10 rounded-full"
         style={{
-          left: half - 60,
-          top: half - 60,
-          width: 120,
-          height: 120,
-          background: 'radial-gradient(circle, rgba(255,220,150,0.45) 0%, rgba(255,220,150,0) 70%)',
+          left: half - 50,
+          top: half - 50,
+          width: 100,
+          height: 100,
+          background: 'radial-gradient(circle, rgba(255,220,150,0.4) 0%, rgba(255,220,150,0) 70%)',
           animation: 'kadennyang-glow 3.2s ease-in-out infinite',
         }}
       />
       <div
         className="absolute z-20 flex items-center justify-center"
-        style={{ left: half - 50, top: half - 50, width: 100, height: 100 }}
-        aria-label="내 위치"
+        style={{ left: half - 32, top: half - 32, width: 64, height: 64 }}
       >
-        <CatStarlit size={100} />
+        <MyLocationIcon size={64} />
       </div>
 
-      {/* 주변 사진 — 별처럼 반짝임. 거리 라벨은 사진 아래 (외부에 깔끔히) */}
+      {/* 주변 사진 — 별처럼 반짝임. 가까울수록 큰 동그라미 (실제 별이 가까울수록 밝고 크게 보이듯) */}
       {positioned.map((p, i) => {
-        const photoSize = 56;
+        // 거리에 따라 크기 차등 — 가까운 사진(50m): 68px, 먼 사진(10km+): 40px
+        const photoSize = Math.round(68 - (p.distance / maxD) * 28);
+        const safePhotoSize = Math.max(40, Math.min(68, photoSize));
         const extraCount = p.others?.length || 0;
         return (
           <button
@@ -175,13 +207,13 @@ export default function NearbyConstellation({
             type="button"
             onClick={() => onPhotoClick?.(p)}
             className="absolute z-10 flex flex-col items-center"
-            style={{ left: p.x - photoSize / 2, top: p.y - photoSize / 2 }}
+            style={{ left: p.x - safePhotoSize / 2, top: p.y - safePhotoSize / 2 }}
           >
             <div
               className="relative overflow-hidden rounded-full bg-white/10"
               style={{
-                width: photoSize,
-                height: photoSize,
+                width: safePhotoSize,
+                height: safePhotoSize,
                 animation: `kadennyang-photo-glow ${3.2 + (i % 4) * 0.4}s ease-in-out infinite`,
                 animationDelay: `${(i * 0.3) % 1.6}s`,
               }}

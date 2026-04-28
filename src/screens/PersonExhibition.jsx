@@ -12,6 +12,7 @@ import { FourPhotoWall } from '../components/Cards';
 import ReportModal from '../components/ReportModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SettingsSheet from '../components/SettingsSheet';
+import FourCutPicker from '../components/FourCutPicker';
 import PhotoZoomModal from '../components/PhotoZoomModal';
 import { IconSaved, IconCollections, IconActivity, IconEdit, IconSettings, IconShare, IconCalendar, IconLock, IconMessage, IconReport, IconBlock, IconHype, IconStar } from '../components/icons/AppIcons';
 import {
@@ -63,6 +64,7 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
   const [blockOpen, setBlockOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tempInfoOpen, setTempInfoOpen] = useState(false);
+  const [fourCutPickerOpen, setFourCutPickerOpen] = useState(false);
   const [followListType, setFollowListType] = useState(null); // 'followers' | 'following'
   const [galleryStart, setGalleryStart] = useState(null); // 갤러리 zoom 시작 인덱스
 
@@ -133,15 +135,20 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
     }
   };
 
-  const handleExport4Cut = async () => {
+  const handleExport4Cut = () => {
     if (wall.length === 0) {
       alert('4컷이 비어있어요. 먼저 큐레이팅 해주세요.');
       return;
     }
+    // 즉시 생성 X — 페르소나/프레임 picker 먼저
+    setFourCutPickerOpen(true);
+  };
+
+  const handleFourCutConfirm = async ({ persona, frame }) => {
     setExporting(true);
     try {
-      // theme(=페르소나 id)를 persona로 전달. 마스코트 + 컬러 모드 둘 다 자동 결정.
-      await shareFourCutCard({ photos: wall, profile, persona: theme });
+      await shareFourCutCard({ photos: wall, profile, persona, frame });
+      setFourCutPickerOpen(false);
     } catch (err) {
       alert('카드 생성 실패: ' + err.message);
     } finally {
@@ -212,19 +219,30 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
       <div className="space-y-4">
         <section className="rounded-[24px] bg-[var(--surface)] p-4 shadow-[0_0_0_1px_var(--border)]">
           <div className="flex gap-3">
-            {/* 프로필 사진 — 25번째 우선, 없으면 첫 작품, 둘 다 없으면 마스코트 placeholder */}
+            {/* 프로필 사진 — 25번째 우선, 없으면 첫 작품, 둘 다 없으면 마스코트 placeholder.
+                25번째일 땐 인스타 스토리 톤 그라데이션 링 (시집·도록 accent 톤) */}
             {(() => {
               const profilePhoto = featured || works[0] || null;
               if (profilePhoto) {
+                const isTwentyFifth = !!twentyFiveArt;
                 return (
                   <button
                     type="button"
                     onClick={() => openArtwork(profilePhoto.id)}
-                    className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-full"
+                    className={`relative shrink-0 rounded-full ${
+                      isTwentyFifth
+                        ? 'h-[96px] w-[96px] p-[3px]'
+                        : 'h-[88px] w-[88px]'
+                    }`}
+                    style={isTwentyFifth ? {
+                      background: 'conic-gradient(from 140deg at 50% 50%, #d97757 0deg, #f5d28a 90deg, #f4dcd1 180deg, #d97757 270deg, #d97757 360deg)',
+                    } : undefined}
                   >
-                    <ImageBox src={profilePhoto.imageUrl} alt={profilePhoto.title} className="h-full w-full" priority />
-                    {twentyFiveArt && (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--ink)] text-white">
+                    <div className="h-full w-full overflow-hidden rounded-full bg-[var(--surface)]">
+                      <ImageBox src={profilePhoto.imageUrl} alt={profilePhoto.title} className="h-full w-full" priority />
+                    </div>
+                    {isTwentyFifth && (
+                      <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--ink)] text-white shadow">
                         <IconStar size={11} filled />
                       </span>
                     )}
@@ -500,6 +518,15 @@ export default function PersonExhibition({ userId: viewedId, setScreen, openArtw
         onConfirm={handleLogoutConfirm}
         onCancel={() => setLogoutOpen(false)}
       />
+
+      {fourCutPickerOpen && (
+        <FourCutPicker
+          defaultPersona={theme}
+          onConfirm={handleFourCutConfirm}
+          onClose={() => setFourCutPickerOpen(false)}
+          busy={exporting}
+        />
+      )}
 
       {tempInfoOpen && (
         <div
