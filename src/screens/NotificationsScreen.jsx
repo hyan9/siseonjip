@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useData } from '../lib/data-context';
 import { useNotifications } from '../lib/notifications-context';
 import {
@@ -58,6 +58,13 @@ export default function NotificationsScreen({ setScreen, openArtwork, openPerson
     // 화면 닫을 때 일괄 읽음 처리
     return () => { clearUnread(); };
   }, [clearUnread]);
+
+  // 매 30초마다 강제 리렌더 — timeAgo("3분 전")가 자연스럽게 갱신
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
 
   const grouped = useMemo(
     () => groupNotifications(notifications, getProfile),
@@ -143,8 +150,10 @@ export default function NotificationsScreen({ setScreen, openArtwork, openPerson
                 key={g.key}
                 type="button"
                 onClick={() => handleClick(g)}
-                className={`flex w-full items-center gap-2.5 border-b border-[var(--border)] px-1 py-2.5 text-left last:border-b-0 ${
-                  g.read_at ? '' : 'bg-[var(--surface-2)]'
+                className={`flex w-full items-center gap-2.5 border-b border-[var(--border)] py-2.5 text-left last:border-b-0 transition ${
+                  g.read_at
+                    ? 'pl-1 opacity-60'
+                    : 'border-l-[3px] border-l-[var(--accent)] pl-2.5'
                 }`}
               >
                 <div className="relative shrink-0">

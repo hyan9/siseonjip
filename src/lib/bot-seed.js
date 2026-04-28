@@ -74,9 +74,9 @@ const BOT_PLACE_BY_USER = {
 // Unsplash 이미지로 작품 구성. 각 봇이 8~12장. 다양한 카테고리.
 const BOT_ARTWORK_BLUEPRINTS = [
   // ── 이끼 (bot:moss) — 비, 골목, 돌담, 식물 ──────
-  { user_id: 'bot:moss',  title: '간판 옆에 자란 이끼',     daily_vision: '장마',  url: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=900&q=80', d: 0 },
-  { user_id: 'bot:moss',  title: '돌담의 검은 자국',        daily_vision: '돌담',  url: 'https://images.unsplash.com/photo-1473773508845-188df298d2d1?auto=format&fit=crop&w=900&q=80', d: 1 },
-  { user_id: 'bot:moss',  title: '비 오기 5분 전',           daily_vision: '장마',  url: 'https://images.unsplash.com/photo-1428592953211-077101b2021b?auto=format&fit=crop&w=900&q=80', d: 3 },
+  { user_id: 'bot:moss',  title: '여름이 머무는 나무',       daily_vision: '잎사귀', url: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=900&q=70', d: 0 },
+  { user_id: 'bot:moss',  title: '잎사귀의 무게',            daily_vision: '잎사귀', url: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=70', d: 1 },
+  { user_id: 'bot:moss',  title: '비 오기 직전의 색',        daily_vision: '장마',   url: 'https://images.unsplash.com/photo-1507149833265-60c372daea22?auto=format&fit=crop&w=900&q=70', d: 3 },
   { user_id: 'bot:moss',  title: '오래된 간판은 둥글다',     daily_vision: '간판',  url: 'https://images.unsplash.com/photo-1493514789931-586cb221d7a7?auto=format&fit=crop&w=900&q=80', d: 6 },
   { user_id: 'bot:moss',  title: '골목 모서리의 흰 줄',      daily_vision: '간판',  url: 'https://images.unsplash.com/photo-1515263487990-61b07816b324?auto=format&fit=crop&w=900&q=80', d: 9 },
   { user_id: 'bot:moss',  title: '잎사귀가 꽉 찬 창문',      daily_vision: '잎사귀', url: 'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?auto=format&fit=crop&w=900&q=80', d: 11 },
@@ -85,9 +85,9 @@ const BOT_ARTWORK_BLUEPRINTS = [
   { user_id: 'bot:moss',  title: '풀 사이로 떨어진 빛',      daily_vision: '잎사귀', url: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&q=80', d: 19 },
 
   // ── 소금 (bot:salt) — 부엌, 주방, 그림자, 음식 ──
-  { user_id: 'bot:salt',  title: '도마 위에 떨어진 빛',     daily_vision: '오후',  url: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=900&q=80', d: 0 },
-  { user_id: 'bot:salt',  title: '컵의 그림자가 더 길다',    daily_vision: '그림자', url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80', d: 2 },
-  { user_id: 'bot:salt',  title: '냄비가 만든 일식',         daily_vision: '주방',  url: 'https://images.unsplash.com/photo-1466637574441-749b8f19452f?auto=format&fit=crop&w=900&q=80', d: 4 },
+  { user_id: 'bot:salt',  title: '오후의 정물',              daily_vision: '오후',  url: 'https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&w=900&q=70', d: 0 },
+  { user_id: 'bot:salt',  title: '유리잔의 그림자',          daily_vision: '그림자', url: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=900&q=70', d: 2 },
+  { user_id: 'bot:salt',  title: '주방 한 켠',               daily_vision: '주방',  url: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=900&q=70', d: 4 },
   { user_id: 'bot:salt',  title: '식탁 끝에 잠시 머문 빵',   daily_vision: '오후',  url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=80', d: 8 },
   { user_id: 'bot:salt',  title: '레몬 두 알의 무게',        daily_vision: '주방',  url: 'https://images.unsplash.com/photo-1556909172-bd5315ff2354?auto=format&fit=crop&w=900&q=80', d: 10 },
   { user_id: 'bot:salt',  title: '나이프와 그릇',            daily_vision: '주방',  url: 'https://images.unsplash.com/photo-1466637574441-749b8f19452f?auto=format&fit=crop&w=900&q=80', d: 12 },
@@ -95,8 +95,8 @@ const BOT_ARTWORK_BLUEPRINTS = [
   { user_id: 'bot:salt',  title: '파스타가 식기 직전',       daily_vision: '주방',  url: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=900&q=80', d: 17 },
 
   // ── 리넨 (bot:linen) — 동네, 산책, 사람 뒷모습 ──
-  { user_id: 'bot:linen', title: '평일 오전의 골목',        daily_vision: '동네',  url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=900&q=80', d: 0 },
-  { user_id: 'bot:linen', title: '버스가 지나가고 남은 자리', daily_vision: '천천히', url: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=900&q=80', d: 1 },
+  { user_id: 'bot:linen', title: '동네 한 모퉁이',          daily_vision: '동네',  url: 'https://images.unsplash.com/photo-1465146633011-14f8e0781093?auto=format&fit=crop&w=900&q=70', d: 0 },
+  { user_id: 'bot:linen', title: '산책 길의 텍스처',         daily_vision: '천천히', url: 'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=900&q=70', d: 1 },
   { user_id: 'bot:linen', title: '어떤 집의 창문',           daily_vision: '동네',  url: 'https://images.unsplash.com/photo-1496317899792-9d7dbcd928a1?auto=format&fit=crop&w=900&q=80', d: 5 },
   { user_id: 'bot:linen', title: '필름이 한 칸 비었던 날',    daily_vision: '필름',  url: 'https://images.unsplash.com/photo-1444212477490-ca407925329e?auto=format&fit=crop&w=900&q=80', d: 12 },
   { user_id: 'bot:linen', title: '닫힌 셔터의 텍스처',         daily_vision: '동네',  url: 'https://images.unsplash.com/photo-1493514789931-586cb221d7a7?auto=format&fit=crop&w=900&q=80', d: 14 },
@@ -105,9 +105,9 @@ const BOT_ARTWORK_BLUEPRINTS = [
   { user_id: 'bot:linen', title: '동네 책방의 노란 창',       daily_vision: '동네',  url: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=900&q=80', d: 21 },
 
   // ── 느와르 (bot:noir) — 야경, 비, 도시, 네온 ──
-  { user_id: 'bot:noir',  title: '가로등 셋',                daily_vision: '야경',  url: 'https://images.unsplash.com/photo-1513415564515-763d91423bdd?auto=format&fit=crop&w=900&q=80', d: 0 },
-  { user_id: 'bot:noir',  title: '비 오는 새벽 두 시',       daily_vision: '비',    url: 'https://images.unsplash.com/photo-1418985991508-e47386d96a71?auto=format&fit=crop&w=900&q=80', d: 2 },
-  { user_id: 'bot:noir',  title: '간판이 깜빡이던 골목',     daily_vision: '도시',  url: 'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?auto=format&fit=crop&w=900&q=80', d: 4 },
+  { user_id: 'bot:noir',  title: '도시의 깊은 밤',           daily_vision: '야경',  url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=70', d: 0 },
+  { user_id: 'bot:noir',  title: '네온이 머무는 자리',       daily_vision: '도시',  url: 'https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?auto=format&fit=crop&w=900&q=70', d: 2 },
+  { user_id: 'bot:noir',  title: '야경의 한 점',             daily_vision: '야경',  url: 'https://images.unsplash.com/photo-1474314243412-cd4a79f02c6a?auto=format&fit=crop&w=900&q=70', d: 4 },
   { user_id: 'bot:noir',  title: '편의점 앞의 검은 자국',    daily_vision: '도시',  url: 'https://images.unsplash.com/photo-1490217751470-db269bb56b8c?auto=format&fit=crop&w=900&q=80', d: 7 },
   { user_id: 'bot:noir',  title: '네온이 다 켜지기 전',      daily_vision: '야경',  url: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=900&q=80', d: 9 },
   { user_id: 'bot:noir',  title: '지하철 마지막 칸',          daily_vision: '도시',  url: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=900&q=80', d: 11 },
@@ -115,8 +115,8 @@ const BOT_ARTWORK_BLUEPRINTS = [
   { user_id: 'bot:noir',  title: '길 끝에 남은 빨간 신호',    daily_vision: '빨강 한 점', url: 'https://images.unsplash.com/photo-1496564203457-11bb12075d90?auto=format&fit=crop&w=900&q=80', d: 17 },
 
   // ── 주전자 (bot:kettle) — 카페, 빛, 손, 책 ──
-  { user_id: 'bot:kettle', title: '컵 위에 떠 있는 빛',       daily_vision: '반사',  url: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=900&q=80', d: 0 },
-  { user_id: 'bot:kettle', title: '에스프레소 표면',          daily_vision: '커피',  url: 'https://images.unsplash.com/photo-1542353436-312f0e1f67ff?auto=format&fit=crop&w=900&q=80', d: 1 },
+  { user_id: 'bot:kettle', title: '오후의 빛',                daily_vision: '반사',  url: 'https://images.unsplash.com/photo-1485808191679-5f86510681a2?auto=format&fit=crop&w=900&q=70', d: 0 },
+  { user_id: 'bot:kettle', title: '천천히 흘러간 한낮',       daily_vision: '카페',  url: 'https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&fit=crop&w=900&q=70', d: 1 },
   { user_id: 'bot:kettle', title: '카페 조명은 늘 따뜻하다',  daily_vision: '카페',  url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=80', d: 3 },
   { user_id: 'bot:kettle', title: '잠시 멈춘 손',             daily_vision: '카페',  url: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=900&q=80', d: 6 },
   { user_id: 'bot:kettle', title: '책 모서리에 닿은 빛',      daily_vision: '책 모서리', url: 'https://images.unsplash.com/photo-1495640388908-05fa85288e61?auto=format&fit=crop&w=900&q=80', d: 8 },
@@ -264,21 +264,25 @@ export function buildBotMemoryGraph(userId) {
 // 알림 화면을 풍성하게 — 봇이 사용자를 follow / 사용자 작품에 hype·comment.
 // 사용자 작품이 0개여도 follow 알림은 항상 보임.
 // 봇 알림 시드 시점 — 사용자별로 한 번만 찍고 localStorage에 저장.
-// 페이지 새로고침해도 같은 시점 → 시간이 흐를수록 알림이 자연스럽게 옛날 것이 됨.
+// 시드 시점 = 첫 방문 - 24시간. 알림이 처음부터 자연스럽게 옛날 것처럼 보임.
+// 시간 흐를수록 "어제", "그저께"로 자연스럽게 변화.
+// v2: 키 변경으로 이전 잘못된 시드값 무시.
+const BOT_SEED_BACKDATE_MS = 24 * 3600000;
 function getBotSeedTime(userId) {
-  if (typeof window === 'undefined') return Date.now();
-  const key = `kadennyang:bot-noti-seed:${userId || 'anon'}`;
+  const fallback = Date.now() - BOT_SEED_BACKDATE_MS;
+  if (typeof window === 'undefined') return fallback;
+  const key = `kadennyang:bot-noti-seed:v2:${userId || 'anon'}`;
   try {
     const saved = window.localStorage.getItem(key);
     if (saved) {
       const t = parseInt(saved, 10);
       if (Number.isFinite(t) && t > 0) return t;
     }
-    const now = Date.now();
-    window.localStorage.setItem(key, String(now));
-    return now;
+    const seedTime = Date.now() - BOT_SEED_BACKDATE_MS;
+    window.localStorage.setItem(key, String(seedTime));
+    return seedTime;
   } catch {
-    return Date.now();
+    return fallback;
   }
 }
 
