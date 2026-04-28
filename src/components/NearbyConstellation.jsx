@@ -75,8 +75,8 @@ export default function NearbyConstellation({
   const items = groups.slice(0, maxItems);
 
   const half = size / 2;
-  const minR = 72; // 고양이 바로 옆
-  const maxR = half - 50; // 사진 28 + 라벨 14 + 여유 6
+  const minR = 56; // 카든냥 반지름 24 + 사진 반지름 ~26. 안쪽까지 사진 배치
+  const maxR = half - 46; // 사진 ~24 + 라벨 14 + 여유 8
   const minD = 50;
   // 사진들의 실제 최대 거리 기반 동적 mapping. 가까운 사진만 있으면 좁게, 먼 사진까지 있으면 넓게.
   const maxObserved = allItems.length > 0 ? allItems[allItems.length - 1].distance : 1000;
@@ -102,22 +102,18 @@ export default function NearbyConstellation({
   }
   const ringDistances = pickRingDistances(maxObserved);
 
-  // 겹침 회피 — 각도가 너무 가까운 형제는 살짝 비껴
-  const placed = [];
+  // 별자리 각도 분산 — GPS 방위는 한쪽으로 몰릴 수 있어 시각적으로 별 같지 않음.
+  // Golden angle(137.5°) 기반 sunflower-style 분산 — 자연스럽게 사방에 흩뿌려짐.
+  // 거리(반지름)는 GPS 그대로, 방위만 인덱스 기반으로 분산.
+  const GOLDEN = Math.PI * (3 - Math.sqrt(5));
+  // 시작 각도에 약간의 deterministic offset (center.lat 기반) — 매번 같은 패턴이지만
+  // 사용자별로 약간 다른 회전. 정수 모듈러로 안정적
+  const startAngle = ((Math.abs(Math.round((center?.lat ?? 0) * 1000)) % 360) / 360) * Math.PI * 2;
   const positioned = items.map((p, i) => {
-    let r = radiusFor(p.distance);
-    let bearing = p.bearing;
-    // 각거리 ≤ 0.35rad (≈20°) & 반지름 차 ≤ 30px이면 약간 회전
-    for (const q of placed) {
-      const angDiff = Math.abs(((bearing - q.bearing + Math.PI) % (2 * Math.PI)) - Math.PI);
-      if (angDiff < 0.35 && Math.abs(r - q.r) < 30) {
-        bearing += (i % 2 === 0 ? 1 : -1) * 0.45;
-        r = Math.min(maxR, r + 14);
-      }
-    }
+    const r = radiusFor(p.distance);
+    const bearing = startAngle + i * GOLDEN;
     const x = half + Math.sin(bearing) * r;
     const y = half - Math.cos(bearing) * r;
-    placed.push({ bearing, r });
     return { ...p, x, y };
   });
 
@@ -205,26 +201,27 @@ export default function NearbyConstellation({
       <span
         className="pointer-events-none absolute z-10 rounded-full"
         style={{
-          left: half - 50,
-          top: half - 50,
-          width: 100,
-          height: 100,
+          left: half - 42,
+          top: half - 42,
+          width: 84,
+          height: 84,
           background: 'radial-gradient(circle, rgba(255,220,150,0.4) 0%, rgba(255,220,150,0) 70%)',
           animation: 'kadennyang-glow 3.2s ease-in-out infinite',
         }}
       />
       <div
         className="absolute z-20 flex items-center justify-center"
-        style={{ left: half - 32, top: half - 32, width: 64, height: 64 }}
+        style={{ left: half - 24, top: half - 24, width: 48, height: 48 }}
       >
-        <MyLocationIcon size={64} />
+        <MyLocationIcon size={48} />
       </div>
 
-      {/* 주변 사진 — 별처럼 반짝임. 가까울수록 큰 동그라미 (실제 별이 가까울수록 밝고 크게 보이듯) */}
+      {/* 주변 사진 — 별처럼 반짝임. 가까울수록 큰 동그라미 (실제 별이 가까울수록 밝고 크게 보이듯).
+          크기 줄여 안쪽 공간에도 사진이 들어갈 수 있게. */}
       {positioned.map((p, i) => {
-        // 거리에 따라 크기 차등 — 가까운 사진(50m): 68px, 먼 사진(10km+): 40px
-        const photoSize = Math.round(68 - (p.distance / maxD) * 28);
-        const safePhotoSize = Math.max(40, Math.min(68, photoSize));
+        // 거리에 따라 크기 차등 — 가까운 사진: 54px, 먼 사진(maxD+): 36px
+        const photoSize = Math.round(54 - (p.distance / maxD) * 18);
+        const safePhotoSize = Math.max(36, Math.min(54, photoSize));
         const extraCount = p.others?.length || 0;
         return (
           <button
