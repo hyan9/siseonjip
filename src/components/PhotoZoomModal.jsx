@@ -82,7 +82,8 @@ export default function PhotoZoomModal({ photos, initialIndex = 0, onClose }) {
           <div
             key={p.id}
             className="flex h-screen w-full items-center justify-center"
-            style={{ scrollSnapAlign: 'center' }}
+            // scroll-snap-stop: always — 빠르게 스크롤해도 한 번에 한 사진씩만 넘어감
+            style={{ scrollSnapAlign: 'center', scrollSnapStop: 'always' }}
           >
             <img
               src={transformedPhotoUrl(p.imageUrl, { width: 1600 })}

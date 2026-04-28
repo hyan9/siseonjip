@@ -29,7 +29,7 @@ export default function NearbyConstellation({
 
   const half = size / 2;
   const minR = 72; // 고양이 바로 옆
-  const maxR = half - 44; // 가장자리
+  const maxR = half - 36; // 사진 28px + 안전 8px (라벨이 사진 안쪽으로 옮겨져서 더 가능)
   const minD = 50; // 50m 이내는 최소 반지름
   const maxD = 5000; // 5km 이상은 최대 반지름
 
@@ -146,7 +146,7 @@ export default function NearbyConstellation({
         <CatStarlit size={100} />
       </div>
 
-      {/* 주변 사진 — 별처럼 반짝임 */}
+      {/* 주변 사진 — 별처럼 반짝임. 거리 라벨은 사진 우측 하단 배지 (이웃 사진과 안 겹침) */}
       {positioned.map((p, i) => {
         const photoSize = 56;
         return (
@@ -154,11 +154,11 @@ export default function NearbyConstellation({
             key={p.id}
             type="button"
             onClick={() => onPhotoClick?.(p)}
-            className="absolute z-10 flex flex-col items-center"
+            className="absolute z-10"
             style={{ left: p.x - photoSize / 2, top: p.y - photoSize / 2 }}
           >
             <div
-              className="overflow-hidden rounded-full bg-white/10"
+              className="relative overflow-hidden rounded-full bg-white/10"
               style={{
                 width: photoSize,
                 height: photoSize,
@@ -176,10 +176,11 @@ export default function NearbyConstellation({
               ) : (
                 <div className="h-full w-full" />
               )}
+              {/* 거리 배지 — 사진 우측 하단에 겹쳐서. 이웃 사진에 가려질 일 없음 */}
+              <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/85 px-1.5 py-[1px] text-[9px] font-bold leading-none text-white shadow">
+                {formatDistance(p.distance)}
+              </span>
             </div>
-            <span className="mt-1 whitespace-nowrap rounded-full bg-white/95 px-1.5 py-[2px] text-[9px] font-bold leading-none text-[var(--ink)]">
-              {formatDistance(p.distance)}
-            </span>
           </button>
         );
       })}

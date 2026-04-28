@@ -121,7 +121,26 @@ function MainApp() {
     return () => cancelAnimationFrame(id);
   }, [screen]);
 
-  const openArtwork = (id) => { setSelectedArtworkId(id); setScreen('detail'); };
+  const openArtwork = useCallback((id) => { setSelectedArtworkId(id); setScreen('detail'); }, []);
+
+  // 공유 URL 진입 — /s/a/:id가 ?artwork=:id로 redirect돼서 SPA에 도달.
+  // 첫 마운트 시 한 번만 처리하고 query 정리.
+  const initialArtworkParamHandled = useRef(false);
+  useEffect(() => {
+    if (initialArtworkParamHandled.current) return;
+    initialArtworkParamHandled.current = true;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const artworkId = params.get('artwork');
+      if (artworkId) {
+        openArtwork(artworkId);
+        // URL 깔끔하게 — query 제거
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    } catch {
+      // SSR/구식 브라우저 — 무시
+    }
+  }, [openArtwork]);
   const openPlace = (id) => { setSelectedPlaceId(id); setScreen('place'); };
   const openPerson = (id) => { setSelectedUserId(id); setScreen('person'); };
   const openKeyword = (word) => { setSelectedKeyword(word); setScreen('keyword'); };

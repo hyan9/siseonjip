@@ -1,8 +1,11 @@
 import Icon from './Icon';
 
-export default function ShareButton({ label = '', title = '카든냥', text = '이 전시를 같이 볼래요?' }) {
+export default function ShareButton({ label = '', title = '카든냥', text = '이 전시를 같이 볼래요?', artworkId }) {
   const handleShare = async () => {
-    const url = window.location.href;
+    // artworkId가 있으면 작품 전용 share URL (카톡/SNS 미리보기 카드 활성화).
+    // 없으면 현재 페이지 URL.
+    const origin = (typeof window !== 'undefined' && window.location.origin) || '';
+    const url = artworkId ? `${origin}/s/a/${artworkId}` : window.location.href;
     const shareData = { title, text, url };
     try {
       if (navigator?.share) await navigator.share(shareData);

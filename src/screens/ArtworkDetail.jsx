@@ -269,7 +269,7 @@ export default function ArtworkDetail({ artworkId, setScreen, openArtwork, openP
                 카메라 보기
               </button>
             )}
-            <div className="absolute right-3 top-3"><ShareButton title={art.title || '카든냥'} /></div>
+            <div className="absolute right-3 top-3"><ShareButton title={art.title || '카든냥'} artworkId={art.id} /></div>
 
             {/* 사진 우하단 — Hype floating (화염). 자기 사진도 허용. */}
             {userId && (
