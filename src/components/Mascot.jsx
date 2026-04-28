@@ -337,20 +337,19 @@ export function CatStarlit({ size = 220, className = '' }) {
 // 각 페르소나마다 자세·장식·색이 고정된 미니 초상화.
 // SettingsSheet 테마 picker, GuideScreen 페르소나 그리드에 사용.
 // currentColor 의존 X — 테마와 무관하게 페르소나 정체성 유지.
-// imgScale — PNG 캔버스 활용도가 페르소나마다 달라서(보라냥 ~50%, 점박이 ~90%) 같은
-// % 사이즈로 그리면 어떤 건 작게, 어떤 건 잘린 듯 보임. 타일 안에서 시각적으로 비슷한
-// 크기로 보이도록 페르소나별로 0.62~1.0 사이의 스케일 박음.
+// imgScale — 타일 안에서 모든 고양이가 비슷한 시각적 크기(타일의 ~50%)가 되도록
+// 페르소나별 PNG 캔버스 활용도를 역으로 보정. 잘린 듯 보이는 일 절대 없게 보수적으로.
 export const PERSONA_VARIANTS = {
-  paper:       { label: '도화지',     pose: 'camera', bg: '#f1f2ee', ink: '#1a1d1f', accent: '#d97757', imgScale: 0.92 },
-  night:       { label: '야간',       pose: 'curl',   bg: '#3d434b', ink: '#ecedef', accent: '#f5d28a', extra: 'moon', imgScale: 1.0 },
-  bread:       { label: '식빵',       pose: 'loaf',   bg: '#f6ecdc', ink: '#7a5a36', accent: '#d97757', imgScale: 0.85 },
-  cheese:      { label: '치즈',       pose: 'stand',  bg: '#fbf2dc', ink: '#c98c2e', accent: '#50331a', imgScale: 0.8 },
-  mackerel:    { label: '고등어',     pose: 'camera', bg: '#e7e9ec', ink: '#5a6168', accent: '#2eb6c6', extra: 'stripes', imgScale: 0.7 },
-  spotted:     { label: '점박이',     pose: 'stand',  bg: '#fafafa', ink: '#e8e8e8', accent: '#141414', extra: 'spots', imgScale: 0.65 },
-  lavender:    { label: '보라냥',     pose: 'curl',   bg: '#efebf6', ink: '#a890c8', accent: '#8b5cf6', imgScale: 1.0 },
-  chlorophyll: { label: '엽록소',     pose: 'stand',  bg: '#eef3e9', ink: '#3a6e44', accent: '#7ab875', extra: 'leaf', imgScale: 0.82 },
-  cyberpunk:   { label: '사이버펑크', pose: 'stand',  bg: '#0a0814', ink: '#f0f0ff', accent: '#ff2d92', extra: 'glitch', imgScale: 0.62 },
-  alien:       { label: '외계냥이',   pose: 'stand',  bg: '#0e1a14', ink: '#a3ff57', accent: '#7c5cff', extra: 'antennae', imgScale: 0.68 },
+  paper:       { label: '도화지',     pose: 'camera', bg: '#f1f2ee', ink: '#1a1d1f', accent: '#d97757', imgScale: 0.78 },
+  night:       { label: '야간',       pose: 'curl',   bg: '#3d434b', ink: '#ecedef', accent: '#f5d28a', extra: 'moon', imgScale: 0.88 },
+  bread:       { label: '식빵',       pose: 'loaf',   bg: '#f6ecdc', ink: '#7a5a36', accent: '#d97757', imgScale: 0.72 },
+  cheese:      { label: '치즈',       pose: 'stand',  bg: '#fbf2dc', ink: '#c98c2e', accent: '#50331a', imgScale: 0.65 },
+  mackerel:    { label: '고등어',     pose: 'camera', bg: '#e7e9ec', ink: '#5a6168', accent: '#2eb6c6', extra: 'stripes', imgScale: 0.58 },
+  spotted:     { label: '점박이',     pose: 'stand',  bg: '#fafafa', ink: '#e8e8e8', accent: '#141414', extra: 'spots', imgScale: 0.55 },
+  lavender:    { label: '보라냥',     pose: 'curl',   bg: '#efebf6', ink: '#a890c8', accent: '#8b5cf6', imgScale: 0.88 },
+  chlorophyll: { label: '엽록소',     pose: 'stand',  bg: '#eef3e9', ink: '#3a6e44', accent: '#7ab875', extra: 'leaf', imgScale: 0.7 },
+  cyberpunk:   { label: '사이버펑크', pose: 'stand',  bg: '#0a0814', ink: '#f0f0ff', accent: '#ff2d92', extra: 'glitch', imgScale: 0.55 },
+  alien:       { label: '외계냥이',   pose: 'stand',  bg: '#0e1a14', ink: '#a3ff57', accent: '#7c5cff', extra: 'antennae', imgScale: 0.58 },
 };
 
 export const PERSONA_KEYS = Object.keys(PERSONA_VARIANTS);
@@ -375,10 +374,17 @@ export function PersonaCat({ persona = 'paper', size = 80, withFrame = true, cla
         src={`/personas/${persona}.png`}
         alt=""
         loading="lazy"
-        // 페르소나별 imgScale로 픽셀 단위 사이즈 고정 — PNG 캔버스 활용도 차이를 보정.
-        // 보라냥(curl·작음)은 1.0, 사이버펑크(가장자리까지 차있음)는 0.62 등.
-        style={{ width: imgPx, height: imgPx }}
-        className="block object-contain"
+        width={imgPx}
+        height={imgPx}
+        // 인라인 스타일로 강하게 박음 — Tailwind preflight의 `img { max-width:100%; height:auto }`
+        // 가 imgPx를 무력화하던 가능성 차단. display:block, object-fit:contain도 인라인으로.
+        style={{
+          width: `${imgPx}px`,
+          height: `${imgPx}px`,
+          maxWidth: 'none',
+          display: 'block',
+          objectFit: 'contain',
+        }}
         draggable={false}
       />
     </span>
